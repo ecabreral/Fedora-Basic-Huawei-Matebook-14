@@ -14,20 +14,32 @@
 set -e
 source "$(dirname "$0")/lib.sh"
 
+# ── Argumentos de Granularidad ───────────────────────────────────────────────
+SKIP_DEP=false; SKIP_GTK=false; SKIP_ICONS=false; SKIP_GDM=false; SKIP_FIREFOX=false; SKIP_SYNC=false
+for arg in "$@"; do
+  case $arg in
+    --skip-dep) SKIP_DEP=true ;;
+    --skip-gtk) SKIP_GTK=true ;;
+    --skip-icons) SKIP_ICONS=true ;;
+    --skip-gdm) SKIP_GDM=true ;;
+    --skip-firefox) SKIP_FIREFOX=true ;;
+    --skip-sync) SKIP_SYNC=true ;;
+  esac
+done
 
 section "🍎 Temas GNOME estilo macOS"
 
- # ...existing code...
-
 # ── 1. Dependencias ───────────────────────────────────────────────────────────
-info "Instalando dependencias del sistema..."
-sudo dnf install -y \
-  git sassc glib2-devel libxml2 \
-  ImageMagick optipng inkscape \
-  gnome-shell-extension-user-theme \
-  gnome-tweaks \
-  gnome-extensions-app
-success "Dependencias instaladas."
+if [ "$SKIP_DEP" = false ]; then
+  info "Instalando dependencias del sistema..."
+  sudo dnf install -y \
+    git sassc glib2-devel libxml2 \
+    ImageMagick optipng inkscape \
+    gnome-shell-extension-user-theme \
+    gnome-tweaks \
+    gnome-extensions-app
+  success "Dependencias instaladas."
+fi
 
 # ── 2. Limpiar repos anteriores ───────────────────────────────────────────────
 info "Limpiando repositorios anteriores..."
@@ -42,53 +54,61 @@ success "Repos anteriores eliminados."
 
 # ── 3. Clonar repositorios ────────────────────────────────────────────────────
 info "Clonando repositorios de temas..."
-git clone https://github.com/vinceliuice/WhiteSur-gtk-theme.git  --depth=1
-git clone https://github.com/vinceliuice/WhiteSur-icon-theme.git --depth=1
-git clone https://github.com/vinceliuice/WhiteSur-firefox-theme.git --depth=1
-git clone https://github.com/vinceliuice/MacTahoe-gtk-theme.git   --depth=1
-git clone https://github.com/vinceliuice/MacTahoe-icon-theme.git  --depth=1
+[ "$SKIP_GTK" = false ] && git clone https://github.com/vinceliuice/WhiteSur-gtk-theme.git  --depth=1
+[ "$SKIP_ICONS" = false ] && git clone https://github.com/vinceliuice/WhiteSur-icon-theme.git --depth=1
+[ "$SKIP_FIREFOX" = false ] && git clone https://github.com/vinceliuice/WhiteSur-firefox-theme.git --depth=1
+[ "$SKIP_GDM" = false ] && git clone https://github.com/vinceliuice/MacTahoe-gtk-theme.git   --depth=1
+[ "$SKIP_ICONS" = false ] && git clone https://github.com/vinceliuice/MacTahoe-icon-theme.git  --depth=1
 success "Repositorios clonados."
 
 # ── 4. Instalar GTK Theme: WhiteSur (Light y Dark) ───────────────────────────
-info "Instalando WhiteSur GTK Theme (Light + Dark)..."
-cd ~/WhiteSur-gtk-theme
-./install.sh -l -N glassy -c Light
-./install.sh -l -N glassy -c Dark
-success "WhiteSur GTK Theme instalado."
+if [ "$SKIP_GTK" = false ]; then
+  info "Instalando WhiteSur GTK Theme (Light + Dark)..."
+  cd ~/WhiteSur-gtk-theme
+  ./install.sh -l -N glassy -c Light
+  ./install.sh -l -N glassy -c Dark
+  success "WhiteSur GTK Theme instalado."
+fi
 
 # ── 5. Instalar Icon Theme: WhiteSur ─────────────────────────────────────────
-info "Instalando WhiteSur Icon Theme..."
-cd ~/WhiteSur-icon-theme
-./install.sh
-success "WhiteSur Icon Theme instalado."
+if [ "$SKIP_ICONS" = false ]; then
+  info "Instalando WhiteSur Icon Theme..."
+  cd ~/WhiteSur-icon-theme
+  ./install.sh
+  success "WhiteSur Icon Theme instalado."
 
-# ── 6. Instalar MacTahoe Icon Theme (instalado pero no activado) ──────────────
-info "Instalando MacTahoe Icon Theme (disponible pero no activo)..."
-cd ~/MacTahoe-icon-theme
-./install.sh
-success "MacTahoe Icon Theme instalado."
+  # ── 6. Instalar MacTahoe Icon Theme (instalado pero no activado) ────────────
+  info "Instalando MacTahoe Icon Theme (disponible pero no activo)..."
+  cd ~/MacTahoe-icon-theme
+  ./install.sh
+  success "MacTahoe Icon Theme instalado."
+fi
 
 # ── 7. Instalar MacTahoe GTK (necesario para el tweak de GDM) ────────────────
-info "Instalando MacTahoe GTK Theme (requerido para GDM)..."
-cd ~/MacTahoe-gtk-theme
-./install.sh -l -c Light
-success "MacTahoe GTK Theme instalado."
+if [ "$SKIP_GDM" = false ]; then
+  info "Instalando MacTahoe GTK Theme (requerido para GDM)..."
+  cd ~/MacTahoe-gtk-theme
+  ./install.sh -l -c Light
+  success "MacTahoe GTK Theme instalado."
 
-# ── 8. Aplicar GDM MacTahoe ───────────────────────────────────────────────────
-info "Aplicando tema GDM MacTahoe (requiere sudo)..."
-if [ -d ~/WhiteSur-gtk-theme ]; then
-  cd ~/WhiteSur-gtk-theme
-  sudo ./tweaks.sh -r 2>/dev/null || true
+  # ── 8. Aplicar GDM MacTahoe ─────────────────────────────────────────────────
+  info "Aplicando tema GDM MacTahoe (requiere sudo)..."
+  if [ -d ~/WhiteSur-gtk-theme ]; then
+    cd ~/WhiteSur-gtk-theme
+    sudo ./tweaks.sh -r 2>/dev/null || true
+  fi
+  cd ~/MacTahoe-gtk-theme
+  sudo ./tweaks.sh -g -b default
+  success "Tema GDM MacTahoe aplicado."
 fi
-cd ~/MacTahoe-gtk-theme
-sudo ./tweaks.sh -g -b default
-success "Tema GDM MacTahoe aplicado."
 
 # ── 9. Instalar WhiteSur Firefox Theme ───────────────────────────────────────
-info "Instalando WhiteSur Firefox Theme..."
-cd ~/WhiteSur-firefox-theme
-./install.sh
-success "WhiteSur Firefox Theme instalado."
+if [ "$SKIP_FIREFOX" = false ]; then
+  info "Instalando WhiteSur Firefox Theme..."
+  cd ~/WhiteSur-firefox-theme
+  ./install.sh
+  success "WhiteSur Firefox Theme instalado."
+fi
 
 # ── 10. Activar extensión User Themes ─────────────────────────────────────────
 info "Activando extensión User Themes..."
@@ -96,24 +116,27 @@ gnome-extensions enable user-theme@gnome-shell-extensions.gcampax.github.com || 
   warn "No se pudo activar User Themes automáticamente. Actívala manualmente."
 
 # ── 11. Aplicar configuración de apariencia GNOME ────────────────────────────
-info "Aplicando apariencia GNOME (modo claro por defecto)..."
+if [ "$SKIP_GTK" = false ] || [ "$SKIP_ICONS" = false ]; then
+  info "Aplicando apariencia GNOME (modo claro por defecto)..."
 
-gsettings set org.gnome.desktop.interface color-scheme 'prefer-light'
-gsettings set org.gnome.desktop.interface gtk-theme "WhiteSur-Light"
-gsettings set org.gnome.shell.extensions.user-theme name "WhiteSur-Light"
-gsettings set org.gnome.desktop.interface icon-theme "WhiteSur"
-gsettings set org.gnome.desktop.interface cursor-theme "Adwaita"
-gsettings set org.gnome.desktop.wm.preferences button-layout 'close,minimize,maximize:'
+  [ "$SKIP_GTK" = false ] && gsettings set org.gnome.desktop.interface color-scheme 'prefer-light'
+  [ "$SKIP_GTK" = false ] && gsettings set org.gnome.desktop.interface gtk-theme "WhiteSur-Light"
+  [ "$SKIP_GTK" = false ] && gsettings set org.gnome.shell.extensions.user-theme name "WhiteSur-Light"
+  [ "$SKIP_ICONS" = false ] && gsettings set org.gnome.desktop.interface icon-theme "WhiteSur"
+  gsettings set org.gnome.desktop.interface cursor-theme "Adwaita"
+  gsettings set org.gnome.desktop.wm.preferences button-layout 'close,minimize,maximize:'
 
-success "Apariencia aplicada."
+  success "Apariencia aplicada."
+fi
 
 # ── 12. Sincronización Automática de Temas Claro/Oscuro ──────────────────────
-info "Configurando script de sincronización automática para GNOME Shell y GTK..."
+if [ "$SKIP_SYNC" = false ]; then
+  info "Configurando script de sincronización automática para GNOME Shell y GTK..."
 
-mkdir -p ~/.local/bin
-mkdir -p ~/.config/autostart
+  mkdir -p ~/.local/bin
+  mkdir -p ~/.config/autostart
 
-cat << 'EOF' > ~/.local/bin/whitesur-theme-sync.sh
+  cat << 'EOF' > ~/.local/bin/whitesur-theme-sync.sh
 #!/bin/bash
 # Espera a que GNOME Shell inicie si se ejecuta al arranque (autostart)
 trap 'pkill -P $$ 2>/dev/null' EXIT
@@ -177,9 +200,9 @@ gsettings monitor org.gnome.shell.extensions.user-theme | while read -r line; do
 wait
 EOF
 
-chmod +x ~/.local/bin/whitesur-theme-sync.sh
+  chmod +x ~/.local/bin/whitesur-theme-sync.sh
 
-cat << 'EOF' > ~/.config/autostart/whitesur-theme-sync.desktop
+  cat << 'EOF' > ~/.config/autostart/whitesur-theme-sync.desktop
 [Desktop Entry]
 Type=Application
 Exec=/home/ecabrera/.local/bin/whitesur-theme-sync.sh
@@ -192,12 +215,13 @@ Comment[es_ES]=Sincroniza Shell y GTK con modo Oscuro
 Comment=Sync Shell and GTK with Dark Mode
 EOF
 
-# Iniciar el script ahora mismo en segundo plano
-if ! pgrep -f whitesur-theme-sync.sh > /dev/null; then
-    ~/.local/bin/whitesur-theme-sync.sh &
-fi
+  # Iniciar el script ahora mismo en segundo plano
+  if ! pgrep -f whitesur-theme-sync.sh > /dev/null; then
+      ~/.local/bin/whitesur-theme-sync.sh &
+  fi
 
-success "Script de sincronización configurado en ~/.local/bin/ y autostart."
+  success "Script de sincronización configurado en ~/.local/bin/ y autostart."
+fi
 
 # ── 13. Resumen final ─────────────────────────────────────────────────────────
 echo ""
@@ -215,4 +239,3 @@ echo "  recargue GTK4/libadwaita correctamente."
 echo ""
 echo "  Logout → Login"
 echo ""
-echo "⚠️ Ahora cierra sesión y vuelve a entrar"

@@ -7,112 +7,136 @@
 set -e
 source "$(dirname "$0")/lib.sh"
 
+# ── Argumentos de Granularidad ───────────────────────────────────────────────
+SKIP_PKG=false; SKIP_EZA=false; SKIP_FONT=false; SKIP_ZSH=false; SKIP_STARSHIP=false; SKIP_CHSH=false
+for arg in "$@"; do
+  case $arg in
+    --skip-pkg) SKIP_PKG=true ;;
+    --skip-eza) SKIP_EZA=true ;;
+    --skip-font) SKIP_FONT=true ;;
+    --skip-zsh) SKIP_ZSH=true ;;
+    --skip-starship) SKIP_STARSHIP=true ;;
+    --skip-chsh) SKIP_CHSH=true ;;
+  esac
+done
+
 section "🚀 Fedora Terminal Pro Setup"
 
 # ── 1. Actualizar sistema ─────────────────────────────────────────────────────
-info "Actualizando sistema..."
-sudo dnf update -y
-success "Sistema actualizado."
+if [ "$SKIP_PKG" = false ]; then
+  info "Actualizando sistema..."
+  sudo dnf update -y
+  success "Sistema actualizado."
 
-# ── 2. Instalar paquetes en un solo bloque ────────────────────────────────────
-section "📦 Instalando paquetes"
-dnf_install \
-  git curl wget unzip \
-  zsh \
-  fastfetch fzf bat zoxide micro \
-  libgda libgda-sqlite \
-  rust cargo
+  # ── 2. Instalar paquetes en un solo bloque ──────────────────────────────────
+  section "📦 Instalando paquetes"
+  dnf_install \
+    git curl wget unzip \
+    zsh \
+    fastfetch fzf bat zoxide micro \
+    libgda libgda-sqlite \
+    rust cargo
+fi
 
 # ── 3. eza (reemplazo moderno de ls) ─────────────────────────────────────────
-section "📦 Instalando eza"
-if command -v eza &>/dev/null; then
-  success "eza ya está instalado."
-else
-  if sudo dnf install -y eza 2>/dev/null; then
-    success "eza instalado desde dnf."
+if [ "$SKIP_EZA" = false ]; then
+  section "📦 Instalando eza"
+  if command -v eza &>/dev/null; then
+    success "eza ya está instalado."
   else
-    info "Instalando eza via cargo (puede tardar varios minutos)..."
-    cargo install eza
-    success "eza instalado via cargo."
+    if sudo dnf install -y eza 2>/dev/null; then
+      success "eza instalado desde dnf."
+    else
+      info "Instalando eza via cargo (puede tardar varios minutos)..."
+      cargo install eza
+      success "eza instalado via cargo."
+    fi
   fi
 fi
 
 # ── 4. Fuente JetBrainsMono Nerd ──────────────────────────────────────────────
-section "🔤 Fuente Nerd"
-if fc-list | grep -qi "JetBrainsMono Nerd"; then
-  success "JetBrainsMono Nerd Font ya instalada."
-else
-  info "Instalando JetBrainsMono Nerd Font..."
-  mkdir -p ~/.local/share/fonts
-  cd ~/.local/share/fonts
-  wget -q https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip
-  unzip -o JetBrainsMono.zip > /dev/null
-  rm JetBrainsMono.zip
-  fc-cache -fv > /dev/null
-  cd ~
-  success "JetBrainsMono Nerd Font instalada."
+if [ "$SKIP_FONT" = false ]; then
+  section "🔤 Fuente Nerd"
+  if fc-list | grep -qi "JetBrainsMono Nerd"; then
+    success "JetBrainsMono Nerd Font ya instalada."
+  else
+    info "Instalando JetBrainsMono Nerd Font..."
+    mkdir -p ~/.local/share/fonts
+    cd ~/.local/share/fonts
+    wget -q https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip
+    unzip -o JetBrainsMono.zip > /dev/null
+    rm JetBrainsMono.zip
+    fc-cache -fv > /dev/null
+    cd ~
+    success "JetBrainsMono Nerd Font instalada."
+  fi
 fi
 
 # ── 5. Oh My Zsh ──────────────────────────────────────────────────────────────
-section "🐚 Oh My Zsh"
-if [ -d "$HOME/.oh-my-zsh" ]; then
-  success "Oh My Zsh ya está instalado."
-else
-  info "Instalando Oh My Zsh..."
-  sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-  success "Oh My Zsh instalado."
-fi
+if [ "$SKIP_ZSH" = false ]; then
+  section "🐚 Oh My Zsh"
+  if [ -d "$HOME/.oh-my-zsh" ]; then
+    success "Oh My Zsh ya está instalado."
+  else
+    info "Instalando Oh My Zsh..."
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+    success "Oh My Zsh instalado."
+  fi
 
-# ── 6. Plugins de Zsh ─────────────────────────────────────────────────────────
-if [ ! -d "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions" ]; then
-  info "Clonando zsh-autosuggestions..."
-  git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions \
-    ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
-fi
+  # ── 6. Plugins de Zsh ────────────────────────────────────────────────────────
+  if [ ! -d "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions" ]; then
+    info "Clonando zsh-autosuggestions..."
+    git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions \
+      ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
+  fi
 
-if [ ! -d "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting" ]; then
-  info "Clonando zsh-syntax-highlighting..."
-  git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting \
-    ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
+  if [ ! -d "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting" ]; then
+    info "Clonando zsh-syntax-highlighting..."
+    git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting \
+      ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
+  fi
+  success "Plugins de Zsh listos."
 fi
-success "Plugins de Zsh listos."
 
 # ── 7. Starship ───────────────────────────────────────────────────────────────
-section "🚀 Starship"
-if command -v starship &>/dev/null; then
-  success "Starship ya está instalado."
-else
-  info "Instalando Starship..."
-  curl -sS https://starship.rs/install.sh | sh -s -- --yes
-  success "Starship instalado."
+if [ "$SKIP_STARSHIP" = false ]; then
+  section "🚀 Starship"
+  if command -v starship &>/dev/null; then
+    success "Starship ya está instalado."
+  else
+    info "Instalando Starship..."
+    curl -sS https://starship.rs/install.sh | sh -s -- --yes
+    success "Starship instalado."
+  fi
+
+  # ── 8. Configurar Starship (preset Pastel Powerline) ────────────────────────
+  mkdir -p ~/.config
+  PRESET_LOCAL="$PROJECT_ROOT/config/starship.toml"
+
+  # Eliminar archivo/enlace previo si existe para evitar errores de cp
+  [ -e ~/.config/starship.toml ] || [ -L ~/.config/starship.toml ] && rm -f ~/.config/starship.toml
+
+  if [ -f "$PRESET_LOCAL" ]; then
+    info "Aplicando preset Pastel Powerline local..."
+    cp "$PRESET_LOCAL" ~/.config/starship.toml
+  else
+    info "Generando preset Pastel Powerline desde starship..."
+    starship preset pastel-powerline > ~/.config/starship.toml
+  fi
+  success "Starship configurado."
 fi
-
-# ── 8. Configurar Starship (preset Pastel Powerline) ─────────────────────────
-mkdir -p ~/.config
-PRESET_LOCAL="$PROJECT_ROOT/config/starship.toml"
-
-# Eliminar archivo/enlace previo si existe para evitar errores de cp
-[ -e ~/.config/starship.toml ] || [ -L ~/.config/starship.toml ] && rm -f ~/.config/starship.toml
-
-if [ -f "$PRESET_LOCAL" ]; then
-  info "Aplicando preset Pastel Powerline local..."
-  cp "$PRESET_LOCAL" ~/.config/starship.toml
-else
-  info "Generando preset Pastel Powerline desde starship..."
-  starship preset pastel-powerline > ~/.config/starship.toml
-fi
-success "Starship configurado con Pastel Powerline."
 
 # ── 9. Generar .zshrc ─────────────────────────────────────────────────────────
-section "⚙️  Configurando .zshrc"
+if [ "$SKIP_ZSH" = false ]; then
+  section "⚙️  Configurando .zshrc"
+  
+  # Si .zshrc existe (como archivo o link), respaldarlo para evitar conflictos
+  if [ -L ~/.zshrc ] || [ -f ~/.zshrc ]; then
+    info "Respaldando .zshrc existente..."
+    mv ~/.zshrc ~/.zshrc.backup.$(date +%s)
+  fi
 
-# Si .zshrc existe (como archivo o link), respaldarlo y eliminarlo para evitar conflictos
-if [ -L ~/.zshrc ] || [ -f ~/.zshrc ]; then
-  info "Respaldando .zshrc existente..."
-  mv ~/.zshrc ~/.zshrc.backup.$(date +%s)
-fi
-
-cat << 'EOF' > ~/.zshrc
+  cat << 'EOF' > ~/.zshrc
 # cargo path
 export PATH="$HOME/.cargo/bin:$PATH"
 
@@ -147,14 +171,16 @@ if [[ $- == *i* ]]; then
   fastfetch
 fi
 EOF
-
-success ".zshrc configurado."
+  success ".zshrc configurado."
+fi
 
 # ── 10. Cambiar shell por defecto a Zsh ───────────────────────────────────────
-if [ "$SHELL" != "$(which zsh)" ]; then
-  info "Cambiando shell por defecto a Zsh..."
-  chsh -s "$(which zsh)"
-  success "Zsh configurado como shell por defecto."
+if [ "$SKIP_CHSH" = false ] && [ "$SKIP_ZSH" = false ]; then
+  if [ "$SHELL" != "$(which zsh)" ]; then
+    info "Cambiando shell por defecto a Zsh..."
+    chsh -s "$(which zsh)"
+    success "Zsh configurado como shell por defecto."
+  fi
 fi
 
 section "✅ Terminal Setup completo"
