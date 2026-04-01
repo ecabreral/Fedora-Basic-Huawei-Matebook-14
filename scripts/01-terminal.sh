@@ -101,7 +101,9 @@ success "Starship configurado con Pastel Powerline."
 
 # ── 9. Generar .zshrc ─────────────────────────────────────────────────────────
 section "⚙️  Configurando .zshrc"
-if [ -f ~/.zshrc ]; then
+
+# Si .zshrc existe (como archivo o link), respaldarlo y eliminarlo para evitar conflictos
+if [ -L ~/.zshrc ] || [ -f ~/.zshrc ]; then
   info "Respaldando .zshrc existente..."
   mv ~/.zshrc ~/.zshrc.backup.$(date +%s)
 fi

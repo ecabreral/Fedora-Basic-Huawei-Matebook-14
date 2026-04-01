@@ -9,6 +9,17 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 source "$SCRIPT_DIR/scripts/lib.sh"
 
+# Función para reportar errores
+error_handler() {
+  echo ""
+  error "¡Error crítico detectado en la instalación!"
+  warn "El script falló en el comando: ${BOLD}${BASH_COMMAND}${RESET}"
+  echo ""
+  read -p "Presiona ENTER para salir..."
+  exit 1
+}
+trap 'error_handler' ERR
+
 # Recibir los scripts seleccionados como argumentos (separados por espacios)
 # Ejemplo: ./gui-launcher.sh terminal vscode theme ...
 SELECTED_IDS=("$@")
