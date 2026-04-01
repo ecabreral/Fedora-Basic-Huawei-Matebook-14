@@ -78,31 +78,8 @@ T = TOKENS
 # ═══════════════════════════════════════════════════════════════════════════════
 # TYPOGRAPHY
 # ═══════════════════════════════════════════════════════════════════════════════
-def get_system_fonts():
-    system = platform.system()
-    return {
-        "sans": {
-            "Linux":   ["Inter", "Noto Sans", "DejaVu Sans", "sans-serif"],
-            "Darwin":  ["SF Pro Text", "Helvetica Neue", "sans-serif"],
-            "Windows": ["Segoe UI", "Calibri", "sans-serif"],
-        }[system],
-        "mono": {
-            "Linux":   ["JetBrains Mono", "Fira Code", "monospace"],
-            "Darwin":  ["SF Mono", "Menlo", "monospace"],
-            "Windows": ["Cascadia Code", "Consolas", "monospace"],
-        }[system],
-    }
-
-def first_font(candidates):
-    available = set(tk.font.families())
-    for f in candidates:
-        if f in available:
-            return f
-    return candidates[-1]
-
-FONTS = get_system_fonts()
-FONT_PRIMARY = first_font(FONTS["sans"])
-FONT_MONO = first_font(FONTS["mono"])
+FONT_PRIMARY = "sans-serif"
+FONT_MONO = "monospace"
 
 F = {
     "display": (FONT_PRIMARY, 24, "bold"),
@@ -202,7 +179,7 @@ class Button(tk.Button):
     STYLES = {
         "primary":   {"fg": T["text_inverse"], "bg": T["accent"],       "hover": T["accent_hover"]},
         "secondary": {"fg": T["text_primary"],  "bg": T["bg_raised"],    "hover": T["bg_overlay"]},
-        "ghost":     {"fg": T["text_secondary"],"bg": "transparent",     "hover": T["bg_hover"]},
+        "ghost":     {"fg": T["text_secondary"],"bg": T["bg_surface"],    "hover": T["bg_hover"]},
         "danger":    {"fg": "#ffffff",           "bg": T["error"],        "hover": "#dc2020"},
     }
 
@@ -329,7 +306,7 @@ class SetupApp(tk.Tk):
         for label, cmd in [("Todo", self._select_all), ("Ninguno", self._select_none),
                           ("Recomendado", self._select_recommended)]:
             Button(right, label, cmd, variant="secondary", size="sm").pack(side="left", padx=4)
-        tk.Frame(right, bg="#ffffff44", width=1, height=28).pack(side="left", padx=12)
+        tk.Frame(right, bg="#ffffff", width=1, height=28).pack(side="left", padx=12)
         Button(right, "☀", self.theme.toggle, variant="secondary", size="sm").pack(side="left", padx=4)
 
         specs = tk.Frame(self, bg=T["bg_surface"], pady=6)
