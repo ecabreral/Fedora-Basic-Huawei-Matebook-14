@@ -2,7 +2,7 @@
 Type=Application
 Name=Fedora Setup Pro
 Comment=Configura tu Huawei Matebook 14 con Fedora
-Exec=bash %h/fedora-setup-launcher.sh
+Exec=bash %h/setup.sh
 Icon=system-software-install
 Terminal=false
 Categories=System;Settings;
