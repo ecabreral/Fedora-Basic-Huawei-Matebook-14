@@ -217,7 +217,7 @@ class SetupApp:
         for label, cmd in [("Todo", self._select_all), ("Ninguno", self._select_none), ("Recomendado", self._select_recommended)]:
             self._make_toolbar_btn(right, label, cmd).pack(side="left", padx=3)
 
-        tk.Frame(right, bg="#ffffff33", width=1, height=22).pack(side="left", padx=10)
+        tk.Frame(right, bg="#ffffff", width=1, height=22).pack(side="left", padx=10)
 
         self.theme_btn = tk.Button(right, text="🌙", font=("Segoe UI", 14),
                 bg=self.colors["header_bg"], fg="white", relief="flat", cursor="hand2",
