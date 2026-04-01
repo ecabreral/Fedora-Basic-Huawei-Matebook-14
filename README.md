@@ -4,7 +4,28 @@
 ![Python](https://img.shields.io/badge/Python-3.14+-blue?style=flat-square&logo=python)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 
-Automatiza la configuración de Fedora Linux para Huawei Matebook 14 con una interfaz gráfica moderna estilo Fedora Installer.
+![Huawei Matebook 14](https://shop-cdncname.huawei.com/mx/uomcdn/MXHW/pms/202405/gbom/6942103120664/800_800_6B641763B81F82076F2BA49959497981mp.png)
+
+## Especificaciones - Huawei Matebook 14 (Intel Core Ultra 5)
+
+| Componente | Especificación |
+|------------|----------------|
+| **Procesador** | Intel Core Ultra 5 125H (Meteor Lake) |
+| **Memoria RAM** | 16 GB / 32 GB LPDDR5 |
+| **Almacenamiento** | 512 GB / 1 TB SSD NVMe PCIe |
+| **Pantalla** | 14.2" 2K (2160x1440) OLED táctil, 100% DCI-P3, 450 nits |
+| **Gráficos** | Intel Arc Graphics |
+| **Batería** | 70 Wh, hasta 13 horas |
+| **Puertos** | USB-C x2 (Thunderbolt 4), USB-A x1, HDMI x1, Jack 3.5mm |
+| **Conectividad** | Wi-Fi 6E, Bluetooth 5.3 |
+| **Cámara** | 1080p FHD con IA |
+| **Audio** | 4x altavoces, 2x micrófonos |
+| **Lector Huella** | Sí |
+| **Dimensiones** | 312.6 x 226.8 x 14.5 mm |
+| **Peso** | 1.31 kg |
+| **Sistema** | Windows 11 Home (preinstalado) |
+
+> Este script optimiza Fedora Linux para aprovechar al máximo este hardware.
 
 ## Características Principales
 
