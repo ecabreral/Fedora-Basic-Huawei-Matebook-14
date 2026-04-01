@@ -37,15 +37,30 @@ if [ -z "$SELECTED" ]; then
   exit 0
 fi
 
-# ── Ejecución en Terminal ────────────────────────────────────────────────────
-# Hacer ejecutables los scripts por si acaso
+# ── Ejecución de la Instalación ───────────────────────────────────────────────
 chmod +x "$SCRIPT_DIR"/scripts/*.sh
 
-# Lanzar gnome-terminal con el gui-launcher.sh
-# Pasamos la lista de selecciones como argumentos
-info "Iniciando instalación en una nueva ventana de terminal..."
+info "Preparando la ejecución..."
 
-gnome-terminal --title="Instalación de Fedora Setup" -- bash -c "$SCRIPT_DIR/scripts/gui-launcher.sh $SELECTED"
+# Intentar detectar un emulador de terminal para abrir en ventana nueva
+TERM_CMD=""
+if command -v gnome-terminal &>/dev/null; then
+  TERM_CMD="gnome-terminal --title='Instalación de Fedora Setup' --"
+elif command -v kgx &>/dev/null; then
+  TERM_CMD="kgx --title='Instalación de Fedora Setup' -e"
+elif command -v gnome-console &>/dev/null; then
+  TERM_CMD="gnome-console --title='Instalación de Fedora Setup' -e"
+fi
 
-zenity --info --title="Proceso Iniciado" --width=400 \
-  --text="✅ La instalación ha comenzado en una ventana de terminal independiente.\n\nPor favor, sigue las instrucciones en la terminal (es posible que se te pida tu contraseña de usuario)."
+if [ -n "$TERM_CMD" ]; then
+  info "Iniciando instalación en una nueva ventana de terminal..."
+  $TERM_CMD bash -c "$SCRIPT_DIR/scripts/gui-launcher.sh $SELECTED"
+  
+  zenity --info --title="Proceso Iniciado" --width=400 \
+    --text="✅ La instalación ha comenzado en una ventana de terminal independiente.\n\nPor favor, sigue las instrucciones en esa ventana."
+else
+  # Fallback: Ejecutar en la terminal actual si no se detecta emulador gráfico
+  info "No se detectó un emulador de terminal gráfico. Ejecutando en la terminal actual..."
+  echo ""
+  bash "$SCRIPT_DIR/scripts/gui-launcher.sh" $SELECTED
+fi
