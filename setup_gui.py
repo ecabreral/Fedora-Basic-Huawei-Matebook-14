@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 import subprocess
@@ -86,10 +87,11 @@ class SetupApp:
         self.start_btn.pack(side=tk.RIGHT, padx=5)
 
     def log(self, text):
-        """Escribe texto en la consola procesando colores ANSI básicos."""
-        # Limpiar secuencias de escape ANSI y mapear a etiquetas
-        # Esta es una implementación simplificada para los scripts del proyecto
-        
+        """Escribe texto en la consola de forma segura desde cualquier hilo."""
+        self.root.after(0, lambda: self._log_internal(text))
+
+    def _log_internal(self, text):
+        """Implementación interna del log (solo debe llamarse desde el hilo principal)."""
         self.console.config(state=tk.NORMAL)
         
         parts = re.split(r'(\x1b\[[0-9;]*m)', text)
@@ -97,24 +99,19 @@ class SetupApp:
             if not part: continue
             
             if part.startswith(r'\x1b[') or part.startswith(r'\033['):
-                # Ignorar reseteo por ahora o mapear colores específicos
                 continue
             
-            # Mapeo manual basado en las funciones de lib.sh
             tag = None
-            clean_part = part
-            
             if "══" in part: tag = "blue"
             elif "✔" in part: tag = "green"
             elif "!" in part: tag = "yellow"
             elif "✗" in part: tag = "red"
             elif "·" in part: tag = "bold"
             
-            self.console.insert(tk.END, clean_part, tag)
+            self.console.insert(tk.END, part, tag)
             
         self.console.see(tk.END)
         self.console.config(state=tk.DISABLED)
-        self.root.update_idletasks()
 
     def run_command(self, cmd_list, password=None):
         """Ejecuta un comando y captura la salida línea por línea."""
@@ -151,24 +148,11 @@ class SetupApp:
         for key, var in self.vars.items():
             if var.get(): items.append(key)
 
-        if not items:
-            messagebox.showwarning("Atención", "No has seleccionado ningún componente.")
-            self.root.after(0, lambda: self.start_btn.config(state=tk.NORMAL))
-            return
-
-        # Pedir contraseña de forma gráfica
-        self.password = simpledialog.askstring("Autenticación", 
-                                              "Se requieren permisos de administrador.\nIntroduce tu contraseña:", 
-                                              show='*')
-        
-        if not self.password:
-            self.log("\n✗ Instalación cancelada: se requiere contraseña.\n")
-            self.root.after(0, lambda: self.start_btn.config(state=tk.NORMAL))
-            return
-
         self.log("\n══ Iniciando instalación con privilegios...\n")
         
         for item in items:
+            script_id = item
+            self.log(f"\n══ Instalando: {script_id.upper()} ═══════════════\n")
             script_id = item
             self.log(f"\n══ Instalando: {script_id.upper()} ═══════════════\n")
             
@@ -187,13 +171,31 @@ class SetupApp:
                 break
         
         self.log("\n══ PROCESO FINALIZADO ════════════════════\n")
-        messagebox.showinfo("Completado", "La instalación ha finalizado. Revisa el log para ver detalles.")
+        self.root.after(0, lambda: messagebox.showinfo("Completado", "La instalación ha finalizado. Revisa el log para ver detalles."))
         self.root.after(0, lambda: self.start_btn.config(state=tk.NORMAL))
 
     def run_install(self):
+        # 1. Verificar selección
+        items = [k for k, v in self.vars.items() if v.get()]
+        if not items:
+            messagebox.showwarning("Atención", "No has seleccionado ningún componente.")
+            return
+
+        # 2. Pedir contraseña en hilo principal (seguro)
+        self.password = simpledialog.askstring("Autenticación", 
+                                              "Se requieren permisos de administrador.\nIntroduce tu contraseña:", 
+                                              show='*')
+        
+        if not self.password:
+            return
+
+        # 3. Preparar UI
         self.start_btn.config(state=tk.DISABLED)
+        self.console.config(state=tk.NORMAL)
         self.console.delete(1.0, tk.END)
-        # Ejecutar en un hilo separado para no bloquear la UI
+        self.console.config(state=tk.DISABLED)
+
+        # 4. Lanzar hilo de trabajo
         thread = threading.Thread(target=self.run_worker)
         thread.start()
 
