@@ -226,7 +226,7 @@ class SetupApp:
         self.theme_btn.pack(side="left", padx=3)
 
         tk.Label(header, text="Intel Core Ultra 5 125H  ·  16 GB LPDDR5  ·  14.2\" 2K OLED  ·  Intel Arc  ·  Fedora 43",
-                font=("Cascadia Code", 8), bg=self.colors["header_bg"], fg="#ffffff88", pady=4).pack(side="bottom", fill="x")
+                font=("Cascadia Code", 8), bg=self.colors["header_bg"], fg="#aaaaaa", pady=4).pack(side="bottom", fill="x")
 
     def _build_options(self):
         canvas = tk.Canvas(self.content, bg=self.colors["bg"], highlightthickness=0, bd=0)
