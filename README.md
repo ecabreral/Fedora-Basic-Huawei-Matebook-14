@@ -126,16 +126,22 @@ cd   → z (zoxide)
 
 ## Instalación
 
+### Ejecutable Standalone (Recomendado)
+```bash
+chmod +x FedoraSetup
+./FedoraSetup
+```
+
+### Script Python
+```bash
+python3 setup_gui.py
+```
+
 ### Rápido
 ```bash
 git clone https://github.com/ecabreral/Fedora-Basic-Huawei-Matebook-14.git
 cd Fedora-Basic-Huawei-Matebook-14
-python3 setup_gui.py
-```
-
-### Interfaz Gráfica
-```bash
-./setup_gui.py
+./FedoraSetup
 ```
 
 ### Línea de Comandos
@@ -159,9 +165,9 @@ NONINTERACTIVE=true GIT_NAME="Tu Nombre" GIT_EMAIL="tu@email.com" \
 
 ```
 Fedora-Basic-Huawei-Matebook-14/
+├── FedoraSetup                 # Ejecutable standalone (16 MB)
 ├── setup.sh                     # Launcher (CLI → GUI)
 ├── setup_gui.py                # Interfaz gráfica
-├── fedora-setup-launcher.sh     # Wrapper portable
 ├── FedoraSetup.desktop         # Entry para GNOME
 │
 ├── scripts/
