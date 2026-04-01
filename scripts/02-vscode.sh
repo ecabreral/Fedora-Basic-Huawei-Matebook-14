@@ -8,7 +8,11 @@
 
 set -e
 source "$(dirname "$0")/lib.sh"
+init_log
+trap cleanup_log EXIT
 require_root
+
+REAL_USER="${SUDO_USER:-$USER}"
 
 enabled=1
 gpgcheck=1
@@ -18,14 +22,19 @@ section "💻 INSTALAR VS CODE CORRECTAMENTE EN FEDORA 43"
 
 # 1. Agregar repo de Microsoft
 info "Importando llave GPG de Microsoft..."
-sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
+sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc 2>/dev/null || true
 
 info "Agregando repositorio oficial de VS Code..."
-sudo sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo'
+echo "[code]
+name=Visual Studio Code
+baseurl=https://packages.microsoft.com/yumrepos/vscode
+enabled=1
+gpgcheck=1
+gpgkey=https://packages.microsoft.com/keys/microsoft.asc" | sudo tee /etc/yum.repos.d/vscode.repo > /dev/null
 
 # 2. Instalar
 info "Actualizando repositorios..."
-sudo dnf check-update
+sudo dnf check-update 2>/dev/null || true
 info "Instalando Visual Studio Code..."
 sudo dnf install -y code
 success "Visual Studio Code instalado."
@@ -66,17 +75,11 @@ SETTINGS
 chown -R "$REAL_USER":"$REAL_USER" "$VSCODE_CONFIG"
 success "Configuración de VS Code aplicada."
 
+info "Corrigiendo permisos de VS Code automáticamente..."
+sudo chown -R "$REAL_USER":"$REAL_USER" "/home/$REAL_USER/.config/Code" 2>/dev/null || true
+sudo chown -R "$REAL_USER":"$REAL_USER" "/home/$REAL_USER/.vscode" 2>/dev/null || true
+
 section "✅ VS Code listo"
 echo -e "  Versión instalada: ${BOLD}$(code --version | head -1)${RESET}"
 echo -e "  Ejecuta ${BOLD}code${RESET} para abrir VS Code."
 echo ""
-
-read -p "¿VS Code mostró error de permisos al abrir? (s/N): " RESP
-if [[ "$RESP" =~ ^[sS]$ ]]; then
-  echo "Corrigiendo permisos de VS Code..."
-  sudo chown -R "$REAL_USER":"$REAL_USER" "/home/$REAL_USER/.config/Code"
-  sudo chown -R "$REAL_USER":"$REAL_USER" "/home/$REAL_USER/.vscode"
-  echo "Permisos corregidos. Intenta abrir VS Code de nuevo."
-else
-  echo "No se detectaron problemas de permisos. Instalación finalizada."
-fi
