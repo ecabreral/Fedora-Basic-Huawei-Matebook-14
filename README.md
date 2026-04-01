@@ -143,12 +143,12 @@ Shell Light → WhiteSur-Light   Shell Dark → WhiteSur-Dark
 
 | Extensión | Descripción |
 |---|---|
-| [Dash to Dock](https://extensions.gnome.org/extension/307/dash-to-dock/) | Dock estilo macOS |
+| [Dash to Dock](https://extensions.gnome.org/extension/307/dash-to-dock/) | Dock estilo macOS (Autoconfigurado con clic para minimizar) |
 | [Night Theme Switcher](https://extensions.gnome.org/extension/2236/night-theme-switcher/) | Cambio automático claro/oscuro |
 | [Compiz Alike Magic Lamp](https://extensions.gnome.org/extension/3740/compiz-alike-magic-lamp-effect/) | Efecto de lámpara al minimizar |
 | [Copyous](https://extensions.gnome.org/extension/8834/copyous/) | Historial de portapapeles |
 
-Ver [`docs/dash-to-dock.md`](docs/dash-to-dock.md) para instrucciones detalladas.
+> 💡 **Automatización**: `setup.sh` configura automáticamente el dock para minimizar al hacer clic una vez activada. Ver [`docs/dash-to-dock.md`](docs/dash-to-dock.md) para más detalles.
 
 ---
 
