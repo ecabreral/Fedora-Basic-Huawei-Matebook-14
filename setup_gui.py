@@ -301,7 +301,7 @@ class SetupApp:
         if mod["sudo"]:
             tk.Label(card, text="🔒 requiere sudo", font=("Cascadia Code", 8),
                     fg=self.colors["warning"], bg=self.colors["card_bg"],
-                    pady=6).pack(side="left", padx=14, padbottom=6)
+                    pady=6).pack(side="left", padx=14, pady=6)
 
         def on_enter(e, c=card):
             c.configure(highlightbackground=self.colors["primary"])
