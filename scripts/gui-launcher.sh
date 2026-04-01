@@ -34,7 +34,7 @@ echo -e "${BLUE}${BOLD}╚══════════════════
 echo ""
 
 step() { 
-  ((CURRENT++))
+  CURRENT=$((CURRENT + 1))
   echo -e "${BLUE}${BOLD}[${CURRENT}/${TOTAL}] $1${RESET}"
 }
 
