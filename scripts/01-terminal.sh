@@ -137,8 +137,8 @@ if [ "$SKIP_ZSH" = false ]; then
   fi
 
   cat << 'EOF' > ~/.zshrc
-# cargo path
-export PATH="$HOME/.cargo/bin:$PATH"
+# paths personalizados
+export PATH="$HOME/.cargo/bin:$HOME/.opencode/bin:$PATH"
 
 # oh-my-zsh
 export ZSH="$HOME/.oh-my-zsh"

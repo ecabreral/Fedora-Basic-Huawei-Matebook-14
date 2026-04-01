@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 import subprocess
 import threading
+import queue
 import os
 import re
 
@@ -16,6 +17,9 @@ class SetupApp:
         self.root.title("Fedora 43 Setup - Huawei Matebook 14")
         self.root.geometry("900x750")
         self.root.resizable(True, True)
+
+        self.log_queue = queue.Queue()
+        self.root.after(100, self._check_log_queue)
 
         self.script_dir = os.path.dirname(os.path.abspath(__file__))
         self.password = ""
@@ -120,7 +124,20 @@ class SetupApp:
         self.start_btn.pack(side=tk.RIGHT)
 
     def log(self, text):
-        self.root.after(0, lambda: self._log_internal(text))
+        """Encola un mensaje de log para ser procesado por el hilo principal."""
+        self.log_queue.put(text)
+
+    def _check_log_queue(self):
+        """Procesa los mensajes pendientes en la cola desde el hilo principal."""
+        try:
+            while True:
+                text = self.log_queue.get_nowait()
+                self._log_internal(text)
+                self.log_queue.task_done()
+        except queue.Empty:
+            pass
+        finally:
+            self.root.after(100, self._check_log_queue)
 
     def _log_internal(self, text):
         self.console.config(state=tk.NORMAL)
