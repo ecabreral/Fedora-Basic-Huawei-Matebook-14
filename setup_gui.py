@@ -1,6 +1,5 @@
-#!/usr/bin/env python3
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext
+from tkinter import ttk, messagebox, scrolledtext, simpledialog
 import subprocess
 import threading
 import os
@@ -117,13 +116,16 @@ class SetupApp:
         self.console.config(state=tk.DISABLED)
         self.root.update_idletasks()
 
-    def run_command(self, cmd_list):
+    def run_command(self, cmd_list, password=None):
         """Ejecuta un comando y captura la salida línea por línea."""
-        # Pasamos la contraseña al primer sudo vía stdin si es necesario
-        # o usamos sudo -S. Para este instalador, usaremos una sesión de sudo activa.
+        # Si hay contraseña, la inyectamos en el proceso usando sudo -S
+        # Modificamos el comando para que use sudo -S si es un script del proyecto
+        
+        final_cmd = ["sudo", "-S"] + cmd_list
         
         process = subprocess.Popen(
-            cmd_list,
+            final_cmd,
+            stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
@@ -131,7 +133,15 @@ class SetupApp:
             cwd=self.script_dir
         )
         
+        # Enviar contraseña si existe
+        if password:
+            process.stdin.write(f"{password}\n")
+            process.stdin.flush()
+        
         for line in process.stdout:
+            # Filtrar el prompt de sudo [sudo] password... para que no ensucie el log
+            if "[sudo] password for" in line:
+                continue
             self.log(line)
         
         return process.wait()
@@ -143,15 +153,20 @@ class SetupApp:
 
         if not items:
             messagebox.showwarning("Atención", "No has seleccionado ningún componente.")
-            self.start_btn.config(state=tk.NORMAL)
+            self.root.after(0, lambda: self.start_btn.config(state=tk.NORMAL))
             return
 
-        # Pre-autenticación (Esto evitará que los scripts fallen en sudo)
-        self.log("\n══ Verificando permisos de administrador...\n")
+        # Pedir contraseña de forma gráfica
+        self.password = simpledialog.askstring("Autenticación", 
+                                              "Se requieren permisos de administrador.\nIntroduce tu contraseña:", 
+                                              show='*')
         
-        # Intentar sudo -v una vez. Si falla, el script no puede seguir.
-        # En una app real usaríamos un diálogo de contraseña, aquí simulamos con la terminal.
-        self.log("· Por favor, si se solicita, ingresa tu contraseña en la terminal principal.\n")
+        if not self.password:
+            self.log("\n✗ Instalación cancelada: se requiere contraseña.\n")
+            self.root.after(0, lambda: self.start_btn.config(state=tk.NORMAL))
+            return
+
+        self.log("\n══ Iniciando instalación con privilegios...\n")
         
         for item in items:
             script_id = item
@@ -166,14 +181,14 @@ class SetupApp:
                 "extensions": "scripts/06-extensions.sh"
             }
             
-            exit_code = self.run_command(["bash", script_map[script_id]])
+            exit_code = self.run_command(["bash", script_map[script_id]], self.password)
             if exit_code != 0:
                 self.log(f"\n✗ Error en {script_id}. Abortando.\n")
                 break
         
         self.log("\n══ PROCESO FINALIZADO ════════════════════\n")
         messagebox.showinfo("Completado", "La instalación ha finalizado. Revisa el log para ver detalles.")
-        self.start_btn.config(state=tk.NORMAL)
+        self.root.after(0, lambda: self.start_btn.config(state=tk.NORMAL))
 
     def run_install(self):
         self.start_btn.config(state=tk.DISABLED)
