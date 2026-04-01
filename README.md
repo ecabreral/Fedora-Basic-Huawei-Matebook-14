@@ -8,7 +8,7 @@ Colección de scripts para automatizar la configuración de Fedora Linux orienta
 ./setup.sh
 ```
 
-> Requiere conexión a internet. Algunos pasos piden entrada del usuario (nombre/email de Git, añadir clave SSH a GitHub, activar extensiones GNOME).
+> 🚀 **Novedad**: Ahora cuenta con una **interfaz gráfica interactiva**. Podrás seleccionar exactamente qué componentes deseas instalar mediante casillas de verificación. Una vez seleccionado, se abrirá una terminal para que sigas el progreso en tiempo real.
 
 ---
 
