@@ -73,10 +73,10 @@ class SetupApp:
         self.console.pack(fill=tk.BOTH, expand=True)
         
         # Configurar etiquetas de color (ansi to tags)
-        self.console.tag_config("blue", fg="#3b82f6", font=("JetBrainsMono Nerd Font", 9, "bold"))
-        self.console.tag_config("green", fg="#22c55e", font=("JetBrainsMono Nerd Font", 9, "bold"))
-        self.console.tag_config("yellow", fg="#eab308")
-        self.console.tag_config("red", fg="#ef4444", font=("JetBrainsMono Nerd Font", 9, "bold"))
+        self.console.tag_config("blue", foreground="#3b82f6", font=("JetBrainsMono Nerd Font", 9, "bold"))
+        self.console.tag_config("green", foreground="#22c55e", font=("JetBrainsMono Nerd Font", 9, "bold"))
+        self.console.tag_config("yellow", foreground="#eab308")
+        self.console.tag_config("red", foreground="#ef4444", font=("JetBrainsMono Nerd Font", 9, "bold"))
         self.console.tag_config("bold", font=("JetBrainsMono Nerd Font", 9, "bold"))
 
         # Botones
@@ -93,11 +93,11 @@ class SetupApp:
         
         self.console.config(state=tk.NORMAL)
         
-        parts = re.split(r'(\e\[[0-9;]*m)', text)
+        parts = re.split(r'(\x1b\[[0-9;]*m)', text)
         for part in parts:
             if not part: continue
             
-            if part.startswith(r'\e[') or part.startswith(r'\033['):
+            if part.startswith(r'\x1b[') or part.startswith(r'\033['):
                 # Ignorar reseteo por ahora o mapear colores específicos
                 continue
             
