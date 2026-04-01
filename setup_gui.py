@@ -1,15 +1,24 @@
 #!/usr/bin/env python3
 """
 Fedora Setup Pro — GUI Installer for Huawei Matebook 14
-Professional Python GUI following design best practices
+Professional PyQt6 Application
 """
 
-import tkinter as tk
-from tkinter import ttk, scrolledtext, messagebox, simpledialog
-import subprocess
-import threading
-import queue
+import sys
 import os
+
+try:
+    from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
+                                  QGridLayout, QLabel, QPushButton, QScrollArea, QFrame,
+                                  QTextEdit, QCheckBox, QGroupBox, QProgressBar, QMessageBox,
+                                  QInputDialog, QSizePolicy, QGraphicsOpacityEffect)
+    from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize, QTimer
+    from PyQt6.QtGui import QFont, QIcon, QPalette, QColor, QAction
+    PYQT6_AVAILABLE = True
+except ImportError:
+    PYQT6_AVAILABLE = False
+
+import subprocess
 import re
 import platform
 import json
@@ -19,79 +28,40 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 SCRIPTS_DIR = os.path.join(SCRIPT_DIR, "scripts")
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# DESIGN TOKENS — 4px Grid System
+# DESIGN TOKENS
 # ═══════════════════════════════════════════════════════════════════════════════
-TOKENS = {
-    "bg_base":      "#0d0d14",
-    "bg_surface":   "#13131f",
-    "bg_card":      "#1a1a2c",
-    "bg_raised":    "#222238",
-    "bg_overlay":   "#2c2c48",
-    "bg_hover":     "#30305a",
-    "border_subtle": "#252540",
-    "border_default":"#38385e",
-    "border_focus":  "#60b0f4",
-    "accent":        "#3c6eb4",
-    "accent_hover":  "#4a7fc7",
-    "accent_dim":    "#1e2d4d",
-    "text_primary":   "#e8e8f0",
-    "text_secondary":"#9898b8",
-    "text_muted":    "#55557a",
-    "text_inverse":  "#ffffff",
-    "success":       "#4ade80",
-    "warning":       "#fbbf24",
-    "error":         "#f87171",
-    "info":          "#60b0f4",
-    "space_1": 4, "space_2": 8, "space_3": 12,
-    "space_4": 16, "space_5": 20, "space_6": 24,
-    "space_8": 32, "space_10": 40,
+DARK = {
+    "bg": "#0d0d14",
+    "surface": "#13131f",
+    "card": "#1a1a2c",
+    "raised": "#222238",
+    "hover": "#30305a",
+    "border": "#38385e",
+    "accent": "#3c6eb4",
+    "accent_hover": "#4a7fc7",
+    "text": "#e8e8f0",
+    "text_sec": "#9898b8",
+    "text_muted": "#55557a",
+    "success": "#4ade80",
+    "warning": "#fbbf24",
+    "error": "#f87171",
 }
 
-TOKENS_LIGHT = {
-    "bg_base":      "#f4f4f8",
-    "bg_surface":    "#ffffff",
-    "bg_card":       "#ffffff",
-    "bg_raised":     "#f0f0f6",
-    "bg_overlay":    "#ffffff",
-    "bg_hover":      "#e8e8f4",
-    "border_subtle": "#e4e4ee",
-    "border_default": "#d0d0e0",
-    "border_focus":  "#3c82f6",
-    "accent":        "#3c82f6",
-    "accent_hover":  "#2563eb",
-    "accent_dim":    "#dbeafe",
-    "text_primary":  "#111827",
-    "text_secondary":"#4b5563",
-    "text_muted":    "#9ca3af",
-    "text_inverse":  "#ffffff",
-    "success":       "#16a34a",
-    "warning":       "#d97706",
-    "error":         "#dc2626",
-    "info":          "#2563eb",
-    "space_1": 4, "space_2": 8, "space_3": 12,
-    "space_4": 16, "space_5": 20, "space_6": 24,
-    "space_8": 32, "space_10": 40,
-}
-
-T = TOKENS
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# TYPOGRAPHY
-# ═══════════════════════════════════════════════════════════════════════════════
-FONT_PRIMARY = "sans-serif"
-FONT_MONO = "monospace"
-
-F = {
-    "display": (FONT_PRIMARY, 24, "bold"),
-    "h1":      (FONT_PRIMARY, 18, "bold"),
-    "h2":      (FONT_PRIMARY, 14, "bold"),
-    "h3":      (FONT_PRIMARY, 12, "bold"),
-    "body":    (FONT_PRIMARY, 10),
-    "body_sm": (FONT_PRIMARY, 9),
-    "label":   (FONT_PRIMARY, 9, "bold"),
-    "caption": (FONT_PRIMARY, 8),
-    "mono":    (FONT_MONO, 9),
-    "btn":     (FONT_PRIMARY, 10, "bold"),
+LIGHT = {
+    "bg": "#f4f4f8",
+    "surface": "#ffffff",
+    "card": "#ffffff",
+    "raised": "#f0f0f6",
+    "hover": "#e8e8f4",
+    "border": "#d0d0e0",
+    "accent": "#3c82f6",
+    "accent_hover": "#2563eb",
+    "text": "#111827",
+    "text_sec": "#4b5563",
+    "text_muted": "#9ca3af",
+    "success": "#16a34a",
+    "warning": "#d97706",
+    "error": "#dc2626",
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -101,306 +71,397 @@ MODULES = [
     {"id": "terminal", "icon": "🐚", "title": "Terminal Pro",
      "desc": "Shell moderno con zsh, Starship y herramientas CLI",
      "script": "01-terminal.sh", "sudo": False, "recommended": True,
-     "items": [("Paquetes base", "git, curl, wget, zsh", "pkg"),
-               ("Herramientas", "eza, bat, fzf, zoxide", "eza"),
-               ("JetBrainsMono Nerd", "Fuente con iconos", "font"),
-               ("Zsh + Oh My Zsh", "Shell moderno", "zsh"),
-               ("Starship", "Prompt minimalista", "starship")]},
+     "items": [("Paquetes base", "git, curl, wget, zsh", True),
+               ("Herramientas", "eza, bat, fzf, zoxide", True),
+               ("JetBrainsMono Nerd", "Fuente con iconos", True),
+               ("Zsh + Oh My Zsh", "Shell moderno", True),
+               ("Starship", "Prompt minimalista", True)]},
     {"id": "vscode", "icon": "💻", "title": "Visual Studio Code",
      "desc": "Editor con GitHub Theme y JetBrains Mono",
      "script": "02-vscode.sh", "sudo": True, "recommended": True,
-     "items": [("VS Code", "Repositorio Microsoft", "main")]},
+     "items": [("VS Code", "Repositorio Microsoft", True)]},
     {"id": "git", "icon": "🔐", "title": "Git + GitHub",
      "desc": "Config global, clave SSH ed25519",
      "script": "03-git.sh", "sudo": False, "recommended": True,
-     "items": [("Config global", "user.name, email", "main"),
-               ("Clave SSH", "ed25519 para GitHub", "ssh")]},
+     "items": [("Config global", "user.name, email", True),
+               ("Clave SSH", "ed25519 para GitHub", True)]},
     {"id": "theme", "icon": "🎨", "title": "Temas GNOME",
      "desc": "Estilo macOS con WhiteSur y MacTahoe",
      "script": "04-gnome-theme.sh", "sudo": False, "recommended": True,
-     "items": [("Dependencias", "sassc, glib", "dep"),
-               ("Tema GTK", "WhiteSur Light + Dark", "gtk"),
-               ("Iconos", "WhiteSur + MacTahoe", "icons"),
-               ("GDM", "Pantalla de inicio", "gdm"),
-               ("Firefox", "WhiteSur Firefox", "firefox")]},
+     "items": [("Dependencias", "sassc, glib", True),
+               ("Tema GTK", "WhiteSur Light + Dark", True),
+               ("Iconos", "WhiteSur + MacTahoe", True),
+               ("GDM", "Pantalla de inicio", False),
+               ("Firefox", "WhiteSur Firefox", True)]},
     {"id": "intel", "icon": "⚡", "title": "Intel Fix",
      "desc": "Elimina el parpadeo de pantalla Intel Arc",
      "script": "05-intel-fix.sh", "sudo": True, "recommended": False,
-     "items": [("Parámetros kernel", "i915.enable_psr=0", "main")]},
+     "items": [("Parámetros kernel", "i915.enable_psr=0", True)]},
     {"id": "extensions", "icon": "🔌", "title": "Extensiones GNOME",
      "desc": "Dash to Dock, Magic Lamp, Night Theme Switcher",
      "script": "06-extensions.sh", "sudo": False, "recommended": True,
-     "items": [("Dash to Dock", "Dock estilo macOS", "dash"),
-               ("Magic Lamp", "Animación minimizar", "lamp"),
-               ("Copyous", "Historial portapapeles", "copy"),
-               ("Night Theme", "Auto claro/oscuro", "night")]},
+     "items": [("Dash to Dock", "Dock estilo macOS", True),
+               ("Magic Lamp", "Animación minimizar", True),
+               ("Copyous", "Historial portapapeles", True),
+               ("Night Theme", "Auto claro/oscuro", True)]},
 ]
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# WIDGETS
-# ═══════════════════════════════════════════════════════════════════════════════
 
-class ScrollableFrame(tk.Frame):
-    def __init__(self, parent, **kw):
-        super().__init__(parent, bg=kw.get("bg", T["bg_surface"]))
-        self.canvas = tk.Canvas(self, highlightthickness=0, bg=kw.get("bg", T["bg_surface"]))
-        self.scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.canvas.yview)
-        self.inner = tk.Frame(self.canvas, bg=kw.get("bg", T["bg_surface"]))
+class InstallThread(QThread):
+    output = pyqtSignal(str, str)
+    finished = pyqtSignal(bool)
+    progress = pyqtSignal(str, int)
 
-        self.canvas.configure(yscrollcommand=self.scrollbar.set)
-        self.scrollbar.pack(side="right", fill="y")
-        self.canvas.pack(side="left", fill="both", expand=True)
-        self._window = self.canvas.create_window((0, 0), window=self.inner, anchor="nw")
+    def __init__(self, modules, password):
+        super().__init__()
+        self.modules = modules
+        self.password = password
 
-        self.inner.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
-        self.canvas.bind("<Configure>", lambda e: self.canvas.itemconfig(self._window, width=e.width))
-        self.canvas.bind_all("<MouseWheel>", self._scroll)
-        self.canvas.bind_all("<Button-4>", self._scroll)
-        self.canvas.bind_all("<Button-5>", self._scroll)
+    def run(self):
+        self.output.emit("╔══════════════════════════════════════════╗", "info")
+        self.output.emit("║   🚀  Iniciando Fedora Setup Pro       ║", "info")
+        self.output.emit("╚══════════════════════════════════════════╝\n", "info")
 
-    def _scroll(self, event):
-        if event.num == 4:
-            self.canvas.yview_scroll(-1, "units")
-        elif event.num == 5:
-            self.canvas.yview_scroll(1, "units")
-        else:
-            self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+        for i, mod in enumerate(self.modules):
+            script = os.path.join(SCRIPTS_DIR, mod["script"])
+            self.progress.emit(mod["title"], int((i/len(self.modules))*100))
 
+            if not os.path.isfile(script):
+                self.output.emit(f"  ✗ No encontrado: {script}", "error")
+                continue
 
-class Card(tk.Frame):
-    def __init__(self, parent, **kw):
-        super().__init__(parent, bg=T["bg_card"],
-                        highlightbackground=T["border_subtle"], highlightthickness=1)
-        self.bind("<Enter>", lambda e: self.configure(highlightbackground=T["border_focus"]))
-        self.bind("<Leave>", lambda e: self.configure(highlightbackground=T["border_subtle"]))
+            self.output.emit(f"\n══ {mod['icon']} {mod['title']} ═══════════════════", "info")
 
+            try:
+                proc = subprocess.Popen(
+                    ["sudo", "-S", "bash", script],
+                    stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT, text=True, bufsize=1
+                )
+                proc.stdin.write(self.password + "\n")
+                proc.stdin.flush()
 
-class Button(tk.Button):
-    STYLES = {
-        "primary":   {"fg": T["text_inverse"], "bg": T["accent"],       "hover": T["accent_hover"]},
-        "secondary": {"fg": T["text_primary"],  "bg": T["bg_raised"],    "hover": T["bg_overlay"]},
-        "ghost":     {"fg": T["text_secondary"],"bg": T["bg_surface"],    "hover": T["bg_hover"]},
-        "danger":    {"fg": "#ffffff",           "bg": T["error"],        "hover": "#dc2020"},
-    }
+                for line in proc.stdout:
+                    clean = ANSI_PATTERN.sub('', line.rstrip())
+                    if "[sudo] password" not in clean:
+                        tag = self._detect_tag(clean)
+                        self.output.emit(clean, tag)
 
-    def __init__(self, parent, text, command=None, variant="primary", size="md", **kw):
-        s = self.STYLES[variant]
-        super().__init__(parent, text=text, command=command,
-                        font=F["btn"], fg=s["fg"], bg=s["bg"],
-                        activeforeground=s["fg"], activebackground=s["hover"],
-                        relief="flat", bd=0, cursor="hand2", padx=16, pady=7, **kw)
-        self._bg_normal = s["bg"]
-        self._bg_hover = s["hover"]
-        self.bind("<Enter>", lambda e: self.configure(bg=self._bg_hover))
-        self.bind("<Leave>", lambda e: self.configure(bg=self._bg_normal))
+                proc.stdin.close()
+                proc.wait()
 
+                if proc.returncode == 0:
+                    self.output.emit(f"\n  ✅ {mod['title']} completado\n", "success")
+                else:
+                    self.output.emit(f"\n  ⚠️  {mod['title']} finalizado\n", "warning")
 
-class ConsoleWidget(tk.Frame):
-    TAGS = {
-        "info":    "#60b0f4",
-        "success": "#4ade80",
-        "warning": "#fbbf24",
-        "error":   "#f87171",
-        "cmd":     "#c084fc",
-        "dim":     "#55557a",
-    }
+            except Exception as e:
+                self.output.emit(f"  ✗ Error: {e}", "error")
 
-    def __init__(self, parent, **kw):
-        super().__init__(parent, bg=T["bg_base"], **kw)
-        self._build()
+        self.progress.emit("Completado", 100)
+        self.finished.emit(True)
 
-    def _build(self):
-        hdr = tk.Frame(self, bg=T["bg_raised"])
-        hdr.pack(fill="x")
-        tk.Label(hdr, text="  Consola", font=F["label"],
-                fg=T["text_muted"], bg=T["bg_raised"], pady=5).pack(side="left")
-        Button(hdr, "Limpiar", command=self.clear, variant="ghost", size="sm").pack(side="right", padx=4)
-
-        self.text = scrolledtext.ScrolledText(self, bg=T["bg_base"], fg="#cdd6f4",
-            font=F["mono"], insertbackground=T["accent"], relief="flat", bd=0,
-            state="disabled", wrap="word", padx=16, pady=8)
-        self.text.pack(fill="both", expand=True)
-        for tag, color in self.TAGS.items():
-            self.text.tag_config(tag, foreground=color)
-
-    def write(self, text, level="info"):
-        clean = ANSI_PATTERN.sub('', text)
-        self.text.configure(state="normal")
-        self.text.insert("end", clean, level)
-        self.text.configure(state="disabled")
-        self.text.see("end")
-
-    def _auto_tag(self, line):
+    def _detect_tag(self, line):
         l = line.lower()
-        if any(x in l for x in ["✔", "ok", "success", "completado", "done", "installed"]):
+        if any(x in l for x in ["✔", "ok", "success", "completado", "done"]):
             return "success"
         if any(x in l for x in ["✗", "error", "failed", "fallo"]):
             return "error"
         if any(x in l for x in ["warn", "advertencia", "⚠"]):
             return "warning"
-        if any(x in l for x in ["instalando", "configurando", "descargando"]):
-            return "info"
         return "dim"
 
-    def clear(self):
-        self.text.configure(state="normal")
-        self.text.delete("1.0", "end")
-        self.text.configure(state="disabled")
+
+class ModuleCard(QFrame):
+    def __init__(self, mod, check_var, colors):
+        super().__init__()
+        self.colors = colors
+        self.mod = mod
+        self.check_var = check_var
+        self._setup_ui()
+
+    def _setup_ui(self):
+        self.setFrameStyle(QFrame.Shape.NoFrame)
+        self.setStyleSheet(f"""
+            QFrame {{
+                background: {self.colors['card']};
+                border: 1px solid {self.colors['border']};
+                border-radius: 8px;
+                padding: 12px;
+            }}
+            QFrame:hover {{
+                border: 1px solid {self.colors['accent']};
+            }}
+            QLabel {{
+                color: {self.colors['text']};
+                background: transparent;
+            }}
+        """)
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(16, 12, 16, 12)
+        layout.setSpacing(8)
+
+        header = QHBoxLayout()
+        icon = QLabel(f"<span style='font-size: 20px'>{self.mod['icon']}</span>")
+        title = QLabel(f"<b style='font-size: 14px'>{self.mod['title']}</b>")
+        title.setStyleSheet(f"color: {self.colors['accent']}")
+        checkbox = QCheckBox()
+        checkbox.setChecked(self.mod["recommended"])
+        checkbox.stateChanged.connect(lambda: None)
+
+        header.addWidget(icon)
+        header.addWidget(title)
+        header.addStretch()
+        header.addWidget(checkbox)
+
+        desc = QLabel(self.mod["desc"])
+        desc.setStyleSheet(f"color: {self.colors['text_sec']}; font-size: 11px;")
+        desc.setWordWrap(True)
+
+        items_frame = QFrame()
+        items_frame.setStyleSheet(f"border-top: 1px solid {self.colors['border']}; padding-top: 8px;")
+        items_layout = QVBoxLayout(items_frame)
+        items_layout.setContentsMargins(0, 8, 0, 0)
+        items_layout.setSpacing(4)
+
+        for name, desc_text, default in self.mod["items"]:
+            item = QLabel(f"▸ <b>{name}</b> <span style='color: {self.colors['text_muted']}'>— {desc_text}</span>")
+            item.setStyleSheet(f"font-size: 11px; color: {self.colors['text']}")
+            items_layout.addWidget(item)
+
+        if self.mod["sudo"]:
+            sudo_badge = QLabel("🔒 requiere sudo")
+            sudo_badge.setStyleSheet(f"color: {self.colors['warning']}; font-size: 10px; font-weight: bold;")
+            layout.addWidget(sudo_badge)
+
+        layout.addLayout(header)
+        layout.addWidget(desc)
+        layout.addWidget(items_frame)
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# MAIN APP
-# ═══════════════════════════════════════════════════════════════════════════════
-
-def center_window(window, width, height):
-    window.update_idletasks()
-    sw, sh = window.winfo_screenwidth(), window.winfo_screenheight()
-    window.geometry(f"{width}x{height}+{(sw-width)//2}+{(sh-height)//2-40}")
-
-
-class SetupApp(tk.Tk):
+class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.title("Fedora Setup Pro — Huawei Matebook 14")
-        self.minsize(900, 750)
-        center_window(self, 1100, 900)
-        self.configure(bg=T["bg_surface"])
-
-        self.password = ""
+        self.dark_mode = True
+        self.colors = DARK
+        self.module_vars = {mod["id"]: mod["recommended"] for mod in MODULES}
         self.is_running = False
-        self.theme = ThemeManager()
-        self.module_vars = {}
+        self.password = ""
+        self.thread = None
 
-        self._create_vars()
-        self._build_ui()
+        self._load_theme()
+        self._setup_ui()
+        self._apply_styles()
+
+    def _load_theme(self):
+        config_path = os.path.expanduser("~/.config/fedora-setup/settings.json")
+        try:
+            with open(config_path) as f:
+                self.dark_mode = json.load(f).get("dark_mode", True)
+                self.colors = DARK if self.dark_mode else LIGHT
+        except:
+            pass
+
+    def _save_theme(self):
+        config_path = os.path.expanduser("~/.config/fedora-setup/settings.json")
+        os.makedirs(os.path.dirname(config_path), exist_ok=True)
+        with open(config_path, "w") as f:
+            json.dump({"dark_mode": self.dark_mode}, f)
+
+    def _setup_ui(self):
+        self.setWindowTitle("Fedora Setup Pro — Huawei Matebook 14")
+        self.setMinimumSize(1000, 700)
+        self.resize(1200, 850)
+
+        central = QWidget()
+        self.setCentralWidget(central)
+        main_layout = QVBoxLayout(central)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+
+        main_layout.addWidget(self._create_header())
+        main_layout.addWidget(self._create_content())
+        main_layout.addWidget(self._create_footer())
+
         self._check_system()
-        self.theme.subscribe(self._on_theme_change)
-        self.after(100, self._check_log_queue)
 
-    def _create_vars(self):
-        for mod in MODULES:
-            self.module_vars[mod["id"]] = tk.BooleanVar(value=mod["recommended"])
+    def _create_header(self):
+        header = QFrame()
+        header.setObjectName("header")
+        layout = QVBoxLayout(header)
+        layout.setContentsMargins(24, 16, 24, 12)
 
-    def _build_ui(self):
-        self._build_header()
-        self._build_body()
-        self._build_footer()
+        top = QHBoxLayout()
+        title_layout = QVBoxLayout()
+        title = QLabel("◉ Fedora Setup Pro")
+        title.setObjectName("title")
+        subtitle = QLabel("Huawei Matebook 14")
+        subtitle.setObjectName("subtitle")
+        title_layout.addWidget(title)
+        title_layout.addWidget(subtitle)
 
-    def _build_header(self):
-        header = tk.Frame(self, bg=T["accent"], height=90)
-        header.pack(fill="x", side="top")
-        header.pack_propagate(False)
+        btn_layout = QHBoxLayout()
+        btn_layout.addWidget(self._create_btn("Todo", self._select_all))
+        btn_layout.addWidget(self._create_btn("Ninguno", self._select_none))
+        btn_layout.addWidget(self._create_btn("Recomendado", self._select_recommended))
+        btn_layout.addSpacing(12)
 
-        inner = tk.Frame(header, bg=T["accent"])
-        inner.pack(fill="x", padx=24, pady=12)
+        self.theme_btn = self._create_btn("☀ Claro" if self.dark_mode else "🌙 Oscuro", self._toggle_theme)
+        btn_layout.addWidget(self.theme_btn)
 
-        left = tk.Frame(inner, bg=T["accent"])
-        left.pack(side="left")
-        tk.Label(left, text="◉ Fedora Setup Pro", font=F["display"],
-                fg=T["text_inverse"], bg=T["accent"]).pack(anchor="w")
-        tk.Label(left, text="Huawei Matebook 14", font=F["body"],
-                fg=T["text_inverse"], bg=T["accent"]).pack(anchor="w")
+        top.addLayout(title_layout)
+        top.addStretch()
+        top.addLayout(btn_layout)
 
-        right = tk.Frame(inner, bg=T["accent"])
-        right.pack(side="right")
-        for label, cmd in [("Todo", self._select_all), ("Ninguno", self._select_none),
-                          ("Recomendado", self._select_recommended)]:
-            Button(right, label, cmd, variant="secondary", size="sm").pack(side="left", padx=4)
-        tk.Frame(right, bg="#ffffff", width=1, height=28).pack(side="left", padx=12)
-        Button(right, "☀", self.theme.toggle, variant="secondary", size="sm").pack(side="left", padx=4)
+        specs = QLabel("Intel Core Ultra 5 125H  ·  16 GB LPDDR5  ·  14.2\" 2K OLED  ·  Intel Arc  ·  Fedora 43")
+        specs.setObjectName("specs")
 
-        specs = tk.Frame(self, bg=T["bg_surface"], pady=6)
-        specs.pack(fill="x")
-        tk.Label(specs, text="Intel Core Ultra 5 125H  ·  16 GB LPDDR5  ·  14.2\" 2K OLED  ·  Intel Arc  ·  Fedora 43",
-                font=F["caption"], fg=T["text_muted"], bg=T["bg_surface"]).pack(side="left", padx=24)
+        layout.addLayout(top)
+        layout.addWidget(specs)
 
-    def _build_body(self):
-        body = tk.Frame(self, bg=T["bg_surface"])
-        body.pack(fill="both", expand=True, padx=24, pady=12)
-        body.grid_rowconfigure(0, weight=1)
-        body.grid_columnconfigure(0, weight=3)
-        body.grid_columnconfigure(1, weight=2)
+        return header
 
-        self.scroll_frame = ScrollableFrame(body, bg=T["bg_surface"])
-        self.scroll_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 12))
-        self._build_cards()
+    def _create_content(self):
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
-        self.console = ConsoleWidget(body)
-        self.console.grid(row=0, column=1, sticky="nsew")
+        container = QFrame()
+        container.setObjectName("content")
+        grid = QGridLayout(container)
+        grid.setContentsMargins(24, 16, 24, 16)
+        grid.setSpacing(16)
 
-    def _build_cards(self):
-        scroll = self.scroll_frame.inner
+        self.module_cards = []
         for i, mod in enumerate(MODULES):
             row, col = divmod(i, 3)
-            card = self._build_card(scroll, mod)
-            card.grid(row=row, column=col, padx=8, pady=8, sticky="nsew")
-            scroll.columnconfigure(col, weight=1)
+            var = mod["recommended"]
+            card = ModuleCard(mod, var, self.colors)
+            self.module_cards.append((mod["id"], card))
+            grid.addWidget(card, row, col)
 
-    def _build_card(self, parent, mod):
-        var = self.module_vars[mod["id"]]
-        card = Card(parent)
+        self.console = QTextEdit()
+        self.console.setObjectName("console")
+        self.console.setReadOnly(True)
+        self.console.setMinimumHeight(200)
 
-        hdr = tk.Frame(card, bg=T["bg_card"])
-        hdr.pack(fill="x", padx=16, pady=(12, 6))
+        grid.addWidget(self.console, 2, 0, 1, 3)
 
-        title_row = tk.Frame(hdr, bg=T["bg_card"])
-        title_row.pack(fill="x")
-        tk.Label(title_row, text=f"{mod['icon']} {mod['title']}",
-                font=F["h2"], fg=T["text_primary"], bg=T["bg_card"]).pack(side="left")
+        scroll.setWidget(container)
+        return scroll
 
-        cb = tk.Checkbutton(title_row, variable=var, bg=T["bg_card"],
-                          activebackground=T["bg_card"], fg=T["accent"],
-                          selectcolor=T["accent_dim"], highlightthickness=0,
-                          command=self._update_summary)
-        cb.pack(side="right")
+    def _create_footer(self):
+        footer = QFrame()
+        footer.setObjectName("footer")
+        layout = QHBoxLayout(footer)
+        layout.setContentsMargins(24, 16, 24, 16)
 
-        tk.Label(hdr, text=mod["desc"], font=F["body_sm"],
-                fg=T["text_secondary"], bg=T["bg_card"]).pack(anchor="w")
+        self.status_label = QLabel("● Listo")
+        self.status_label.setObjectName("status")
+        layout.addWidget(self.status_label)
 
-        tk.Frame(card, bg=T["border_subtle"], height=1).pack(fill="x")
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setObjectName("progress")
+        self.progress_bar.setMaximumWidth(300)
+        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setValue(0)
+        layout.addWidget(self.progress_bar)
 
-        items = tk.Frame(card, bg=T["bg_card"])
-        items.pack(fill="x", padx=16, pady=8)
+        self.install_btn = self._create_btn("⚡  Instalar Fedora", self._on_install, primary=True)
+        layout.addWidget(self.install_btn)
 
-        for name, desc, key in mod["items"]:
-            row = tk.Frame(items, bg=T["bg_card"])
-            row.pack(fill="x", pady=2)
-            tk.Label(row, text=f"▸ {name}", font=F["body_sm"],
-                    fg=T["text_primary"], bg=T["bg_card"]).pack(side="left")
-            tk.Label(row, text=f"— {desc}", font=F["caption"],
-                    fg=T["text_muted"], bg=T["bg_card"]).pack(side="right")
+        return footer
 
-        if mod["sudo"]:
-            tk.Label(card, text="🔒 requiere sudo", font=F["caption"],
-                    fg=T["warning"], bg=T["bg_card"], pady=6).pack(side="left", padx=16)
+    def _create_btn(self, text, callback, primary=False):
+        btn = QPushButton(text)
+        btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn.clicked.connect(callback)
+        if primary:
+            btn.setObjectName("primaryBtn")
+        return btn
 
-        return card
+    def _apply_styles(self):
+        accent = self.colors["accent"]
+        accent_hover = self.colors["accent_hover"]
+        bg = self.colors["bg"]
+        surface = self.colors["surface"]
+        card = self.colors["card"]
+        text = self.colors["text"]
+        text_sec = self.colors["text_sec"]
+        text_muted = self.colors["text_muted"]
+        border = self.colors["border"]
+        success = self.colors["success"]
+        warning = self.colors["warning"]
+        error = self.colors["error"]
 
-    def _build_footer(self):
-        footer = tk.Frame(self, bg=T["bg_surface"], height=60)
-        footer.pack(fill="x", side="bottom")
-        footer.pack_propagate(False)
+        stylesheet = f"""
+            QMainWindow {{ background: {bg}; }}
+            QWidget {{ background: {bg}; color: {text}; font-family: 'Segoe UI', sans-serif; }}
 
-        inner = tk.Frame(footer, bg=T["bg_surface"])
-        inner.pack(fill="x", padx=24, pady=12)
+            #header {{ background: {accent}; padding: 0; }}
+            #title {{ color: white; font-size: 22px; font-weight: bold; }}
+            #subtitle {{ color: rgba(255,255,255,0.8); font-size: 12px; }}
 
-        self.summary_label = tk.Label(inner, text="● Listo", font=F["body_sm"],
-                fg=T["text_secondary"], bg=T["bg_surface"])
-        self.summary_label.pack(side="left")
+            #content {{ background: {bg}; }}
 
-        self.progress_label = tk.Label(inner, text="", font=F["caption"],
-                fg=T["text_muted"], bg=T["bg_surface"])
-        self.progress_label.pack(side="left", padx=16)
+            QScrollArea {{ background: {bg}; border: none; }}
+            QScrollBar:vertical {{ background: {surface}; width: 10px; border-radius: 5px; }}
+            QScrollBar::handle:vertical {{ background: {border}; min-height: 30px; border-radius: 5px; }}
+            QScrollBar::handle:hover {{ background: {text_muted}; }}
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{ height: 0px; }}
 
-        self.install_btn = Button(inner, "⚡  Instalar Fedora",
-                command=self._on_install_click, variant="primary")
-        self.install_btn.pack(side="right")
+            QPushButton {{
+                background: {card};
+                color: {text};
+                border: 1px solid {border};
+                border-radius: 6px;
+                padding: 8px 16px;
+                font-size: 12px;
+            }}
+            QPushButton:hover {{ background: {self.colors['hover']}; border-color: {accent}; }}
+            QPushButton:pressed {{ background: {surface}; }}
 
-    def _on_theme_change(self):
-        for widget in self.winfo_children():
-            widget.destroy()
-        self._create_vars()
-        self._build_ui()
+            #primaryBtn {{
+                background: {accent};
+                color: white;
+                border: none;
+                font-weight: bold;
+                font-size: 13px;
+                padding: 10px 24px;
+            }}
+            #primaryBtn:hover {{ background: {accent_hover}; }}
+
+            QCheckBox {{ color: {text}; spacing: 8px; }}
+            QCheckBox::indicator {{ width: 18px; height: 18px; border: 2px solid {border}; border-radius: 4px; background: {card}; }}
+            QCheckBox::indicator:checked {{ background: {accent}; border-color: {accent}; }}
+
+            #console {{
+                background: #0d0d14;
+                color: #e0e0e0;
+                border: 1px solid {border};
+                border-radius: 8px;
+                padding: 12px;
+                font-family: 'JetBrains Mono', 'Consolas', monospace;
+                font-size: 11px;
+            }}
+
+            #footer {{ background: {surface}; border-top: 1px solid {border}; }}
+            #status {{ color: {text_sec}; font-size: 11px; }}
+
+            #progress {{ border: none; border-radius: 4px; background: {surface}; height: 6px; }}
+            #progress::chunk {{ background: {accent}; border-radius: 4px; }}
+
+            #specs {{ color: rgba(255,255,255,0.6); font-size: 10px; font-family: monospace; padding: 8px 0 0 0; }}
+        """
+        self.setStyleSheet(stylesheet)
+
+    def _toggle_theme(self):
+        self.dark_mode = not self.dark_mode
+        self.colors = DARK if self.dark_mode else LIGHT
+        self.theme_btn.setText("☀ Claro" if self.dark_mode else "🌙 Oscuro")
+        self._save_theme()
+        self._apply_styles()
 
     def _check_system(self):
         info = f"{platform.system()} {platform.release()}"
@@ -410,136 +471,98 @@ class SetupApp(tk.Tk):
                 info = r.stdout.strip().split(':', 1)[1].strip()
         except:
             pass
-        self.console.write(f"Sistema: {info}\n", "dim")
-        self.console.write("Selecciona los componentes y presiona ⚡ Instalar...\n\n", "dim")
+        self._console_write(f"Sistema: {info}\n", "dim")
+        self._console_write("Selecciona los componentes y presiona ⚡ Instalar...\n\n", "dim")
+
+    def _console_write(self, text, level="dim"):
+        colors = {
+            "info": "#60b0f4",
+            "success": self.colors["success"],
+            "warning": self.colors["warning"],
+            "error": self.colors["error"],
+            "dim": "#55557a",
+        }
+        color = colors.get(level, "#e0e0e0")
+        cursor = self.console.textCursor()
+        cursor.movePosition(cursor.End)
+        self.console.setTextCursor(cursor)
+        self.console.insertHtml(f'<span style="color: {color}">{text.replace(" ", "&nbsp;").replace(chr(10), "<br>")}</span>')
+        self.console.verticalScrollBar().setValue(self.console.verticalScrollBar().maximum())
 
     def _select_all(self):
-        for var in self.module_vars.values():
-            var.set(True)
-        self._update_summary()
+        for mod_id, card in self.module_cards:
+            self.module_vars[mod_id] = True
+        self._update_status()
 
     def _select_none(self):
-        for var in self.module_vars.values():
-            var.set(False)
-        self._update_summary()
+        for mod_id, card in self.module_cards:
+            self.module_vars[mod_id] = False
+        self._update_status()
 
     def _select_recommended(self):
         for mod in MODULES:
-            self.module_vars[mod["id"]].set(mod["recommended"])
-        self._update_summary()
+            self.module_vars[mod["id"]] = mod["recommended"]
+        self._update_status()
 
-    def _update_summary(self):
-        count = sum(1 for v in self.module_vars.values() if v.get())
-        self.summary_label.config(text=f"● {count} módulos seleccionados")
+    def _update_status(self):
+        count = sum(1 for v in self.module_vars.values() if v)
+        self.status_label.setText(f"● {count} módulos seleccionados")
 
-    def _on_install_click(self):
-        if self.is_running:
-            return
-        selected = [m for m in MODULES if self.module_vars[m["id"]].get()]
+    def _on_install(self):
+        selected = [m for m in MODULES if self.module_vars.get(m["id"], False)]
         if not selected:
-            messagebox.showwarning("Sin selección", "Selecciona al menos un módulo.")
+            QMessageBox.warning(self, "Sin selección", "Selecciona al menos un módulo.")
             return
-        confirm = "Se instalarán los siguientes módulos:\n\n" + \
-            "\n".join(f"  {m['icon']} {m['title']}" for m in selected) + \
-            "\n\n¿Continuar?"
-        if not messagebox.askyesno("Confirmar instalación", confirm):
-            return
-        self.password = simpledialog.askstring("Autenticación",
-                                              "Introduce tu contraseña de sudo:", show='*')
-        if not self.password:
-            return
-        self._start_installation(selected)
 
-    def _start_installation(self, selected):
+        msg = "Se instalarán los siguientes módulos:\n\n"
+        msg += "\n".join(f"  {m['icon']} {m['title']}" for m in selected)
+        msg += "\n\n¿Continuar?"
+
+        reply = QMessageBox.question(self, "Confirmar instalación", msg, QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        password, ok = QInputDialog.getText(self, "Autenticación", "Introduce tu contraseña de sudo:", QLineEdit.EchoMode.Password)
+        if not ok or not password:
+            return
+
+        self._start_installation(selected, password)
+
+    def _start_installation(self, selected, password):
         self.is_running = True
-        self.install_btn.configure(state="disabled", text="🔄 Instalando...")
+        self.install_btn.setEnabled(False)
+        self.install_btn.setText("🔄 Instalando...")
         self.console.clear()
-        threading.Thread(target=self._run_installation, args=(selected,), daemon=True).start()
 
-    def _run_installation(self, selected):
-        self.console.write("╔══════════════════════════════════════════╗\n", "info")
-        self.console.write("║   🚀  Iniciando Fedora Setup Pro       ║\n", "info")
-        self.console.write("╚══════════════════════════════════════════╝\n\n", "info")
+        self.thread = InstallThread(selected, password)
+        self.thread.output.connect(lambda text, level: self._console_write(text + "\n", level))
+        self.thread.progress.connect(lambda title, pct: (self.status_label.setText(f"Ejecutando: {title}"), self.progress_bar.setValue(pct)))
+        self.thread.finished.connect(self._on_complete)
+        self.thread.start()
 
-        for mod in selected:
-            script_path = os.path.join(SCRIPTS_DIR, mod["script"])
-            if not os.path.isfile(script_path):
-                self.console.write(f"  ✗ No encontrado: {script_path}\n", "error")
-                continue
-
-            self.after(0, lambda m=mod["title"]: self.progress_label.config(text=f"Ejecutando: {m}"))
-            self.console.write(f"\n══ {mod['icon']} {mod['title']} ═══════════════════\n", "info")
-
-            cmd = ["sudo", "-S", "bash", script_path]
-            try:
-                proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                      stderr=subprocess.STDOUT, text=True, bufsize=1, cwd=SCRIPT_DIR)
-                proc.stdin.write(self.password + "\n")
-                proc.stdin.flush()
-
-                for line in proc.stdout:
-                    line = line.rstrip()
-                    if line and "[sudo] password for" not in line:
-                        clean = ANSI_PATTERN.sub('', line)
-                        self.after(0, lambda l=clean: self.console.write(l + "\n", self.console._auto_tag(l)))
-
-                proc.stdin.close()
-                proc.wait()
-
-                if proc.returncode == 0:
-                    self.after(0, lambda m=mod["title"]: self.console.write(f"\n  ✅ {m} completado\n\n", "success"))
-                else:
-                    self.after(0, lambda m=mod["title"]: self.console.write(f"\n  ⚠️  {m} finalizado\n\n", "warning"))
-            except Exception as e:
-                self.console.write(f"  ✗ Error: {e}\n", "error")
-
-        self.after(0, self._on_complete)
-
-    def _on_complete(self):
+    def _on_complete(self, success):
         self.is_running = False
-        self.install_btn.configure(state="normal", text="⚡  Instalar Fedora")
-        self.progress_label.config(text="")
-        self.console.write("\n╔══════════════════════════════════════════╗\n", "success")
-        self.console.write("║      ✅  Proceso Completado              ║\n", "success")
-        self.console.write("╚══════════════════════════════════════════╝\n", "success")
-        self.console.write("\nSi instalaste temas, cierra sesión para aplicar cambios.\n", "warning")
-        messagebox.showinfo("Completado", "Instalación finalizada.\nCierra sesión para aplicar cambios.")
-
-    def _check_log_queue(self):
-        self.after(100, self._check_log_queue)
-
-
-class ThemeManager:
-    CONFIG_PATH = os.path.expanduser("~/.config/fedora-setup/settings.json")
-
-    def __init__(self):
-        self._dark = self._load_preference()
-        self._subscribers = []
-
-    def subscribe(self, callback):
-        self._subscribers.append(callback)
-
-    def toggle(self):
-        global T
-        self._dark = not self._dark
-        T = TOKENS if self._dark else TOKENS_LIGHT
-        self._save_preference()
-        for cb in self._subscribers:
-            cb()
-
-    def _load_preference(self):
-        try:
-            with open(self.CONFIG_PATH) as f:
-                return json.load(f).get("dark_mode", True)
-        except:
-            return True
-
-    def _save_preference(self):
-        os.makedirs(os.path.dirname(self.CONFIG_PATH), exist_ok=True)
-        with open(self.CONFIG_PATH, "w") as f:
-            json.dump({"dark_mode": self._dark}, f)
+        self.install_btn.setEnabled(True)
+        self.install_btn.setText("⚡  Instalar Fedora")
+        self.progress_bar.setValue(100)
+        self.status_label.setText("✓ Instalación completada")
+        self._console_write("\n╔══════════════════════════════════════════╗\n", "success")
+        self._console_write("║      ✅  Proceso Completado              ║\n", "success")
+        self._console_write("╚══════════════════════════════════════════╝\n", "success")
+        self._console_write("\nSi instalaste temas, cierra sesión para aplicar cambios.\n", "warning")
+        QMessageBox.information(self, "Completado", "Instalación finalizada.\nCierra sesión para aplicar cambios.")
 
 
 if __name__ == "__main__":
-    app = SetupApp()
-    app.mainloop()
+    if not PYQT6_AVAILABLE:
+        print("PyQt6 no está instalado. Ejecuta:")
+        print("  pip install PyQt6")
+        print("  sudo dnf install python3-pyQt6")
+        print("\nAlternativamente, usa la versión tkinter:")
+        print("  python3 setup_gui.py --tk")
+        sys.exit(1)
+
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec())
