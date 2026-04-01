@@ -1,172 +1,265 @@
-# Scripts de Configuración de Fedora 43
+# Fedora Setup Pro
 
-Colección de scripts para automatizar la configuración de Fedora Linux orientada a desarrollo, con una experiencia de escritorio GNOME similar a macOS.
+![Fedora](https://img.shields.io/badge/Fedora-43-blue?style=flat-square&logo=fedora)
+![Python](https://img.shields.io/badge/Python-3.14+-blue?style=flat-square&logo=python)
+![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 
-## Uso rápido
+Automatiza la configuración de Fedora Linux para Huawei Matebook 14 con una interfaz gráfica moderna estilo Fedora Installer.
 
-```bash
-./setup.sh
+## Características Principales
+
+### 🎨 Interfaz Gráfica
+- **Diseño estilo Fedora Installer (Anaconda)** con paleta de colores oficial
+- **Tema claro/oscuro** con toggle en tiempo real
+- **Layout responsivo** que se adapta a cualquier resolución
+- **Cards colapsables** para organizar componentes
+- **Consola integrada** con soporte para copiar/pegar
+- **Barra de progreso** durante la instalación
+
+### ⚙️ Modularidad
+- **Selección granular**: Instala solo lo que necesites
+- **Tres modos de selección**: Todo / Ninguno / Recomendado
+- **Idempotente**: Verifica antes de instalar
+- **Flags de granularidad**: `--skip-{componente}`
+
+### 📝 Logging
+- Logs detallados en `/logs/`
+- Registro de comandos ejecutados
+- Timestamps en cada acción
+- Compatible con múltiples usuarios (sudo)
+
+---
+
+## Capturas de Pantalla
+
+```
+┌────────────────────────────────────────────────────────────┐
+│  🟢 Fedora Setup Pro                                      │
+│     Configura tu Huawei Matebook 14                       │
+├────────────────────────────────────────────────────────────┤
+│                                                            │
+│  ┌─ 🐚 Terminal Pro ─────────────────────────────────┐   │
+│  │ ☑ Paquetes base         git, curl, wget          │   │
+│  │ ☑ Herramientas modernas  eza, bat, fzf          │   │
+│  │ ☑ Zsh + Oh My Zsh     Shell moderno            │   │
+│  │ ☑ Starship Prompt      Prompt minimalista        │   │
+│  └───────────────────────────────────────────────────┘   │
+│                                                            │
+│  ┌─ 🍎 Temas macOS ─────────────────────────────────┐   │
+│  │ ☑ Tema GTK WhiteSur      Light + Dark           │   │
+│  │ ☑ Iconos WhiteSur       WhiteSur + MacTahoe   │   │
+│  │ ☐ GDM / Login          Pantalla de inicio      │   │
+│  └───────────────────────────────────────────────────┘   │
+│                                                            │
+│  [Todo] [Ninguno] [Recomendado]                          │
+│                                                            │
+│  ┌─ 📟 Consola ─────────────────────────────────────┐   │
+│  │  Iniciando instalación...                         │   │
+│  │  ✔ Terminal Pro completado                       │   │
+│  └───────────────────────────────────────────────────┘   │
+│                                                            │
+│            [ ⚡ Instalar Fedora ]                        │
+└────────────────────────────────────────────────────────────┘
 ```
 
-> 🚀 **Novedad**: Ahora cuenta con una **interfaz gráfica interactiva**. Podrás seleccionar exactamente qué componentes deseas instalar mediante casillas de verificación. Una vez seleccionado, se abrirá una terminal para que sigas el progreso en tiempo real.
+---
+
+## Componentes Disponibles
+
+### 🐚 Terminal Pro
+| Componente | Descripción |
+|------------|-------------|
+| Paquetes base | git, curl, wget, unzip |
+| Herramientas modernas | eza, bat, fzf, zoxide, fastfetch, micro |
+| Fuente Nerd | JetBrainsMono Nerd Font |
+| Zsh + Oh My Zsh | Shell moderno con plugins |
+| Starship | Prompt minimalista estilo Pastel Powerline |
+
+**Aliases configurados:**
+```bash
+ls   → eza --icons=auto
+ll   → eza -lah --icons --git
+cat  → bat --paging=never
+cd   → z (zoxide)
+```
+
+### 🍎 Temas macOS
+| Componente | Descripción |
+|------------|-------------|
+| Dependencias | sassc, glib, ImageMagick |
+| Tema GTK | WhiteSur Light + Dark |
+| Iconos | WhiteSur + MacTahoe |
+| GDM | Pantalla de login estilo macOS |
+| Firefox | WhiteSur Firefox Theme |
+| Sync | Auto-switch claro/oscuro |
+
+### 🛠️ Aplicaciones
+| Componente | Descripción |
+|------------|-------------|
+| VS Code | Editor con config optimizada (GitHub theme, JetBrains Mono) |
+| Git + SSH | Config global + clave ed25519 para GitHub |
+| Intel Fix | Parámetros kernel para corregir parpadeo |
+| Extensiones | Dash to Dock, Magic Lamp, Copyous, Night Theme Switcher |
+
+---
+
+## Instalación
+
+### Rápido
+```bash
+git clone https://github.com/ecabreral/Fedora-Basic-Huawei-Matebook-14.git
+cd Fedora-Basic-Huawei-Matebook-14
+python3 setup_gui.py
+```
+
+### Interfaz Gráfica
+```bash
+./setup_gui.py
+```
+
+### Línea de Comandos
+```bash
+# Ejecutar script individual
+sudo bash scripts/01-terminal.sh
+sudo bash scripts/04-gnome-theme.sh
+
+# Con flags de granularidad
+sudo bash scripts/01-terminal.sh --skip-pkg --skip-font
+sudo bash scripts/04-gnome-theme.sh --skip-firefox --skip-gdm
+
+# Modo no interactivo
+NONINTERACTIVE=true GIT_NAME="Tu Nombre" GIT_EMAIL="tu@email.com" \
+  bash scripts/03-git.sh
+```
 
 ---
 
 ## Estructura del Proyecto
 
 ```
-Fedora/
-├── setup.sh                    # ▶ Punto de entrada — ejecutar este
+Fedora-Basic-Huawei-Matebook-14/
+├── setup.sh                     # Launcher (CLI → GUI)
+├── setup_gui.py                # Interfaz gráfica
+├── fedora-setup-launcher.sh     # Wrapper portable
+├── FedoraSetup.desktop         # Entry para GNOME
+│
 ├── scripts/
-│   ├── lib.sh                  # Librería compartida (colores, helpers)
-│   ├── 01-terminal.sh          # Terminal moderna: zsh, Starship, eza…
-│   ├── 02-vscode.sh            # Visual Studio Code + configuración
-│   ├── 03-git.sh               # Git global + clave SSH para GitHub
-│   ├── 04-gnome-theme.sh       # Temas GNOME estilo macOS
-│   ├── 05-intel-fix.sh         # Fix parpadeo pantalla Intel (opcional)
-│   └── cleanup.sh              # Elimina Oh My Zsh (opcional)
+│   ├── lib.sh                  # Librería compartida
+│   ├── 01-terminal.sh          # Terminal moderna
+│   ├── 02-vscode.sh            # Visual Studio Code
+│   ├── 03-git.sh               # Git + SSH
+│   ├── 04-gnome-theme.sh       # Temas macOS
+│   ├── 05-intel-fix.sh         # Fix Intel
+│   └── 06-extensions.sh         # Extensiones GNOME
+│
 ├── config/
-│   └── starship.toml           # Preset Pastel Powerline para Starship
+│   └── starship.toml            # Preset Pastel Powerline
+│
+├── logs/                       # Logs de ejecución
+│
 └── docs/
-    ├── dash-to-dock.md         # Guía de configuración de Dash to Dock
-    └── copyous-troubleshooting.md  # Solución de problemas de Copyous
+    ├── dash-to-dock.md
+    └── copyous-troubleshooting.md
 ```
 
 ---
 
-## Qué instala cada script
+## Sistema de Logging
 
-### 1. Terminal — `scripts/01-terminal.sh`
-
-| Herramienta | Descripción |
-|---|---|
-| `zsh` + Oh My Zsh | Shell moderna con plugins |
-| `starship` | Prompt Pastel Powerline |
-| `eza` | `ls` moderno con iconos y colores |
-| `bat` | `cat` con syntax highlighting |
-| `fzf` | Búsqueda difusa en terminal |
-| `zoxide` | `cd` inteligente con historial |
-| `fastfetch` | Info del sistema al abrir terminal |
-| `micro` | Editor de texto en terminal |
-| `rust` + `cargo` | Toolchain de Rust |
-| JetBrainsMono Nerd Font | Fuente con soporte de iconos |
-
-**Aliases configurados en `.zshrc`:**
-
-| Alias | Comando |
-|---|---|
-| `ls` | `eza --icons=auto` |
-| `ll` | `eza -lah --icons --git` |
-| `lt` | `eza --tree --icons` |
-| `cat` | `bat --paging=never` |
-| `cd` | `z` (zoxide) |
-| `cls` | `clear` |
-| `update` | `sudo dnf update -y && flatpak update -y` |
-
----
-
-### 2. Visual Studio Code — `scripts/02-vscode.sh`
-
-**INSTALAR VS CODE CORRECTAMENTE EN FEDORA 43**
-
-Método recomendado (OFICIAL Microsoft):
-
-1. Agregar repo de Microsoft:
-  ```bash
-  sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
-  sudo sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo'
-  ```
-2. Instalar:
-  ```bash
-  sudo dnf check-update
-  sudo dnf install code
-  ```
-✔️ Este es el método oficial para Fedora.
-
-- El script también corrige permisos de `~/.config/Code` y `~/.vscode` para evitar problemas de propiedad.
-- Configura automáticamente `~/.config/Code/User/settings.json`:
-  - Tema claro → **GitHub Light** | oscuro → **GitHub Dark** (auto según el sistema)
-  - Fuente: **JetBrains Mono** con ligaduras, tamaño 14
-  - `formatOnSave`, `autoSave afterDelay`, minimap desactivado
-  - Icon theme: `vs-seti`
-
----
-
-### 3. Git + GitHub — `scripts/03-git.sh`
-
-- Configura nombre, email y rama por defecto (`main`)
-- Configura `pull.rebase false` y `core.autocrlf input`
-- Genera clave SSH **ed25519**
-- Copia la clave al portapapeles automáticamente (`wl-copy` o `xclip`)
-- Abre `github.com/settings/keys` en el navegador
-- Verifica la conexión SSH al final
-
----
-
-### 4. Temas GNOME — `scripts/04-gnome-theme.sh`
-
-Instala **GNOME Tweaks** y **GNOME Extensions** para gestionar temas y extensiones fácilmente.
-
-| Componente | Tema |
-|---|---|
-| GTK Theme | **WhiteSur-Light** + **WhiteSur-Dark** |
-| GNOME Shell | **WhiteSur-Light** |
-| Icon Theme | **WhiteSur** |
-| GDM (pantalla de login) | **MacTahoe** |
-| Firefox | **WhiteSur Firefox Theme** |
-| Cursores | Adwaita |
-| MacTahoe Icons | Instalado (no activo por defecto) |
-
-El cambio automático claro↔oscuro se gestiona con **Night Theme Switcher**. Configurarlo así:
-
+Los logs se guardan automáticamente en:
 ```
-GTK Light  → WhiteSur-Light    GTK Dark  → WhiteSur-Dark
-Shell Light → WhiteSur-Light   Shell Dark → WhiteSur-Dark
+proyecto/logs/setup-YYYYMMDD-HHMMSS.log
 ```
 
-> Activa *Ubicación automática del dispositivo* en Configuración → Privacidad → Ubicación para que el cambio sea por hora solar.
-
----
-
-### 5. Fix Intel Flicker — `scripts/05-intel-fix.sh`
-
-- Detecta GPU Intel automáticamente (se omite si no se detecta)
-- Aplica parámetros de kernel via `grubby`:
-  ```
-  i915.enable_psr=0   i915.enable_dc=0   intel_idle.max_cstate=2
-  ```
-- **Requiere reinicio** para tener efecto
-
----
-
-## Extensiones GNOME
-
-| Extensión | Descripción |
-|---|---|
-| [Dash to Dock](https://extensions.gnome.org/extension/307/dash-to-dock/) | Dock estilo macOS (Autoconfigurado con clic para minimizar) |
-| [Night Theme Switcher](https://extensions.gnome.org/extension/2236/night-theme-switcher/) | Cambio automático claro/oscuro |
-| [Compiz Alike Magic Lamp](https://extensions.gnome.org/extension/3740/compiz-alike-magic-lamp-effect/) | Efecto de lámpara al minimizar |
-| [Copyous](https://extensions.gnome.org/extension/8834/copyous/) | Historial de portapapeles |
-
-> 💡 **Automatización**: `setup.sh` configura automáticamente el dock para minimizar al hacer clic una vez activada. Ver [`docs/dash-to-dock.md`](docs/dash-to-dock.md) para más detalles.
-
----
-
-## Limpieza opcional — `scripts/cleanup.sh`
-
-Elimina Oh My Zsh y carga los plugins de Zsh directamente (más ligero). Starship sigue funcionando como prompt.
-
+**Contenido del log:**
 ```bash
-./scripts/cleanup.sh
+========================================
+Inicio: 2026-04-01 12:00:00
+Script: 04-gnome-theme
+Host: matebook
+User: ecabrera
+Log File: /home/.../logs/setup-20260401-120000.log
+========================================
+[12:00:01] INFO: Instalando WhiteSur GTK Theme...
+[12:00:05] OK: WhiteSur GTK Theme instalado.
+...
+Fin: 2026-04-01 12:00:30
+========================================
 ```
-
-> Oh My Zsh es liviano y no interfiere con Starship. Este paso es completamente opcional.
 
 ---
 
-## Notas
+## Variables de Entorno
 
-- Probado en **Fedora 43** con **GNOME**
-- `setup.sh` detecta automáticamente si hay GPU Intel y omite el fix si no aplica
-- Todos los scripts son **idempotentes**: verifican si cada componente ya está instalado antes de instalar
-- `scripts/lib.sh` es la librería compartida usada por todos los scripts
+| Variable | Descripción | Valor por defecto |
+|----------|-------------|-------------------|
+| `NONINTERACTIVE` | Modo no interactivo | `false` |
+| `GIT_NAME` | Nombre para Git | Prompt interactivo |
+| `GIT_EMAIL` | Email para Git | Prompt interactivo |
+| `LOG_DIR` | Directorio de logs | `proyecto/logs/` |
+| `FORCE_INTEL_FIX` | Forzar fix Intel | `false` |
+
+---
+
+## Requisitos
+
+- **Fedora 43+** (probado en Fedora 43)
+- **Python 3.14+** (para GUI)
+- **GNOME** (temas y extensiones)
+- **sudo** privileges
+- **Huawei Matebook 14** (optimizado para)
+
+---
+
+## Solución de Problemas
+
+### La GUI no responde
+```bash
+# Verificar Python
+python3 --version
+
+# Verificar tkinter
+python3 -c "import tkinter; print('tkinter OK')"
+```
+
+### Permisos de archivos
+```bash
+# Los logs se crean con el usuario real
+ls -la logs/
+
+# Eliminar logs antiguos
+rm -f logs/*.log
+```
+
+### Extensiones no se abren
+- Asegúrate de tener Firefox instalado
+- Instala las extensiones manualmente desde los enlaces mostrados
+
+---
+
+## Contribuir
+
+1. Fork el repositorio
+2. Crea una rama (`git checkout -b feature/nueva-funcion`)
+3. Commit (`git commit -am 'Agrega nueva función'`)
+4. Push (`git push origin feature/nueva-funcion`)
+5. Crea un Pull Request
+
+---
+
+## Licencia
+
+MIT License - Ver [LICENSE](LICENSE) para más detalles.
+
+---
+
+## Créditos
+
+- **WhiteSur GTK Theme**: [vinceliuice/WhiteSur-gtk-theme](https://github.com/vinceliuice/WhiteSur-gtk-theme)
+- **WhiteSur Icon Theme**: [vinceliuice/WhiteSur-icon-theme](https://github.com/vinceliuice/WhiteSur-icon-theme)
+- **MacTahoe Theme**: [vinceliuice/MacTahoe-gtk-theme](https://github.com/vinceliuice/MacTahoe-gtk-theme)
+- **Starship**: [starship/starship](https://github.com/starship/starship)
+
+---
+
+> 🚀 Configura tu Huawei Matebook 14 con Fedora en minutos, no horas.
