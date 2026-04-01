@@ -90,6 +90,10 @@ fi
 # ── 8. Configurar Starship (preset Pastel Powerline) ─────────────────────────
 mkdir -p ~/.config
 PRESET_LOCAL="$PROJECT_ROOT/config/starship.toml"
+
+# Eliminar archivo/enlace previo si existe para evitar errores de cp
+[ -e ~/.config/starship.toml ] || [ -L ~/.config/starship.toml ] && rm -f ~/.config/starship.toml
+
 if [ -f "$PRESET_LOCAL" ]; then
   info "Aplicando preset Pastel Powerline local..."
   cp "$PRESET_LOCAL" ~/.config/starship.toml

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Fedora Setup Pro
+Comment=Configura tu Huawei Matebook 14 con Fedora
+Exec=python3 /home/ecabrera/Downloads/Fedora-Basic-Huawei-Matebook-14/setup_gui.py
+Icon=system-software-install
+Terminal=false
+Categories=System;Settings;
+Keywords=setup;fedora;matebook;
