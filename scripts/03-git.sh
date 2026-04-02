@@ -42,22 +42,17 @@ info "Verificando configuración actual de Git (usuario: $REAL_USER)..."
 echo ""
 
 GIT_CONFIGURED=true
-GIT_NAME=""
-GIT_EMAIL=""
-
-GIT_NAME=$(git_config_or_empty --global user.name)
-if [ -n "$GIT_NAME" ]; then
-  success "Nombre: $GIT_NAME"
-  log_to_file "Git nombre: $GIT_NAME"
+CURRENT_GIT_NAME=$(git_config_or_empty --global user.name)
+if [ -n "$CURRENT_GIT_NAME" ]; then
+  success "Nombre: $CURRENT_GIT_NAME"
 else
   GIT_CONFIGURED=false
   warn "Nombre: No configurado"
 fi
 
-GIT_EMAIL=$(git_config_or_empty --global user.email)
-if [ -n "$GIT_EMAIL" ]; then
-  success "Email: $GIT_EMAIL"
-  log_to_file "Git email: $GIT_EMAIL"
+CURRENT_GIT_EMAIL=$(git_config_or_empty --global user.email)
+if [ -n "$CURRENT_GIT_EMAIL" ]; then
+  success "Email: $CURRENT_GIT_EMAIL"
 else
   GIT_CONFIGURED=false
   warn "Email: No configurado"
@@ -65,7 +60,6 @@ fi
 
 if [ -f "$GIT_SSH_KEY" ]; then
   success "Clave SSH: $GIT_SSH_KEY existe"
-  log_to_file "Clave SSH: existe"
 else
   GIT_CONFIGURED=false
   warn "Clave SSH: No existe"
@@ -73,7 +67,13 @@ fi
 
 echo ""
 
-if [ "$GIT_CONFIGURED" = true ]; then
+# En modo no-interactivo, si se pasan GIT_NAME y GIT_EMAIL, forzamos reconfiguración
+FORCE_RECONFIG=false
+if [ "$NONINTERACTIVE" = "true" ] && [ -n "$GIT_NAME" ] && [ -n "$GIT_EMAIL" ]; then
+    FORCE_RECONFIG=true
+fi
+
+if [ "$GIT_CONFIGURED" = true ] && [ "$FORCE_RECONFIG" = false ]; then
   success "Git está completamente configurado."
   if [ "$NONINTERACTIVE" = "false" ]; then
     read -p "  ¿Deseas reconfigurar? [s/N]: " RECONFIG
@@ -94,11 +94,12 @@ fi
 # ── 3. Solicitar datos ─────────────────────────────────────────────────────────
 echo ""
 if [ "$NONINTERACTIVE" = "false" ]; then
-  read -p "  Ingresa tu nombre para Git: " GIT_NAME
-  read -p "  Ingresa tu email de GitHub:  " GIT_EMAIL
+  [[ -z "$GIT_NAME" ]] && read -p "  Ingresa tu nombre para Git: " GIT_NAME
+  [[ -z "$GIT_EMAIL" ]] && read -p "  Ingresa tu email de GitHub:  " GIT_EMAIL
 else
+  GIT_NAME="${GIT_NAME:-$CURRENT_GIT_NAME}"
   GIT_NAME="${GIT_NAME:-$(whoami)}"
-  GIT_EMAIL="${GIT_EMAIL:-}"
+  GIT_EMAIL="${GIT_EMAIL:-$CURRENT_GIT_EMAIL}"
 fi
 echo ""
 

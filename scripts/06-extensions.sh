@@ -36,8 +36,10 @@ sudo -u "$REAL_USER" firefox "${EXTENSIONS[@]}" 2>/dev/null &
 sleep 2
 success "Navegador abierto con las páginas de extensiones."
 
-echo ""
-read -p "  Activa las extensiones y presiona ENTER para continuar... "
+if [ "$NONINTERACTIVE" = "false" ]; then
+    echo ""
+    read -p "  Activa las extensiones y presiona ENTER para continuar... "
+fi
 
 # ── Configuración Dash to Dock ───────────────────────────────────────────────
 info "Aplicando configuración avanzada de Dash to Dock..."

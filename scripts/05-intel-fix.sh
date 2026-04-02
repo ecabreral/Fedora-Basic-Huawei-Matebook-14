@@ -19,10 +19,13 @@ section "🔧 Fix Intel Screen Flicker"
 if ! lspci | grep -qi "intel.*graphics\|intel.*vga\|intel.*display"; then
   warn "No se detectó una GPU Intel en este sistema."
   warn "Este script está diseñado solo para GPUs Intel (driver i915)."
-  if [ "${FORCE_INTEL_FIX:-false}" != "true" ]; then
+  if [ "${FORCE_INTEL_FIX:-false}" != "true" ] && [ "$NONINTERACTIVE" = "false" ]; then
     echo ""
     read -p "  ¿Aplicar parámetros de todas formas? [s/N]: " FORCE
     [[ "$FORCE" != "s" && "$FORCE" != "S" ]] && exit 0
+  else
+    warn "Modo no-interactivo o FORCE_INTEL_FIX activo: Saltando prompts."
+    [[ "$NONINTERACTIVE" = "true" && "${FORCE_INTEL_FIX:-false}" != "true" ]] && exit 0
   fi
 fi
 

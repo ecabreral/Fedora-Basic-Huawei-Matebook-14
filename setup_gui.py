@@ -13,9 +13,16 @@ import os
 import re
 import platform
 import json
+import sys
 
 ANSI_PATTERN = re.compile(r'\x1b\[[0-9;]*m')
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Detectar si se está ejecutando desde un binario de PyInstaller
+if getattr(sys, 'frozen', False):
+    SCRIPT_DIR = sys._MEIPASS
+else:
+    SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
 SCRIPTS_DIR = os.path.join(SCRIPT_DIR, "scripts")
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -267,6 +274,8 @@ class SetupApp(tk.Tk):
         self.configure(bg=T["bg_surface"])
 
         self.password = ""
+        self.git_name = ""
+        self.git_email = ""
         self.is_running = False
         self.theme = ThemeManager()
         self.module_vars = {}
@@ -448,6 +457,33 @@ class SetupApp(tk.Tk):
                                               "Introduce tu contraseña de sudo:", show='*')
         if not self.password:
             return
+
+        self.git_name = ""
+        self.git_email = ""
+        if any(m["id"] == "git" for m in selected):
+            # Obtener valores actuales para pre-rellenar
+            cur_name = ""
+            cur_email = ""
+            try:
+                cur_name = subprocess.check_output(["git", "config", "--global", "user.name"], text=True).strip()
+                cur_email = subprocess.check_output(["git", "config", "--global", "user.email"], text=True).strip()
+            except:
+                pass
+
+            name = simpledialog.askstring("Configuración Git", "Ingresa tu nombre para Git:", initialvalue=cur_name)
+            email = None
+            if name is not None:
+                email = simpledialog.askstring("Configuración Git", "Ingresa tu email de GitHub:", initialvalue=cur_email)
+
+            if name is None or email is None:
+                if messagebox.askyesno("Saltar Git", "¿Deseas saltar la configuración de Git y continuar con el resto?"):
+                    selected = [m for m in selected if m["id"] != "git"]
+                else:
+                    return
+            else:
+                self.git_name = name
+                self.git_email = email
+
         self._start_installation(selected)
 
     def _start_installation(self, selected):
@@ -470,7 +506,12 @@ class SetupApp(tk.Tk):
             self.after(0, lambda m=mod["title"]: self.progress_label.config(text=f"Ejecutando: {m}"))
             self.console.write(f"\n══ {mod['icon']} {mod['title']} ═══════════════════\n", "info")
 
-            cmd = ["sudo", "-S", "bash", script_path]
+            env_args = ["NONINTERACTIVE=true"]
+            if self.git_name: env_args.append(f"GIT_NAME={self.git_name}")
+            if self.git_email: env_args.append(f"GIT_EMAIL={self.git_email}")
+
+            # Usamos 'env' para asegurar que las variables pasen a través de sudo de forma portable
+            cmd = ["sudo", "-S", "env"] + env_args + ["bash", script_path]
             try:
                 proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                       stderr=subprocess.STDOUT, text=True, bufsize=1, cwd=SCRIPT_DIR)
