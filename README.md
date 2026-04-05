@@ -1,4 +1,4 @@
-# Scripts de Configuración de Fedora 43
+# Fedora Setup - Huawei Matebook 14
 
 Colección de scripts para automatizar la configuración de Fedora Linux orientada a desarrollo, con una experiencia de escritorio GNOME similar a macOS.
 
@@ -8,15 +8,24 @@ Colección de scripts para automatizar la configuración de Fedora Linux orienta
 ./setup.sh
 ```
 
-> 🚀 **Novedad**: Ahora cuenta con una **interfaz gráfica interactiva**. Podrás seleccionar exactamente qué componentes deseas instalar mediante casillas de verificación. Una vez seleccionado, se abrirá una terminal para que sigas el progreso en tiempo real.
+> 🚀 **Novedad**: Ahora cuenta con una **interfaz gráfica profesional en Python**. Ejecuta `setup.sh` y se abrirá una GUI moderna donde podrás navegar por los componentes, ver su descripción e instalar cada uno con progreso en tiempo real.
 
 ---
 
 ## Estructura del Proyecto
 
 ```
-Fedora/
+Fedora-Basic-Huawei-Matebook-14/
 ├── setup.sh                    # ▶ Punto de entrada — ejecutar este
+├── main.py                     # Entry point de la GUI Python
+├── gui/                        # Módulo de GUI profesional
+│   ├── app.py                  # Ventana principal
+│   ├── theme.py                # Sistema de temas (tokens de diseño)
+│   └── widgets/                # Componentes reutilizables
+│       ├── button.py           # Botones estilizados
+│       ├── card.py             # Tarjetas
+│       ├── console.py          # Consola de salida
+│       └── progress.py         # Progress bar
 ├── scripts/
 │   ├── lib.sh                  # Librería compartida (colores, helpers)
 │   ├── 01-terminal.sh          # Terminal moderna: zsh, Starship, eza…
@@ -24,6 +33,7 @@ Fedora/
 │   ├── 03-git.sh               # Git global + clave SSH para GitHub
 │   ├── 04-gnome-theme.sh       # Temas GNOME estilo macOS
 │   ├── 05-intel-fix.sh         # Fix parpadeo pantalla Intel (opcional)
+│   ├── 06-extensions.sh        # Extensiones GNOME
 │   └── cleanup.sh              # Elimina Oh My Zsh (opcional)
 ├── config/
 │   └── starship.toml           # Preset Pastel Powerline para Starship
@@ -164,9 +174,58 @@ Elimina Oh My Zsh y carga los plugins de Zsh directamente (más ligero). Starshi
 
 ---
 
+## Requisitos
+
+- **Python 3.10+** (para la GUI)
+- **Zenity** (fallback si la GUI Python no está disponible)
+
+La GUI se inicia automáticamente. Si Python no está instalado, el script intentará usar Zenity como alternativa.
+
+---
+
+## Interfaz Gráfica
+
+La aplicación incluye una **GUI profesional en Python** con las siguientes características:
+
+- **Tema oscuro** con tokens de diseño Fedora (#60b0f4 accent)
+- **Navegación por sidebar** para explorar componentes
+- **Consola en tiempo real** que muestra el output de la instalación
+- **Progress bar animada** con progreso en vivo
+- **Ejecución en background thread** para no bloquear la UI
+
+### Capturas de pantalla
+
+La GUI incluye las siguientes páginas:
+- **Inicio**: Información general del proyecto
+- **Terminal**: Instalación de zsh, Starship, eza, bat, fzf, zoxide
+- **VS Code**: Editor configurado con extensiones
+- **Git**: SSH keys para GitHub
+- **Tema**: Apariencia estilo macOS
+- **Intel Fix**: Solución al parpadeo de pantalla
+- **Extensiones**: GNOME extensions
+
+---
+
 ## Notas
 
 - Probado en **Fedora 43** con **GNOME**
 - `setup.sh` detecta automáticamente si hay GPU Intel y omite el fix si no aplica
 - Todos los scripts son **idempotentes**: verifican si cada componente ya está instalado antes de instalar
 - `scripts/lib.sh` es la librería compartida usada por todos los scripts
+
+---
+
+## Tecnologías
+
+| Componente | Tecnología |
+|------------|-------------|
+| GUI | Python 3 + tkinter |
+| Instalador | Bash scripts |
+| Temas | GTK, GNOME Shell |
+| Terminal | zsh + Starship |
+
+---
+
+## Licencia
+
+MIT
