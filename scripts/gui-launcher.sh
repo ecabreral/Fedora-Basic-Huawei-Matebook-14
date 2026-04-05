@@ -68,6 +68,10 @@ for ID in "${SELECTED_IDS[@]}"; do
       step "Extensiones GNOME"
       "$SCRIPT_DIR/scripts/06-extensions.sh"
       ;;
+    "opencode")
+      step "OpenCode CLI"
+      "$SCRIPT_DIR/scripts/07-opencode.sh"
+      ;;
   esac
   echo ""
 done
@@ -87,6 +91,7 @@ for ID in "${SELECTED_IDS[@]}"; do
     "theme")      echo "   • Temas GTK/Icons/GDM WhiteSur" ;;
     "intel")      echo "   • Parámetros del kernel Intel (Flicker Fix)" ;;
     "extensions") echo "   • Extensiones GNOME (Dash to Dock...)" ;;
+    "opencode")   echo "   • OpenCode CLI (IA Assistant)" ;;
   esac
 done
 echo ""

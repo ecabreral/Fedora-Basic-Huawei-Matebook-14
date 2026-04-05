@@ -18,6 +18,7 @@ NAV_ITEMS = [
     ("🎨", "Tema", "theme"),
     ("🔲", "Intel Fix", "intel"),
     ("🧩", "Extensiones", "extensions"),
+    ("🚀", "OpenCode CLI", "opencode"),
 ]
 
 
@@ -110,6 +111,9 @@ class App(tk.Tk):
         elif page_id == "extensions":
             self._build_install_page("extensions", "Extensiones GNOME",
                                      "Dash to Dock, Magic Lamp, etc.")
+        elif page_id == "opencode":
+            self._build_install_page("opencode", "OpenCode CLI",
+                                     "Asistente de IA para terminal y generación de código")
 
     def _build_home_page(self):
         container = tk.Frame(self.content, bg=T["bg_surface"])
@@ -131,8 +135,9 @@ class App(tk.Tk):
             ("📝", "VS Code", "Editor configurado con extensiones"),
             ("🔧", "Git", "SSH keys para GitHub"),
             ("🎨", "Tema", "Apariencia macOS-like"),
-            ("🔲", "Intel Fix", "驱动 de pantalla"),
+            ("🔲", "Intel Fix", "Fix parpadeo pantalla"),
             ("🧩", "Extensiones", "GNOME extensions"),
+            ("🚀", "OpenCode", "IA CLI Interpeter"),
         ]
         
         grid_frame = tk.Frame(container, bg=T["bg_surface"])

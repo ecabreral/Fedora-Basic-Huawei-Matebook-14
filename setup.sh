@@ -41,6 +41,7 @@ SELECTED=$(zenity --list --checklist --title="Selección de Componentes" \
   TRUE  "theme"      "Temas macOS (GTK, Iconos, GDM, Firefox)" \
   FALSE "intel"      "Fix Intel Screen Flicker (Fix parpadeo pantalla)" \
   TRUE  "extensions" "Extensiones GNOME (Dash to Dock, Magic Lamp, etc.)" \
+  TRUE  "opencode"   "OpenCode CLI (Asistente de IA para Terminal)" \
   --hide-column=2 --separator=" ")
 
 if [ -z "$SELECTED" ]; then

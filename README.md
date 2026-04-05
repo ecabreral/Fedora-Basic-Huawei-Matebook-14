@@ -34,6 +34,7 @@ Fedora-Basic-Huawei-Matebook-14/
 │   ├── 04-gnome-theme.sh       # Temas GNOME estilo macOS
 │   ├── 05-intel-fix.sh         # Fix parpadeo pantalla Intel (opcional)
 │   ├── 06-extensions.sh        # Extensiones GNOME
+│   ├── 07-opencode.sh          # OpenCode CLI: Asistente de IA para terminal
 │   └── cleanup.sh              # Elimina Oh My Zsh (opcional)
 ├── config/
 │   └── starship.toml           # Preset Pastel Powerline para Starship
@@ -162,6 +163,18 @@ Shell Light → WhiteSur-Light   Shell Dark → WhiteSur-Dark
 
 ---
 
+### 7. OpenCode CLI — `scripts/07-opencode.sh`
+
+Instala el intérprete de IA **OpenCode** para usar directamente desde la terminal.
+
+- Utiliza el instalador oficial de `opencode.ai`.
+- Configura automáticamente el PATH en `~/.zshrc`.
+- Permite ejecutar comandos de lenguaje natural, generar código y realizar tareas de sistema mediante el comando `opencode`.
+
+> 💡 **Idempotencia**: El script detecta si ya está instalado o si el PATH ya está configurado para evitar re-descargas innecesarias.
+
+---
+
 ## Limpieza opcional — `scripts/cleanup.sh`
 
 Elimina Oh My Zsh y carga los plugins de Zsh directamente (más ligero). Starship sigue funcionando como prompt.
@@ -203,6 +216,7 @@ La GUI incluye las siguientes páginas:
 - **Tema**: Apariencia estilo macOS
 - **Intel Fix**: Solución al parpadeo de pantalla
 - **Extensiones**: GNOME extensions
+- **OpenCode CLI**: Instalación del asistente de IA
 
 ---
 
