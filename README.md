@@ -18,6 +18,7 @@ Fedora-Basic-Huawei-Matebook-14/
 ├── scripts/
 │   ├── lib.sh                  # Librería compartida (colores, helpers)
 │   ├── gui-launcher.sh         # Ejecutor de scripts seleccionados
+│   ├── 00-base-system.sh       # Sistema base: repositorios, códecs, VA-API, Flatpak
 │   ├── 01-terminal.sh          # Terminal moderna: zsh, Starship, eza…
 │   ├── 02-vscode.sh            # Visual Studio Code + configuración
 │   ├── 03-git.sh               # Git global + clave SSH para GitHub
@@ -62,6 +63,7 @@ El instalador funciona completamente en terminal:
 
 | # | Componente | Descripción |
 |---|------------|-------------|
+| 0 | Sistema Base | Repositorios (RPM Fusion), códecs, VA-API Intel, Flatpak |
 | 1 | Terminal | zsh, Starship (6 temas), eza, bat, fzf, zoxide, fastfetch |
 | 2 | VS Code | Editor con configuración optimizada |
 | 3 | Git | Configuración global + clave SSH para GitHub |
@@ -105,6 +107,19 @@ Solo se agrega si el comando `opencode` está disponible en el sistema.
 ---
 
 ## Qué instala cada script
+
+### 0. Sistema Base — `scripts/00-base-system.sh`
+
+| Categoría | Paquetes/Acciones |
+|-----------|-------------------|
+| **Repositorios** | RPM Fusion Free + Non-Free |
+| **Códecs multimedia** | ffmpeg, gstreamer plugins (base, good, bad, ugly) |
+| **VA-API Intel** | libva, libva-utils, intel-media-driver, libva-intel-driver |
+| **OpenH264** | Para Firefox |
+| **Flatpak** | Instalación + Flathub |
+| **Optimizaciones** | NetworkManager-wait-online deshabilitado, Gnome Software removido del autostart |
+
+> **Importante**: Este script debe ejecutarse primero (opción 0 o al instalar todos). Esencial para MateBook 14 con Intel Core Ultra.
 
 ### 1. Terminal — `scripts/01-terminal.sh`
 
