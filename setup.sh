@@ -1,115 +1,242 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# setup.sh
-# Instalador gráfico para la configuración de Fedora 43 en Matebook 14.
+# setup.sh - Instalador en CONSOLA para Fedora 43 en Matebook 14
 # ==============================================================================
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-
-# ── Verificar Dependencias de Python ─────────────────────────────────────────
-if ! command -v python3 &>/dev/null; then
-  echo "Python 3 no está instalado. Por favor, instálalo primero."
-  exit 1
-fi
-
-# ── Intentar iniciar la GUI Python ───────────────────────────────────────────
-if python3 "$SCRIPT_DIR/main.py"; then
-  exit 0
-fi
-
-# Fallback: Si la GUI Python falla, intentar Zenity
-echo "Intentando interfaz Zenity..."
-
 source "$SCRIPT_DIR/scripts/lib.sh"
 
-if ! command -v zenity &>/dev/null; then
-  warn "Zenity no está instalado. Instalándolo..."
-  sudo dnf install -y zenity
-fi
+# ── Título Banner ─────────────────────────────────────────────────────────
+print_banner() {
+    echo ""
+    echo "╔═══════════════════════════════════════════════════════════════╗"
+    echo "║     Fedora 43 Setup - Huawei Matebook 14                     ║"
+    echo "║     Configuración automatizada en terminal                   ║"
+    echo "╚═══════════════════════════════════════════════════════════════╝"
+    echo ""
+}
 
-zenity --info --title="Fedora 43 Setup" --width=400 \
-  --text="🚀 Bienvenido al configurador de Fedora para Huawei Matebook 14.\n\nA continuación podrás elegir qué componentes deseas configurar."
+# ── Menú Principal (ncurses) ──────────────────────────────────────────────
+show_menu() {
+    local options=(
+        "1" "Instalar TODOS los componentes"
+        "2" "Seleccionar componentes específicos"
+        "3" "Salir"
+    )
+    
+    local cmd=(dialog --backtitle "Fedora Setup" --title "Menú Principal" \
+        --menu "Elige una opción:" 15 60 8)
+    
+    local choice=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)
+    echo "$choice"
+}
 
-SELECTED=$(zenity --list --checklist --title="Selección de Componentes" \
-  --width=600 --height=450 \
-  --column="Instalar" --column="ID" --column="Componente" \
-  TRUE  "terminal"   "Terminal Moderna (zsh, Starship, eza, bat, fzf...)" \
-  TRUE  "vscode"     "Visual Studio Code + Extensiones & Configuración" \
-  TRUE  "git"        "Git Global + Generación de Clave SSH para GitHub" \
-  TRUE  "theme"      "Temas macOS (GTK, Iconos, GDM, Firefox)" \
-  FALSE "intel"      "Fix Intel Screen Flicker (Fix parpadeo pantalla)" \
-  TRUE  "extensions" "Extensiones GNOME (Dash to Dock, Magic Lamp, etc.)" \
-  TRUE  "opencode"   "OpenCode CLI (Asistente de IA para Terminal)" \
-  --hide-column=2 --separator=" ")
+# ── Selección de Componentes ──────────────────────────────────────────────
+show_component_menu() {
+    local cmd=(dialog --backtitle "Fedora Setup" --title "Seleccionar Componentes" \
+        --checklist "Marca los componentes a instalar:" 18 70 12)
+    
+    local options=(
+        "terminal"  "Terminal Moderna (zsh, Starship, eza, bat, fzf...)" on
+        "vscode"    "Visual Studio Code + Extensiones" on
+        "git"       "Git + Clave SSH para GitHub" on
+        "theme"     "Temas macOS (GTK, Iconos, GDM, Firefox)" on
+        "intel"     "Fix Intel Screen Flicker" off
+        "extensions" "Extensiones GNOME" on
+        "opencode"  "OpenCode CLI (Asistente IA)" on
+    )
+    
+    local selected=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)
+    echo "$selected"
+}
 
-if [ -z "$SELECTED" ]; then
-  info "Instalación cancelada por el usuario."
-  exit 0
-fi
+# ── Selector de Tema Starship ─────────────────────────────────────────────
+show_starship_menu() {
+    local cmd=(dialog --backtitle "Fedora Setup" --title "Tema de Starship" \
+        --radiolist "Selecciona el tema para tu terminal:" 20 60 12)
+    
+    local options=(
+        "tokyo-night"           "🌙 Tokyo Night (oscuro, recomendado)" on
+        "pastel-powerline"      "🎨 Pastel Powerline (claro)" off
+        "gruvbox-rainbow"       "🟤 Gruvbox Rainbow (oscuro)" off
+        "catppuccin-powerline"  "🟣 Catppuccin Powerline (oscuro)" off
+        "jetpack"               "🚀 Jetpack (minimalista)" off
+        "pure-preset"           "⚡ Pure Prompt (clásico)" off
+    )
+    
+    local theme=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)
+    echo "$theme"
+}
 
-# Si terminal está seleccionado, pedir tema de Starship
-if echo "$SELECTED" | grep -qw "terminal"; then
-  THEME=$(zenity --list --radiolist --title="Tema de Starship" \
-      --width=600 --height=450 \
-      --column="Seleccionar" --column="ID" --column="Tema" \
-      TRUE  "tokyo-night"            "🌙 Tokyo Night (oscuro, recomendado)" \
-      FALSE "pastel-powerline"        "🎨 Pastel Powerline (claro)" \
-      FALSE "gruvbox-rainbow"         "🟤 Gruvbox Rainbow (oscuro)" \
-      FALSE "catppuccin-powerline"    "🟣 Catppuccin Powerline (oscuro)" \
-      FALSE "jetpack"                 "🚀 Jetpack (minimalista)" \
-      FALSE "pure-preset"             "⚡ Pure Prompt (clásico)" \
-      FALSE "nerd-font-symbols"       "🔣 Nerd Font Symbols" \
-      FALSE "no-nerd-font"            "🔤 Sin Nerd Font" \
-      FALSE "bracketed-segments"      "🔲 Bracketed Segments" \
-      FALSE "plain-text"               "📝 Plain Text" \
-      FALSE "no-runtimes"             "🚫 Sin Runtime Versions" \
-      FALSE "no-empty-icons"          "🚫 Sin Iconos Vacíos" \
-      --hide-column=2)
-  
-  if [ -n "$THEME" ]; then
-    export TERMINAL_THEME="$THEME"
-    info "Tema seleccionado: $TERMINAL_THEME"
-  fi
-fi
+# ── Menú Alternativo (sin dialog) ─────────────────────────────────────────
+show_menu_simple() {
+    echo "╔═══════════════════════════════════════════════════════════════╗"
+    echo "║     Fedora 43 Setup - Huawei Matebook 14                     ║"
+    echo "╚═══════════════════════════════════════════════════════════════╝"
+    echo ""
+    echo "  [1] Instalar TODOS los componentes"
+    echo "  [2] Seleccionar componentes específicos"
+    echo "  [3] Salir"
+    echo ""
+    read -p "Selecciona una opción [1-3]: " choice
+    echo ""
+    echo "$choice"
+}
 
-chmod +x "$SCRIPT_DIR"/scripts/*.sh
-info "Preparando la ejecución..."
+show_component_menu_simple() {
+    local -A selected
+    selected[terminal]=false
+    selected[vscode]=false
+    selected[git]=false
+    selected[theme]=false
+    selected[intel]=false
+    selected[extensions]=false
+    selected[opencode]=false
+    
+    while true; do
+        echo ""
+        echo "═══════════════════════════════════════════════════════════════"
+        echo "  SELECCIONA LOS COMPONENTES A INSTALAR"
+        echo "═══════════════════════════════════════════════════════════════"
+        echo ""
+        
+        echo "  [1] Terminal Moderna (zsh, Starship, eza, bat, fzf...)   $([ "${selected[terminal]}" = true ] && echo "[✓]" || echo "[ ]")"
+        echo "  [2] Visual Studio Code + Extensiones                      $([ "${selected[vscode]}" = true ] && echo "[✓]" || echo "[ ]")"
+        echo "  [3] Git + Clave SSH para GitHub                           $([ "${selected[git]}" = true ] && echo "[✓]" || echo "[ ]")"
+        echo "  [4] Temas macOS (GTK, Iconos, GDM, Firefox)              $([ "${selected[theme]}" = true ] && echo "[✓]" || echo "[ ]")"
+        echo "  [5] Fix Intel Screen Flicker                             $([ "${selected[intel]}" = true ] && echo "[✓]" || echo "[ ]")"
+        echo "  [6] Extensiones GNOME                                    $([ "${selected[extensions]}" = true ] && echo "[✓]" || echo "[ ]")"
+        echo "  [7] OpenCode CLI (Asistente IA)                         $([ "${selected[opencode]}" = true ] && echo "[✓]" || echo "[ ]")"
+        echo ""
+        echo "  [A] Continuar con la instalación"
+        echo "  [Q] Cancelar y salir"
+        echo ""
+        read -p "  Opción (número para togglear, A para continuar): " input
+        
+        case "$input" in
+            1)   if [ "${selected[terminal]}" = true ]; then selected[terminal]=false; else selected[terminal]=true; fi ;;
+            2)   if [ "${selected[vscode]}" = true ]; then selected[vscode]=false; else selected[vscode]=true; fi ;;
+            3)   if [ "${selected[git]}" = true ]; then selected[git]=false; else selected[git]=true; fi ;;
+            4)   if [ "${selected[theme]}" = true ]; then selected[theme]=false; else selected[theme]=true; fi ;;
+            5)   if [ "${selected[intel]}" = true ]; then selected[intel]=false; else selected[intel]=true; fi ;;
+            6)   if [ "${selected[extensions]}" = true ]; then selected[extensions]=false; else selected[extensions]=true; fi ;;
+            7)   if [ "${selected[opencode]}" = true ]; then selected[opencode]=false; else selected[opencode]=true; fi ;;
+            a|A) break ;;
+            q|Q) exit 0 ;;
+        esac
+    done
+    
+    local result=""
+    for key in "${!selected[@]}"; do
+        if [ "${selected[$key]}" = true ]; then
+            result="$result $key"
+        fi
+    done
+    echo "$result"
+}
 
-# Agregar tema de terminal si está seleccionado
-TERMINAL_ARG=""
-if [ -n "$TERMINAL_THEME" ]; then
-  SELECTED="$SELECTED"
-  TERMINAL_ARG="$TERMINAL_THEME"
-fi
+show_starship_menu_simple() {
+    echo ""
+    echo "═══════════════════════════════════════════════════════════════"
+    echo "  SELECCIONA EL TEMA DE STARSHIP"
+    echo "═══════════════════════════════════════════════════════════════"
+    echo ""
+    echo "  [1] 🌙 Tokyo Night (oscuro, recomendado)"
+    echo "  [2] 🎨 Pastel Powerline (claro)"
+    echo "  [3] 🟤 Gruvbox Rainbow (oscuro)"
+    echo "  [4] 🟣 Catppuccin Powerline (oscuro)"
+    echo "  [5] 🚀 Jetpack (minimalista)"
+    echo "  [6] ⚡ Pure Prompt (clásico)"
+    echo ""
+    read -p "Selecciona tema [1-6]: " choice
+    
+    case "$choice" in
+        1) echo "tokyo-night" ;;
+        2) echo "pastel-powerline" ;;
+        3) echo "gruvbox-rainbow" ;;
+        4) echo "catppuccin-powerline" ;;
+        5) echo "jetpack" ;;
+        6) echo "pure-preset" ;;
+        *) echo "tokyo-night" ;;
+    esac
+}
 
-TERM_CMD=""
-if command -v ptyxis &>/dev/null; then
-  TERM_CMD="ptyxis --title='Instalación de Fedora Setup' -e"
-elif command -v gnome-terminal &>/dev/null; then
-  TERM_CMD="gnome-terminal --title='Instalación de Fedora Setup' --"
-elif command -v kgx &>/dev/null; then
-  TERM_CMD="kgx --title='Instalación de Fedora Setup' -e"
-elif command -v gnome-console &>/dev/null; then
-  TERM_CMD="gnome-console --title='Instalación de Fedora Setup' -e"
-fi
+# ── Main ───────────────────────────────────────────────────────────────────
+main() {
+    print_banner
+    
+    # Detectar si hay dialog disponible
+    if command -v dialog &>/dev/null && [ -t 1 ]; then
+        USE_DIALOG=1
+    else
+        USE_DIALOG=0
+    fi
+    
+    # Menú principal
+    if [ "$USE_DIALOG" -eq 1 ]; then
+        choice=$(show_menu)
+    else
+        choice=$(show_menu_simple)
+    fi
+    
+    case "$choice" in
+        1)  # Todos los componentes
+            SELECTED="terminal vscode git theme intel extensions opencode"
+            ;;
+        2)  # Seleccionar componentes
+            if [ "$USE_DIALOG" -eq 1 ]; then
+                SELECTED=$(show_component_menu)
+            else
+                SELECTED=$(show_component_menu_simple)
+            fi
+            ;;
+        3|*)
+            info "Instalación cancelada."
+            exit 0
+            ;;
+    esac
+    
+    if [ -z "$SELECTED" ]; then
+        info "No se seleccionaron componentes."
+        exit 0
+    fi
+    
+    # Si terminal está seleccionado, pedir tema
+    if echo "$SELECTED" | grep -qw "terminal"; then
+        if [ "$USE_DIALOG" -eq 1 ]; then
+            THEME=$(show_starship_menu)
+        else
+            THEME=$(show_starship_menu_simple)
+        fi
+        
+        if [ -n "$THEME" ]; then
+            export TERMINAL_THEME="$THEME"
+            info "Tema seleccionado: $TERMINAL_THEME"
+        fi
+    fi
+    
+    echo ""
+    info "Componentes a instalar: $SELECTED"
+    echo ""
+    read -p "¿Continuar con la instalación? [s/N]: " confirm
+    if [[ ! "$confirm" =~ ^[sS]$ ]]; then
+        info "Instalación cancelada."
+        exit 0
+    fi
+    
+    chmod +x "$SCRIPT_DIR"/scripts/*.sh
+    
+    # Ejecutar scripts
+    info "Iniciando instalación..."
+    echo ""
+    
+    if [ -n "$TERMINAL_THEME" ]; then
+        TERMINAL_THEME="$TERMINAL_THEME" bash "$SCRIPT_DIR/scripts/gui-launcher.sh" $SELECTED
+    else
+        bash "$SCRIPT_DIR/scripts/gui-launcher.sh" $SELECTED
+    fi
+}
 
-if [ -n "$TERM_CMD" ]; then
-  info "Iniciando instalación en una nueva ventana de terminal..."
-  if [ -n "$TERMINAL_ARG" ]; then
-    $TERM_CMD bash -c "TERMINAL_THEME=$TERMINAL_ARG $SCRIPT_DIR/scripts/gui-launcher.sh $SELECTED"
-  else
-    $TERM_CMD bash -c "$SCRIPT_DIR/scripts/gui-launcher.sh $SELECTED"
-  fi
-  zenity --info --title="Proceso Iniciado" --width=400 \
-    --text="✅ La instalación ha comenzado en una ventana de terminal independiente.\n\nPor favor, sigue las instrucciones en esa ventana."
-else
-  info "No se detectÃ³ un emulador de terminal grÃ¡fico. Ejecutando en la terminal actual..."
-  echo ""
-  if [ -n "$TERMINAL_ARG" ]; then
-    TERMINAL_THEME="$TERMINAL_ARG" bash "$SCRIPT_DIR/scripts/gui-launcher.sh" $SELECTED
-  else
-    bash "$SCRIPT_DIR/scripts/gui-launcher.sh" $SELECTED
-  fi
-fi
+main "$@"
