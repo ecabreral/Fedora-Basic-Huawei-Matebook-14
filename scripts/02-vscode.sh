@@ -42,6 +42,12 @@ fi
 
 echo "✔️ Este es el método oficial para Fedora"
 
+# Verificar si VS Code se instaló correctamente
+if ! command -v code &>/dev/null; then
+  warn "VS Code no se encontró después de la instalación. Omitiendo configuración."
+  exit 0
+fi
+
 # ── 3. Configuración inicial de VS Code ───────────────────────────────────────
 section "⚙️  Configurando VS Code"
 
@@ -53,6 +59,7 @@ fi
 # Crear directorio de configuración
 VSCODE_CONFIG_DIR="/home/$REAL_USER/.config/Code/User"
 mkdir -p "$VSCODE_CONFIG_DIR"
+chown -R "$REAL_USER":"$REAL_USER" "/home/$REAL_USER/.config" 2>/dev/null || true
 
 cat > "$VSCODE_CONFIG_DIR/settings.json" << 'SETTINGS'
 {

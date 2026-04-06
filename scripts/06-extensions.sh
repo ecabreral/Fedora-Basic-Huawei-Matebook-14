@@ -21,7 +21,11 @@ else
     gnome-extensions install "https://extensions.gnome.org/extension/307/dash-to-dock/" 2>/dev/null || \
       info "Dash to Dock ya instalado o requiere instalación manual"
 fi
-gsettings set org.gnome.shell.extensions.dash-to-dock click-action 'focus-minimize-or-appspread'
+
+# Configurar Dash to Dock solo si está instalado
+if gnome-extensions list | grep -q "dash-to-dock"; then
+    gsettings set org.gnome.shell.extensions.dash-to-dock click-action 'focus-minimize-or-appspread' 2>/dev/null || true
+fi
 
 # ── Magic Lamp Effect (desde tu repositorio) ───────────────────────────────────
 info "Instalando Compiz Alike Magic Lamp Effect..."
