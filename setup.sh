@@ -3,7 +3,7 @@
 # setup.sh - Instalador en CONSOLA para Fedora 43 en Matebook 14
 # ==============================================================================
 
-set +e  # No salir en errores
+set +e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/scripts/lib.sh"
@@ -15,96 +15,6 @@ print_banner() {
     echo "║     Configuración automatizada en terminal                   ║"
     echo "╚═══════════════════════════════════════════════════════════════╝"
     echo ""
-}
-
-main() {
-    print_banner
-    
-    # Detectar si hay dialog disponible
-    if command -v dialog &>/dev/null && [ -t 1 ]; then
-        USE_DIALOG=1
-    else
-        USE_DIALOG=0
-    fi
-    
-    echo "  [1] Instalar TODOS los componentes"
-    echo "  [2] Seleccionar componentes específicos"
-    echo "  [3] Salir"
-    echo ""
-    echo "  Escribe el número y presiona ENTER"
-    echo ""
-    read -p "Selecciona una opción [1-3]: " choice
-    echo ""
-    
-    case "$choice" in
-        1)  # Todos los componentes
-            SELECTED="terminal vscode git theme intel extensions opencode"
-            ;;
-        2)  # Seleccionar componentes específicos
-            SELECTED=$(show_component_menu_simple)
-            ;;
-        3|*)
-            info "Instalación cancelada."
-            exit 0
-            ;;
-    esac
-    
-    local choice=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)
-    echo "$choice"
-}
-
-# ── Selección de Componentes ──────────────────────────────────────────────
-show_component_menu() {
-    local cmd=(dialog --backtitle "Fedora Setup" --title "Seleccionar Componentes" \
-        --checklist "Marca los componentes a instalar:" 18 70 12)
-    
-    local options=(
-        "terminal"  "Terminal Moderna (zsh, Starship, eza, bat, fzf...)" on
-        "vscode"    "Visual Studio Code + Extensiones" on
-        "git"       "Git + Clave SSH para GitHub" on
-        "theme"     "Temas macOS (GTK, Iconos, GDM, Firefox)" on
-        "intel"     "Fix Intel Screen Flicker" off
-        "extensions" "Extensiones GNOME" on
-        "opencode"  "OpenCode CLI (Asistente IA)" on
-    )
-    
-    local selected=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)
-    echo "$selected"
-}
-
-# ── Selector de Tema Starship ─────────────────────────────────────────────
-show_starship_menu() {
-    local cmd=(dialog --backtitle "Fedora Setup" --title "Tema de Starship" \
-        --radiolist "Selecciona el tema para tu terminal:" 20 60 12)
-    
-    local options=(
-        "tokyo-night"           "🌙 Tokyo Night (oscuro, recomendado)" on
-        "pastel-powerline"      "🎨 Pastel Powerline (claro)" off
-        "gruvbox-rainbow"       "🟤 Gruvbox Rainbow (oscuro)" off
-        "catppuccin-powerline"  "🟣 Catppuccin Powerline (oscuro)" off
-        "jetpack"               "🚀 Jetpack (minimalista)" off
-        "pure-preset"           "⚡ Pure Prompt (clásico)" off
-    )
-    
-    local theme=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)
-    echo "$theme"
-}
-
-# ── Menú Alternativo (sin dialog) ─────────────────────────────────────────
-show_menu_simple() {
-    echo "╔═══════════════════════════════════════════════════════════════╗"
-    echo "║     Fedora 43 Setup - Huawei Matebook 14                     ║"
-    echo "╚═══════════════════════════════════════════════════════════════╝"
-    echo ""
-    echo "  [1] Instalar TODOS los componentes"
-    echo "  [2] Seleccionar componentes específicos"
-    echo "  [3] Salir"
-    echo ""
-    echo "  Escribe el número y presiona ENTER"
-    echo ""
-    read -p "Selecciona una opción [1-3]: " choice
-    echo ""
-    echo "$choice"
 }
 
 show_component_menu_simple() {
@@ -151,7 +61,7 @@ show_component_menu_simple() {
     done
     
     local result=""
-    for key in "${!selected[@]}"; do
+    for key in terminal vscode git theme intel extensions opencode; do
         if [ "${selected[$key]}" = true ]; then
             result="$result $key"
         fi
@@ -185,34 +95,24 @@ show_starship_menu_simple() {
     esac
 }
 
-# ── Main ───────────────────────────────────────────────────────────────────
 main() {
     print_banner
     
-    # Detectar si hay dialog disponible
-    if command -v dialog &>/dev/null && [ -t 1 ]; then
-        USE_DIALOG=1
-    else
-        USE_DIALOG=0
-    fi
-    
-    # Menú principal
-    if [ "$USE_DIALOG" -eq 1 ]; then
-        choice=$(show_menu)
-    else
-        choice=$(show_menu_simple)
-    fi
+    echo "  [1] Instalar TODOS los componentes"
+    echo "  [2] Seleccionar componentes específicos"
+    echo "  [3] Salir"
+    echo ""
+    echo "  Escribe el número y presiona ENTER"
+    echo ""
+    read -p "Selecciona una opción [1-3]: " choice
+    echo ""
     
     case "$choice" in
-        1)  # Todos los componentes
+        1)
             SELECTED="terminal vscode git theme intel extensions opencode"
             ;;
-        2)  # Seleccionar componentes
-            if [ "$USE_DIALOG" -eq 1 ]; then
-                SELECTED=$(show_component_menu)
-            else
-                SELECTED=$(show_component_menu_simple)
-            fi
+        2)
+            SELECTED=$(show_component_menu_simple)
             ;;
         3|*)
             info "Instalación cancelada."
@@ -225,14 +125,8 @@ main() {
         exit 0
     fi
     
-    # Si terminal está seleccionado, pedir tema
     if echo "$SELECTED" | grep -qw "terminal"; then
-        if [ "$USE_DIALOG" -eq 1 ]; then
-            THEME=$(show_starship_menu)
-        else
-            THEME=$(show_starship_menu_simple)
-        fi
-        
+        THEME=$(show_starship_menu_simple)
         if [ -n "$THEME" ]; then
             export TERMINAL_THEME="$THEME"
             info "Tema seleccionado: $TERMINAL_THEME"
@@ -240,7 +134,7 @@ main() {
     fi
     
     echo ""
-    info "Componentes a instalar: $SELECTED"
+    info "Componentes a instalar:$SELECTED"
     echo ""
     read -p "¿Continuar con la instalación? [s/N]: " confirm
     if [[ ! "$confirm" =~ ^[sS]$ ]]; then
@@ -250,7 +144,6 @@ main() {
     
     chmod +x "$SCRIPT_DIR"/scripts/*.sh
     
-    # Ejecutar scripts
     info "Iniciando instalación..."
     echo ""
     
