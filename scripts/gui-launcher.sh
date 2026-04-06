@@ -124,7 +124,7 @@ for ID in "${SELECTED_IDS[@]}"; do
 done
 
 # ── Agregar OpenCode al PATH ─────────────────────────────────────────────
-if [ -d "$HOME/.opencode/bin" ]; then
+if command -v opencode &>/dev/null; then
   if ! grep -q '\.opencode/bin' ~/.zshrc 2>/dev/null; then
     info "Agregando OpenCode al PATH..."
     echo 'export PATH="$HOME/.opencode/bin:$PATH"' >> ~/.zshrc

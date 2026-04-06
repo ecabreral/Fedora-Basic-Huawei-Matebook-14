@@ -93,10 +93,12 @@ Todos los scripts verifican si un componente ya está instalado antes de procede
 
 ### 📋 OpenCode PATH Automático
 
-Al final de cada instalación, automáticamente se agrega OpenCode al PATH:
+Al final de la instalación, si OpenCode está instalado y funciona, se agrega automáticamente al PATH:
 ```bash
 export PATH="$HOME/.opencode/bin:$PATH"
 ```
+
+Solo se agrega si el comando `opencode` está disponible en el sistema.
 
 ---
 
