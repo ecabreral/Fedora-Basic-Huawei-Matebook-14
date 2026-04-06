@@ -70,29 +70,30 @@ show_component_menu_simple() {
 }
 
 show_starship_menu_simple() {
-    echo ""
-    echo "═══════════════════════════════════════════════════════════════"
-    echo "  SELECCIONA EL TEMA DE STARSHIP"
-    echo "═══════════════════════════════════════════════════════════════"
-    echo ""
-    echo "  [1] 🌙 Tokyo Night (oscuro, recomendado)"
-    echo "  [2] 🎨 Pastel Powerline (claro)"
-    echo "  [3] 🟤 Gruvbox Rainbow (oscuro)"
-    echo "  [4] 🟣 Catppuccin Powerline (oscuro)"
-    echo "  [5] 🚀 Jetpack (minimalista)"
-    echo "  [6] ⚡ Pure Prompt (clásico)"
-    echo ""
-    read -p "Selecciona tema [1-6]: " choice
-    
-    case "$choice" in
-        1) echo "tokyo-night" ;;
-        2) echo "pastel-powerline" ;;
-        3) echo "gruvbox-rainbow" ;;
-        4) echo "catppuccin-powerline" ;;
-        5) echo "jetpack" ;;
-        6) echo "pure-preset" ;;
-        *) echo "tokyo-night" ;;
-    esac
+    while true; do
+        echo ""
+        echo "═══════════════════════════════════════════════════════════════"
+        echo "  SELECCIONA EL TEMA DE STARSHIP"
+        echo "═══════════════════════════════════════════════════════════════"
+        echo ""
+        echo "  [1] 🌙 Tokyo Night (oscuro, recomendado)"
+        echo "  [2] 🎨 Pastel Powerline (claro)"
+        echo "  [3] 🟤 Gruvbox Rainbow (oscuro)"
+        echo "  [4] 🟣 Catppuccin Powerline (oscuro)"
+        echo "  [5] 🚀 Jetpack (minimalista)"
+        echo "  [6] ⚡ Pure Prompt (clásico)"
+        echo ""
+        read -p "Selecciona tema [1-6]: " choice
+        
+        case "$choice" in
+            1)  echo "tokyo-night"; return ;;
+            2)  echo "pastel-powerline"; return ;;
+            3)  echo "gruvbox-rainbow"; return ;;
+            4)  echo "catppuccin-powerline"; return ;;
+            5)  echo "jetpack"; return ;;
+            6)  echo "pure-preset"; return ;;
+        esac
+    done
 }
 
 main() {
