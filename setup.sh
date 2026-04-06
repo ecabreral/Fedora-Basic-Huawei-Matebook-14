@@ -85,7 +85,9 @@ if [ -n "$TERMINAL_THEME" ]; then
 fi
 
 TERM_CMD=""
-if command -v gnome-terminal &>/dev/null; then
+if command -v ptyxis &>/dev/null; then
+  TERM_CMD="ptyxis --title='Instalación de Fedora Setup' -e"
+elif command -v gnome-terminal &>/dev/null; then
   TERM_CMD="gnome-terminal --title='Instalación de Fedora Setup' --"
 elif command -v kgx &>/dev/null; then
   TERM_CMD="kgx --title='Instalación de Fedora Setup' -e"

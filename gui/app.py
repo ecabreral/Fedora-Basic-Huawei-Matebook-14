@@ -238,12 +238,14 @@ class App(tk.Tk):
             cmd_str += " " + theme
 
         term_cmd = None
-        for prog in ["kgx", "gnome-terminal", "xterm", "konsole", "mate-terminal", "tilix", "terminator"]:
+        for prog in ["ptyxis", "kgx", "gnome-terminal", "xterm", "konsole", "mate-terminal", "tilix", "terminator"]:
             if shutil.which(prog):
                 term_cmd = prog
                 break
 
-        if term_cmd == "kgx":
+        if term_cmd == "ptyxis":
+            subprocess.Popen(["ptyxis", "--title", "Fedora Setup", "-e", cmd_str])
+        elif term_cmd == "kgx":
             subprocess.Popen(["kgx", "--title", "Fedora Setup", "-e", cmd_str])
         elif term_cmd == "gnome-terminal":
             subprocess.Popen(["gnome-terminal", "--title", "Fedora Setup", "--", cmd_str])
@@ -258,7 +260,7 @@ class App(tk.Tk):
         elif term_cmd == "terminator":
             subprocess.Popen(["terminator", "-t", "Fedora Setup", "-e", cmd_str])
         else:
-            self._console.write(f"\n❌ No se encontró terminal interactiva. Buscando en: kgx, gnome-terminal, konsole, tilix, terminator...\n", "error")
+            self._console.write(f"\n❌ No se encontró terminal interactiva. Buscando en: ptyxis, kgx, gnome-terminal, konsole, tilix, terminator...\n", "error")
             return
 
         self._console.write(f"\n✅ Instalación iniciada en terminal ({term_cmd}).\n", "success")
