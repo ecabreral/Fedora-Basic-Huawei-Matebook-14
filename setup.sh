@@ -3,12 +3,11 @@
 # setup.sh - Instalador en CONSOLA para Fedora 43 en Matebook 14
 # ==============================================================================
 
-set -e
+set +e  # No salir en errores
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/scripts/lib.sh"
 
-# ── Título Banner ─────────────────────────────────────────────────────────
 print_banner() {
     echo ""
     echo "╔═══════════════════════════════════════════════════════════════╗"
@@ -18,16 +17,37 @@ print_banner() {
     echo ""
 }
 
-# ── Menú Principal (ncurses) ──────────────────────────────────────────────
-show_menu() {
-    local options=(
-        "1" "Instalar TODOS los componentes"
-        "2" "Seleccionar componentes específicos"
-        "3" "Salir"
-    )
+main() {
+    print_banner
     
-    local cmd=(dialog --backtitle "Fedora Setup" --title "Menú Principal" \
-        --menu "Elige una opción:" 15 60 8)
+    # Detectar si hay dialog disponible
+    if command -v dialog &>/dev/null && [ -t 1 ]; then
+        USE_DIALOG=1
+    else
+        USE_DIALOG=0
+    fi
+    
+    echo "  [1] Instalar TODOS los componentes"
+    echo "  [2] Seleccionar componentes específicos"
+    echo "  [3] Salir"
+    echo ""
+    echo "  Escribe el número y presiona ENTER"
+    echo ""
+    read -p "Selecciona una opción [1-3]: " choice
+    echo ""
+    
+    case "$choice" in
+        1)  # Todos los componentes
+            SELECTED="terminal vscode git theme intel extensions opencode"
+            ;;
+        2)  # Seleccionar componentes específicos
+            SELECTED=$(show_component_menu_simple)
+            ;;
+        3|*)
+            info "Instalación cancelada."
+            exit 0
+            ;;
+    esac
     
     local choice=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)
     echo "$choice"
