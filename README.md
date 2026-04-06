@@ -27,7 +27,7 @@ Fedora-Basic-Huawei-Matebook-14/
 │   ├── 07-opencode.sh          # OpenCode CLI: Asistente de IA para terminal
 │   └── cleanup.sh              # Elimina Oh My Zsh (opcional)
 ├── config/
-│   └── starship.toml           # Preset Pastel Powerline para Starship
+│   └── starship.toml           # Preset para Starship (sin uso)
 └── docs/
     ├── dash-to-dock.md         # Guía de configuración de Dash to Dock
     └── copyous-troubleshooting.md  # Solución de problemas de Copyous
@@ -41,13 +41,15 @@ El instalador funciona completamente en terminal:
 
 ```
 ╔═══════════════════════════════════════════════════════════════╗
-║     Fedora 43 Setup - Huawei Matebook 14                     ║
+║     Fedora Setup - Huawei Matebook 14                        ║
 ║     Configuración automatizada en terminal                   ║
 ╚═══════════════════════════════════════════════════════════════╝
 
   [1] Instalar TODOS los componentes
   [2] Seleccionar componentes específicos
   [3] Salir
+
+  Escribe el número y presiona ENTER
 ```
 
 - **Menú interactivo** - Escribe el número y presiona ENTER
@@ -65,7 +67,7 @@ El instalador funciona completamente en terminal:
 | 3 | Git | Configuración global + clave SSH para GitHub |
 | 4 | Temas | GTK, Iconos, Shell estilo macOS |
 | 5 | Intel Fix | Solución parpadeo pantalla (opcional) |
-| 6 | Extensiones | Dash to Dock, Magic Lamp, Night Theme Switcher |
+| 6 | Extensiones | Dash to Dock, Magic Lamp, Night Theme Switcher, Copyous |
 | 7 | OpenCode CLI | Asistente de IA para terminal |
 
 ---
@@ -190,7 +192,7 @@ sudo dnf install code
 
 ---
 
-### OpenCode CLI — `scripts/07-opencode.sh`
+## OpenCode CLI — `scripts/07-opencode.sh`
 
 Instala el intérprete de IA **OpenCode** para usar directamente desde la terminal.
 
@@ -198,17 +200,17 @@ Instala el intérprete de IA **OpenCode** para usar directamente desde la termin
 
 ## Requisitos
 
-- **Fedora 43** con **GNOME**
+- **Fedora 43/44** con **GNOME**
 - Ninguna dependencia adicional requerida (todo funciona en consola)
 
 ---
 
 ## Notas
 
-- Probado en **Fedora 43** con **GNOME**
+- Probado en **Fedora 43 y 44** con **GNOME**
 - `setup.sh` detecta automáticamente si hay GPU Intel y omite el fix si no aplica
 - Todos los scripts son **idempotentes**
-- El PATH de OpenCode se agrega automáticamente
+- El PATH de OpenCode se agrega automáticamente solo si está instalado
 
 ---
 
