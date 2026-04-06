@@ -29,10 +29,15 @@ else
 
   # 3. Instalar
   info "Actualizando repositorios..."
-  sudo dnf check-update
+  sudo dnf check-update || true
   info "Instalando Visual Studio Code..."
-  sudo dnf install -y code
-  success "Visual Studio Code instalado."
+  if sudo dnf install -y code; then
+    success "Visual Studio Code instalado."
+  else
+    error "Error al instalar VS Code. Intentando método alternativo..."
+    # Intentar instalar sin -y (para Fedora nuevo)
+    sudo dnf install code || warn "No se pudo instalar VS Code."
+  fi
 fi
 
 echo "✔️ Este es el método oficial para Fedora"
