@@ -69,6 +69,16 @@ else
       info "Night Theme Switcher ya instalado o requiere instalación manual"
 fi
 
+# ── Función helper para abrir URLs ─────────────────────────────────────────────
+open_url() {
+    local url="$1"
+    if command -v xdg-open &>/dev/null; then
+        xdg-open "$url" &
+    else
+        echo "  🔗 $url"
+    fi
+}
+
 # ── Abrir páginas de extensiones ─────────────────────────────────────────────
 info "Abriendo páginas de extensiones GNOME en tu navegador para activar..."
 echo ""
@@ -79,10 +89,15 @@ echo "  3. Copyous"
 echo "  4. Night Theme Switcher"
 echo ""
 
-xdg-open "https://extensions.gnome.org/extension/307/dash-to-dock/"             2>/dev/null &
-xdg-open "https://extensions.gnome.org/extension/3740/compiz-alike-magic-lamp-effect/" 2>/dev/null &
-xdg-open "https://extensions.gnome.org/extension/8834/copyous/"                  2>/dev/null &
-xdg-open "https://extensions.gnome.org/extension/2236/night-theme-switcher/"     2>/dev/null &
+open_url "https://extensions.gnome.org/extension/307/dash-to-dock/"
+open_url "https://extensions.gnome.org/extension/3740/compiz-alike-magic-lamp-effect/"
+open_url "https://extensions.gnome.org/extension/8834/copyous/"
+open_url "https://extensions.gnome.org/extension/2236/night-theme-switcher/"
+
+if ! command -v xdg-open &>/dev/null; then
+    echo ""
+    echo "  ⚠️ No se detectó navegador. Copia las URLs arriba y ábrelas manualmente."
+fi
 
 echo ""
 read -p "  Presiona ENTER para continuar después de activar las extensiones... "

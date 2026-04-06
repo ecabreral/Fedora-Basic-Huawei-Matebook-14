@@ -80,7 +80,22 @@ fi
 # ── 6. Guiar para añadir en GitHub ────────────────────────────────────────────
 section "🌐 Añadir clave a GitHub"
 info "Abriendo GitHub → Settings → SSH Keys..."
-xdg-open "https://github.com/settings/keys" 2>/dev/null &
+
+# Función helper para abrir URLs
+open_url() {
+    local url="$1"
+    if command -v xdg-open &>/dev/null; then
+        xdg-open "$url" &
+    else
+        echo "  🔗 $url"
+    fi
+}
+
+open_url "https://github.com/settings/keys"
+
+if ! command -v xdg-open &>/dev/null; then
+    echo "  ⚠️ No se detectó navegador. Copia la URL arriba y ábrela manualmente."
+fi
 
 echo ""
 echo "  1. En la página que se abrió, haz clic en 'New SSH key'"
