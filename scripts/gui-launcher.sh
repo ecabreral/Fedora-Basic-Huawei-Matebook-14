@@ -52,6 +52,16 @@ step() {
 
 for ID in "${SELECTED_IDS[@]}"; do
   case "$ID" in
+    "base")
+      step "Sistema Base (Repositorios, Códecs, VA-API, Flatpak)"
+      set +e
+      sudo "$SCRIPT_DIR/scripts/00-base-system.sh"
+      RESULT=$?
+      set -e
+      if [ $RESULT -ne 0 ]; then
+        warn "Error en sistema base. Continuando..."
+      fi
+      ;;
     "terminal")
       step "Terminal & Herramientas"
       THEME="${TERMINAL_THEME:-tokyo-night}"
@@ -149,6 +159,7 @@ echo ""
 echo "  Resumen de lo configurado:"
 for ID in "${SELECTED_IDS[@]}"; do
   case "$ID" in
+    "base")        echo "   • Sistema Base (RPM Fusion, códecs, VA-API, Flatpak)" ;;
     "terminal")   echo "   • Terminal moderna (zsh, Starship, eza...)" ;;
     "vscode")     echo "   • Visual Studio Code + Configuración" ;;
     "git")        echo "   • Git & Clave SSH para GitHub" ;;

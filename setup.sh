@@ -19,6 +19,7 @@ print_banner() {
 
 show_component_menu_simple() {
     local -A selected
+    selected[base]=false
     selected[terminal]=false
     selected[vscode]=false
     selected[git]=false
@@ -34,6 +35,7 @@ show_component_menu_simple() {
         echo "═══════════════════════════════════════════════════════════════" >&2
         echo "" >&2
         
+        echo "  [0] Sistema Base (Repositorios, Códecs, VA-API, Flatpak) $([ "${selected[base]}" = true ] && echo "[✓]" || echo "[ ]")" >&2
         echo "  [1] Terminal Moderna (zsh, Starship, eza, bat, fzf...)   $([ "${selected[terminal]}" = true ] && echo "[✓]" || echo "[ ]")" >&2
         echo "  [2] Visual Studio Code + Extensiones                      $([ "${selected[vscode]}" = true ] && echo "[✓]" || echo "[ ]")" >&2
         echo "  [3] Git + Clave SSH para GitHub                           $([ "${selected[git]}" = true ] && echo "[✓]" || echo "[ ]")" >&2
@@ -48,6 +50,7 @@ show_component_menu_simple() {
         read -p "  Opción (número para togglear, A para continuar): " input
         
         case "$input" in
+            0)   selected[base]=$([ "${selected[base]}" = true ] && echo false || echo true) ;;
             1)   selected[terminal]=$([ "${selected[terminal]}" = true ] && echo false || echo true) ;;
             2)   selected[vscode]=$([ "${selected[vscode]}" = true ] && echo false || echo true) ;;
             3)   selected[git]=$([ "${selected[git]}" = true ] && echo false || echo true) ;;
@@ -57,12 +60,12 @@ show_component_menu_simple() {
             7)   selected[opencode]=$([ "${selected[opencode]}" = true ] && echo false || echo true) ;;
             a|A) break ;;
             q|Q) exit 0 ;;
-            *)   echo "  ⚠ Opción inválida. Usa 1-7, A o Q" >&2 ;;
+            *)   echo "  ⚠ Opción inválida. Usa 0-7, A o Q" >&2 ;;
         esac
     done
     
     local result=""
-    for key in terminal vscode git theme intel extensions opencode; do
+    for key in base terminal vscode git theme intel extensions opencode; do
         if [ "${selected[$key]}" = true ]; then
             result="$result $key"
         fi
@@ -113,7 +116,7 @@ main() {
     
     case "$choice" in
         1)
-            SELECTED="terminal vscode git theme intel extensions opencode"
+            SELECTED="base terminal vscode git theme intel extensions opencode"
             ;;
         2)
             SELECTED=$(show_component_menu_simple)
