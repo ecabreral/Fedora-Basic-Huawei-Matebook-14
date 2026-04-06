@@ -70,6 +70,7 @@ show_component_menu_simple() {
 }
 
 show_starship_menu_simple() {
+    local theme=""
     while true; do
         echo ""
         echo "═══════════════════════════════════════════════════════════════"
@@ -86,14 +87,15 @@ show_starship_menu_simple() {
         read -p "Selecciona tema [1-6]: " choice
         
         case "$choice" in
-            1)  echo "tokyo-night"; return ;;
-            2)  echo "pastel-powerline"; return ;;
-            3)  echo "gruvbox-rainbow"; return ;;
-            4)  echo "catppuccin-powerline"; return ;;
-            5)  echo "jetpack"; return ;;
-            6)  echo "pure-preset"; return ;;
+            1)  theme="tokyo-night"; break ;;
+            2)  theme="pastel-powerline"; break ;;
+            3)  theme="gruvbox-rainbow"; break ;;
+            4)  theme="catppuccin-powerline"; break ;;
+            5)  theme="jetpack"; break ;;
+            6)  theme="pure-preset"; break ;;
         esac
     done
+    echo "$theme"
 }
 
 main() {
