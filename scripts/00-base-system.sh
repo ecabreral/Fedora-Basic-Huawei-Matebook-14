@@ -25,16 +25,6 @@ else
   success "RPM Fusion Non-Free instalado."
 fi
 
-section "🗃️ Habilitando Terra Repository"
-
-if rpm -q fedora-terra-release &>/dev/null; then
-  success "Terra Repository ya está instalado."
-else
-  info "Instalando Terra Repository..."
-  sudo dnf install -y fedora-terra-release
-  success "Terra Repository instalado."
-fi
-
 section "📊 Actualizando sistema"
 
 info "Actualizando paquetes del sistema..."
@@ -146,7 +136,6 @@ section "✅ Base System Setup completo"
 echo ""
 echo "  Resume del sistema:"
 echo "    • RPM Fusion: Free + Non-Free"
-echo "    • Terra Repository"
 echo "    • Códecs multimedia"
 echo "    • VA-API Intel (Hardware video acceleration)"
 echo "    • OpenH264"
