@@ -5,12 +5,8 @@ Colección de scripts para automatizar la configuración de Fedora Linux orienta
 ## Uso rápido
 
 ```bash
-./fedora-setup
-# o
 ./setup.sh
 ```
-
-> 🚀 **Novedad**: Ahora cuenta con una **interfaz gráfica profesional en Python** y **Zenity**. Al ejecutar `./fedora-setup` se abrirá una GUI donde podrás navegar por los componentes, seleccionar opciones e instalar con progreso en tiempo real. También puedes elegir el **tema de Starship** que más te guste (12 presets disponibles).
 
 ---
 
@@ -18,17 +14,7 @@ Colección de scripts para automatizar la configuración de Fedora Linux orienta
 
 ```
 Fedora-Basic-Huawei-Matebook-14/
-├── fedora-setup                 # ▶ Punto de entrada ejecutable
-├── setup.sh                    # Script principal
-├── main.py                     # Entry point de la GUI Python
-├── gui/                        # Módulo de GUI profesional
-│   ├── app.py                  # Ventana principal
-│   ├── theme.py                # Sistema de temas (tokens de diseño)
-│   └── widgets/                # Componentes reutilizables
-│       ├── button.py           # Botones estilizados
-│       ├── card.py             # Tarjetas
-│       ├── console.py          # Consola de salida
-│       └── progress.py         # Progress bar
+├── setup.sh                    # Instalador interactivo en consola
 ├── scripts/
 │   ├── lib.sh                  # Librería compartida (colores, helpers)
 │   ├── gui-launcher.sh         # Ejecutor de scripts seleccionados
@@ -49,41 +35,61 @@ Fedora-Basic-Huawei-Matebook-14/
 
 ---
 
-## Características Principales
+## Interfaz de Consola (TUI)
 
-### 🎨 Selector de Tema Starship (12 Presets)
+El instalador funciona completamente en terminal:
 
-Al instalar la Terminal, puedes elegir entre **12 temas diferentes** para Starship:
+```
+╔═══════════════════════════════════════════════════════════════╗
+║     Fedora 43 Setup - Huawei Matebook 14                     ║
+║     Configuración automatizada en terminal                   ║
+╚═══════════════════════════════════════════════════════════════╝
 
-| # | Preset | Estilo | Descripción |
-|---|--------|--------|-------------|
-| 1 | Tokyo Night | Oscuro | Inspirado en tokyo-night-vscode-theme |
-| 2 | Pastel Powerline | Claro | Inspirado en M365Princess |
-| 3 | Gruvbox Rainbow | Oscuro | Colores warm estilo retro |
-| 4 | Catppuccin Powerline | Oscuro | Paleta Catppuccin minimalista |
-| 5 | Jetpack | Minimalista | Inspirado en geometry/spaceship |
-| 6 | Pure Prompt | Clásico | Emula el look de Pure |
-| 7 | Nerd Font Symbols | Símbolos | Usa símbolos Nerd Font |
-| 8 | No Nerd Font | Sin símbolos | No usa Nerd Font |
-| 9 | Bracketed Segments | Formato | Segmentos entre paréntesis |
-| 10 | Plain Text | Texto | Solo texto plano |
-| 11 | No Runtime Versions | Utilidad | Oculta versiones de runtime |
-| 12 | No Empty Icons | Utilidad | No muestra iconos vacíos |
+  [1] Instalar TODOS los componentes
+  [2] Seleccionar componentes específicos
+  [3] Salir
+```
 
-**El selector aparece automáticamente** al elegir "Terminal Moderna" en:
-- **GUI Python**: RadioButtons para seleccionar tema
-- **GUI Zenity**: Lista de selección con `--hide-column=2`
+- **Menú interactivo** - Escribe el número y presiona ENTER
+- **Selección de componentes** - Toggles con números 1-7, [A] continuar, [Q] salir
+- **Selector de tema Starship** - 6 presets disponibles
 
 ---
+
+## Componentes
+
+| # | Componente | Descripción |
+|---|------------|-------------|
+| 1 | Terminal | zsh, Starship (6 temas), eza, bat, fzf, zoxide, fastfetch |
+| 2 | VS Code | Editor con configuración optimizada |
+| 3 | Git | Configuración global + clave SSH para GitHub |
+| 4 | Temas | GTK, Iconos, Shell estilo macOS |
+| 5 | Intel Fix | Solución parpadeo pantalla (opcional) |
+| 6 | Extensiones | Dash to Dock, Magic Lamp, Night Theme Switcher |
+| 7 | OpenCode CLI | Asistente de IA para terminal |
+
+---
+
+## Selector de Tema Starship (6 Presets)
+
+| # | Preset | Estilo |
+|---|--------|--------|
+| 1 | Tokyo Night | Oscuro (recomendado) |
+| 2 | Pastel Powerline | Claro |
+| 3 | Gruvbox Rainbow | Oscuro |
+| 4 | Catppuccin Powerline | Oscuro |
+| 5 | Jetpack | Minimalista |
+| 6 | Pure Prompt | Clásico |
+
+---
+
+## Características
 
 ### 🔄 Ejecución Idempotente
 
 Todos los scripts verifican si un componente ya está instalado antes de proceder:
 - Si ya está instalado → Omite la instalación
 - Si ya está configurado → Omite la configuración
-- Permite ejecutar múltiples veces sin efectos secundarios
-
----
 
 ### 📋 OpenCode PATH Automático
 
@@ -91,7 +97,6 @@ Al final de cada instalación, automáticamente se agrega OpenCode al PATH:
 ```bash
 export PATH="$HOME/.opencode/bin:$PATH"
 ```
-Se ejecuta `source ~/.zshrc` para que esté disponible inmediatamente.
 
 ---
 
@@ -102,7 +107,7 @@ Se ejecuta `source ~/.zshrc` para que esté disponible inmediatamente.
 | Herramienta | Descripción |
 |---|---|
 | `zsh` + Oh My Zsh | Shell moderna con plugins |
-| `starship` | Prompt configurable (12 temas) |
+| `starship` | Prompt configurable (6 temas) |
 | `eza` | `ls` moderno con iconos y colores |
 | `bat` | `cat` con syntax highlighting |
 | `fzf` | Búsqueda difusa en terminal |
@@ -128,68 +133,47 @@ Se ejecuta `source ~/.zshrc` para que esté disponible inmediatamente.
 
 ### 2. Visual Studio Code — `scripts/02-vscode.sh`
 
-**INSTALAR VS CODE CORRECTAMENTE EN FEDORA**
+Instala VS Code desde el repositorio oficial de Microsoft:
+```bash
+sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
+sudo dnf install code
+```
 
-Método recomendado (OFICIAL Microsoft):
-
-1. Agregar repo de Microsoft:
-   ```bash
-   sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
-   sudo sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo'
-   ```
-2. Instalar:
-   ```bash
-   sudo dnf check-update
-   sudo dnf install code
-   ```
-✔️ Este es el método oficial para Fedora.
-
-- El script también corrige permisos de `~/.config/Code` y `~/.vscode` para evitar problemas de propiedad.
-- Configura automáticamente `~/.config/Code/User/settings.json`:
-  - Tema claro → **GitHub Light** | oscuro → **GitHub Dark** (auto según el sistema)
-  - Fuente: **JetBrains Mono** con ligaduras, tamaño 14
-  - `formatOnSave`, `autoSave afterDelay`, minimap desactivado
-  - Icon theme: `vs-seti`
+- Configura tema, fuente JetBrains Mono con ligaduras
+- Configura `formatOnSave`, `autoSave`, minimap desactivado
 
 ---
 
 ### 3. Git + GitHub — `scripts/03-git.sh`
 
 - Configura nombre, email y rama por defecto (`main`)
-- Configura `pull.rebase false` y `core.autocrlf input`
 - Genera clave SSH **ed25519**
-- Copia la clave al portapapeles automáticamente (`wl-copy` o `xclip`)
+- Copia la clave al portapapeles automáticamente
 - Abre `github.com/settings/keys` en el navegador
-- Verifica la conexión SSH al final
+- Verifica la conexión SSH
 
 ---
 
 ### 4. Temas GNOME — `scripts/04-gnome-theme.sh`
-
-Instala **GNOME Tweaks** y **GNOME Extensions** para gestionar temas y extensiones fácilmente.
 
 | Componente | Tema |
 |---|---|
 | GTK Theme | **WhiteSur-Light** + **WhiteSur-Dark** |
 | GNOME Shell | **WhiteSur-Light** |
 | Icon Theme | **WhiteSur** |
-| GDM (pantalla de login) | **MacTahoe** |
+| GDM | **MacTahoe** |
 | Firefox | **WhiteSur Firefox Theme** |
-| Cursores | Adwaita |
-| MacTahoe Icons | Instalado (no activo por defecto) |
-
-El cambio automático claro↔oscuro se gestiona con **Night Theme Switcher**.
 
 ---
 
 ### 5. Fix Intel Flicker — `scripts/05-intel-fix.sh`
 
-- Detecta GPU Intel automáticamente (se omite si no se detecta)
-- Aplica parámetros de kernel via `grubby`:
+- Detecta GPU Intel automáticamente
+- Aplica parámetros de kernel:
   ```
-  i915.enable_psr=0   i915.enable_dc=0   intel_idle.max_cstate=2
+  i915.enable_psr=0 i915.enable_dc=0 intel_idle.max_cstate=2
   ```
-- **Requiere reinicio** para tener efecto
+- **Requiere reinicio**
 
 ---
 
@@ -204,67 +188,16 @@ El cambio automático claro↔oscuro se gestiona con **Night Theme Switcher**.
 
 ---
 
-### 7. OpenCode CLI — `scripts/07-opencode.sh`
+### OpenCode CLI — `scripts/07-opencode.sh`
 
 Instala el intérprete de IA **OpenCode** para usar directamente desde la terminal.
-
-- Utiliza el instalador oficial de `opencode.ai`.
-- Configura automáticamente el PATH en `~/.zshrc`.
-- Permite ejecutar comandos de lenguaje natural mediante el comando `opencode`.
-
----
-
-## Limpieza opcional — `scripts/cleanup.sh`
-
-Elimina Oh My Zsh y carga los plugins de Zsh directamente (más ligero). Starship sigue funcionando como prompt.
-
-```bash
-./scripts/cleanup.sh
-```
-
-> Oh My Zsh es liviano y no interfiere con Starship. Este paso es completamente opcional.
 
 ---
 
 ## Requisitos
 
-- **Python 3.10+** (para la GUI)
-- **Zenity** (fallback si la GUI Python no está disponible)
-
-La GUI se inicia automáticamente. Si Python no está instalado, el script intentará usar Zenity como alternativa.
-
----
-
-## Interfaz Gráfica
-
-La aplicación incluye dos interfaces gráfica:
-
-### 1. GUI Python (Principal)
-
-- **Tema oscuro** con tokens de diseño Fedora (#60b0f4 accent)
-- **Navegación por sidebar** para explorar componentes
-- **Selector de tema Starship** con 12 opciones
-- **Consola en tiempo real** que muestra el output de la instalación
-- **Progress bar animada** con progreso en vivo
-- **Ejecución en background thread** para no bloquear la UI
-
-### 2. GUI Zenity (Fallback)
-
-- Selector de componentes con checkboxes
-- **Selector de tema Starship** con 12 opciones
-- Ejecución en terminal separada
-
-### Capturas de pantalla
-
-La GUI incluye las siguientes páginas:
-- **Inicio**: Información general del proyecto
-- **Terminal**: Instalación de zsh, Starship (12 temas), eza, bat, fzf, zoxide
-- **VS Code**: Editor configurado con extensiones
-- **Git**: SSH keys para GitHub
-- **Tema**: Apariencia estilo macOS
-- **Intel Fix**: Solución al parpadeo de pantalla
-- **Extensiones**: GNOME extensions
-- **OpenCode CLI**: Instalación del asistente de IA
+- **Fedora 43** con **GNOME**
+- Ninguna dependencia adicional requerida (todo funciona en consola)
 
 ---
 
@@ -272,21 +205,8 @@ La GUI incluye las siguientes páginas:
 
 - Probado en **Fedora 43** con **GNOME**
 - `setup.sh` detecta automáticamente si hay GPU Intel y omite el fix si no aplica
-- Todos los scripts son **idempotentes**: verifican si cada componente ya está instalado antes de instalar
-- El PATH de OpenCode se agrega automáticamente al final de la instalación
-- `scripts/lib.sh` es la librería compartida usada por todos los scripts
-- El log de instalación se guarda en `install.log` para revisión
-
----
-
-## Tecnologías
-
-| Componente | Tecnología |
-|------------|-------------|
-| GUI | Python 3 + tkinter |
-| Instalador | Bash scripts |
-| Temas | GTK, GNOME Shell |
-| Terminal | zsh + Starship |
+- Todos los scripts son **idempotentes**
+- El PATH de OpenCode se agrega automáticamente
 
 ---
 
