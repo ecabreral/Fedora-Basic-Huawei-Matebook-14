@@ -28,23 +28,23 @@ show_component_menu_simple() {
     selected[opencode]=false
     
     while true; do
-        echo ""
-        echo "═══════════════════════════════════════════════════════════════"
-        echo "  SELECCIONA LOS COMPONENTES A INSTALAR"
-        echo "═══════════════════════════════════════════════════════════════"
-        echo ""
+        echo "" >&2
+        echo "═══════════════════════════════════════════════════════════════" >&2
+        echo "  SELECCIONA LOS COMPONENTES A INSTALAR" >&2
+        echo "═══════════════════════════════════════════════════════════════" >&2
+        echo "" >&2
         
-        echo "  [1] Terminal Moderna (zsh, Starship, eza, bat, fzf...)   $([ "${selected[terminal]}" = true ] && echo "[✓]" || echo "[ ]")"
-        echo "  [2] Visual Studio Code + Extensiones                      $([ "${selected[vscode]}" = true ] && echo "[✓]" || echo "[ ]")"
-        echo "  [3] Git + Clave SSH para GitHub                           $([ "${selected[git]}" = true ] && echo "[✓]" || echo "[ ]")"
-        echo "  [4] Temas macOS (GTK, Iconos, GDM, Firefox)              $([ "${selected[theme]}" = true ] && echo "[✓]" || echo "[ ]")"
-        echo "  [5] Fix Intel Screen Flicker                             $([ "${selected[intel]}" = true ] && echo "[✓]" || echo "[ ]")"
-        echo "  [6] Extensiones GNOME                                    $([ "${selected[extensions]}" = true ] && echo "[✓]" || echo "[ ]")"
-        echo "  [7] OpenCode CLI (Asistente IA)                         $([ "${selected[opencode]}" = true ] && echo "[✓]" || echo "[ ]")"
-        echo ""
-        echo "  [A] Continuar con la instalación"
-        echo "  [Q] Cancelar y salir"
-        echo ""
+        echo "  [1] Terminal Moderna (zsh, Starship, eza, bat, fzf...)   $([ "${selected[terminal]}" = true ] && echo "[✓]" || echo "[ ]")" >&2
+        echo "  [2] Visual Studio Code + Extensiones                      $([ "${selected[vscode]}" = true ] && echo "[✓]" || echo "[ ]")" >&2
+        echo "  [3] Git + Clave SSH para GitHub                           $([ "${selected[git]}" = true ] && echo "[✓]" || echo "[ ]")" >&2
+        echo "  [4] Temas macOS (GTK, Iconos, GDM, Firefox)              $([ "${selected[theme]}" = true ] && echo "[✓]" || echo "[ ]")" >&2
+        echo "  [5] Fix Intel Screen Flicker                             $([ "${selected[intel]}" = true ] && echo "[✓]" || echo "[ ]")" >&2
+        echo "  [6] Extensiones GNOME                                    $([ "${selected[extensions]}" = true ] && echo "[✓]" || echo "[ ]")" >&2
+        echo "  [7] OpenCode CLI (Asistente IA)                         $([ "${selected[opencode]}" = true ] && echo "[✓]" || echo "[ ]")" >&2
+        echo "" >&2
+        echo "  [A] Continuar con la instalación" >&2
+        echo "  [Q] Cancelar y salir" >&2
+        echo "" >&2
         read -p "  Opción (número para togglear, A para continuar): " input
         
         case "$input" in
