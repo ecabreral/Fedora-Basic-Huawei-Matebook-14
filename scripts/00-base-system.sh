@@ -25,13 +25,12 @@ else
   success "RPM Fusion Non-Free instalado."
 fi
 
-info "Deshabilitando repositorios rawhide de RPM Fusion..."
-if sudo dnf config-manager --list-enabled 2>/dev/null | grep -q "rawhide"; then
-  sudo dnf config-manager --set-disabled rpmfusion-nonfree-rawhide 2>/dev/null
-  sudo dnf config-manager --set-disabled rpmfusion-free-rawhide 2>/dev/null
-  success "Repositorios rawhide deshabilitados."
+info "Eliminando repositorios rawhide de RPM Fusion..."
+if sudo dnf repolist 2>/dev/null | grep -q "rawhide"; then
+  sudo dnf remove -y rpmfusion-nonfree-rawhide rpmfusion-free-rawhide 2>/dev/null
+  success "Repositorios rawhide eliminados."
 else
-  success "Repositorios rawhide ya deshabilitados o no presentes."
+  success "Repositorios rawhide no presentes."
 fi
 
 section "📊 Actualizando sistema"
