@@ -48,15 +48,16 @@ show_component_menu_simple() {
         read -p "  Opción (número para togglear, A para continuar): " input
         
         case "$input" in
-            1)   if [ "${selected[terminal]}" = true ]; then selected[terminal]=false; else selected[terminal]=true; fi ;;
-            2)   if [ "${selected[vscode]}" = true ]; then selected[vscode]=false; else selected[vscode]=true; fi ;;
-            3)   if [ "${selected[git]}" = true ]; then selected[git]=false; else selected[git]=true; fi ;;
-            4)   if [ "${selected[theme]}" = true ]; then selected[theme]=false; else selected[theme]=true; fi ;;
-            5)   if [ "${selected[intel]}" = true ]; then selected[intel]=false; else selected[intel]=true; fi ;;
-            6)   if [ "${selected[extensions]}" = true ]; then selected[extensions]=false; else selected[extensions]=true; fi ;;
-            7)   if [ "${selected[opencode]}" = true ]; then selected[opencode]=false; else selected[opencode]=true; fi ;;
+            1)   selected[terminal]=$([ "${selected[terminal]}" = true ] && echo false || echo true) ;;
+            2)   selected[vscode]=$([ "${selected[vscode]}" = true ] && echo false || echo true) ;;
+            3)   selected[git]=$([ "${selected[git]}" = true ] && echo false || echo true) ;;
+            4)   selected[theme]=$([ "${selected[theme]}" = true ] && echo false || echo true) ;;
+            5)   selected[intel]=$([ "${selected[intel]}" = true ] && echo false || echo true) ;;
+            6)   selected[extensions]=$([ "${selected[extensions]}" = true ] && echo false || echo true) ;;
+            7)   selected[opencode]=$([ "${selected[opencode]}" = true ] && echo false || echo true) ;;
             a|A) break ;;
             q|Q) exit 0 ;;
+            *)   echo "  ⚠ Opción inválida. Usa 1-7, A o Q" >&2 ;;
         esac
     done
     
