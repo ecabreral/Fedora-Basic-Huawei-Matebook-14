@@ -40,7 +40,6 @@ dnf_install \
   gstreamer1-plugins-good \
   gstreamer1-plugins-bad-free \
   gstreamer1-plugins-ugly \
-  gstreamer1-plugins-base-wayland \
   gstreamer1-plugins-good-extras \
   gstreamer1-plugins-bad-free-extras
 
@@ -52,8 +51,7 @@ section "🎬 VA-API: Aceleración de video por hardware (Intel)"
 
 dnf_install \
   libva \
-  libva-utils \
-  intel-gpu-tools
+  libva-utils
 
 if rpm -q intel-media-driver &>/dev/null; then
   success "intel-media-driver ya está instalado."
@@ -141,6 +139,9 @@ echo "    • VA-API Intel (Hardware video acceleration)"
 echo "    • OpenH264"
 echo "    • Flatpak + Flathub"
 echo "    • Optimizaciones de arranque"
+echo ""
+echo "  Opcional (solo si necesitas debugging):"
+echo "    • sudo dnf install intel-gpu-tools  # Para intel_gpu_top"
 echo ""
 echo "  Para reiniciar y aplicar cambios: sudo reboot"
 echo ""
