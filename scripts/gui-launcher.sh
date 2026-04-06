@@ -4,6 +4,14 @@
 # Ejecuta los scripts seleccionados en el instalador gráfico.
 # ==============================================================================
 
+# Verificar si se tiene sudo
+if ! sudo -n true 2>/dev/null; then
+  echo ""
+  echo "⚠️ Algunos scripts requieren permisos de administrador (sudo)."
+  echo "   Se te pedirá tu contraseña cuando sea necesario."
+  echo ""
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 source "$SCRIPT_DIR/scripts/lib.sh"
 
@@ -58,7 +66,7 @@ for ID in "${SELECTED_IDS[@]}"; do
     "vscode")
       step "Visual Studio Code"
       set +e
-      "$SCRIPT_DIR/scripts/02-vscode.sh"
+      sudo "$SCRIPT_DIR/scripts/02-vscode.sh"
       RESULT=$?
       set -e
       if [ $RESULT -ne 0 ]; then
@@ -89,7 +97,7 @@ for ID in "${SELECTED_IDS[@]}"; do
       step "Fix Intel Screen Flicker"
       if lspci | grep -qi "intel.*graphics\|intel.*vga\|intel.*display"; then
         set +e
-        "$SCRIPT_DIR/scripts/05-intel-fix.sh"
+        sudo "$SCRIPT_DIR/scripts/05-intel-fix.sh"
         RESULT=$?
         set -e
         if [ $RESULT -ne 0 ]; then
