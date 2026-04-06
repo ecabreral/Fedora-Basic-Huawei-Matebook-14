@@ -29,14 +29,15 @@ fi
 
 # ── Magic Lamp Effect (desde tu repositorio) ───────────────────────────────────
 info "Instalando Compiz Alike Magic Lamp Effect..."
-if [ -d "$EXTENSIONS_DIR/compiz-alike-magic-lamp-effect@he fury" ] || [ -d "$EXTENSIONS_DIR/compiz-alike-magic-lamp-effect@hermes84" ]; then
+if [ -d "$EXTENSIONS_DIR/compiz-alike-magic-lamp-effect@hermes83.github.com" ]; then
     success "Magic Lamp Effect ya instalado."
 else
     MAGIC_LAMP_REPO="https://github.com/ecabreral/compiz-alike-magic-lamp-effect"
     TEMP_DIR=$(mktemp -d)
 
-    if git clone "$MAGIC_LAMP_REPO" "$TEMP_DIR/magic-lamp" 2>/dev/null; then
-        EXTENSION_UUID="compiz-alike-magic-lamp-effect@he fury"
+    if git clone --depth 1 "$MAGIC_LAMP_REPO" "$TEMP_DIR/magic-lamp" 2>/dev/null; then
+        # El UUID correcto es compiz-alike-magic-lamp-effect@hermes83.github.com
+        EXTENSION_UUID="compiz-alike-magic-lamp-effect@hermes83.github.com"
         if [ -d "$TEMP_DIR/magic-lamp/$EXTENSION_UUID" ]; then
             cp -r "$TEMP_DIR/magic-lamp/$EXTENSION_UUID" "$EXTENSIONS_DIR/"
             success "Magic Lamp Effect instalado correctamente."
