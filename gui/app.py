@@ -94,8 +94,7 @@ class App(tk.Tk):
         if page_id == "home":
             self._build_home_page()
         elif page_id == "terminal":
-            self._build_install_page("terminal", "Terminal Moderna",
-                                     "zsh, Starship, eza, bat, fzf, zoxide...")
+            self._build_terminal_page()
         elif page_id == "vscode":
             self._build_install_page("vscode", "Visual Studio Code",
                                      "Editor con extensiones y configuración optimizada")
@@ -152,6 +151,58 @@ class App(tk.Tk):
         for c in range(cols):
             grid_frame.columnconfigure(c, weight=1)
 
+    def _build_terminal_page(self):
+        container = tk.Frame(self.content, bg=T["bg_surface"])
+        container.pack(fill="both", expand=True, padx=40, pady=40)
+
+        tk.Label(container, text="Terminal Moderna", font=F["h1"],
+                 fg=T["text_primary"], bg=T["bg_surface"]).pack(anchor="w")
+
+        tk.Label(container, text="zsh, Starship, eza, bat, fzf, zoxide...",
+                 font=F["body_lg"], fg=T["text_secondary"], bg=T["bg_surface"]
+                 ).pack(anchor="w", pady=(8, 16))
+
+        theme_frame = tk.LabelFrame(container, text="🎨 Tema de Starship",
+                                     font=F["body"], fg=T["text_primary"],
+                                     bg=T["bg_surface"], bd=1, padx=16, pady=12)
+        theme_frame.pack(fill="x", pady=(0, 16))
+
+        self._starship_theme = tk.StringVar(value="tokyo-night")
+
+        themes = [
+            ("tokyo-night", "🌙 Tokyo Night (oscuro, recomendado)"),
+            ("pastel-powerline", "🎨 Pastel Powerline (claro)"),
+            ("gruvbox-rainbow", "🟤 Gruvbox Rainbow (oscuro)"),
+            ("catppuccin-powerline", "🟣 Catppuccin Powerline (oscuro)"),
+            ("jetpack", "🚀 Jetpack (minimalista)"),
+            ("pure-preset", "⚡ Pure Prompt (clásico)"),
+            ("nerd-font-symbols", "🔣 Nerd Font Symbols"),
+            ("no-nerd-font", "🔤 Sin Nerd Font"),
+            ("bracketed-segments", "🔲 Bracketed Segments"),
+            ("plain-text", "📝 Plain Text"),
+            ("no-runtimes", "🚫 Sin Runtime Versions"),
+            ("no-empty-icons", "🚫 Sin Iconos Vacíos"),
+        ]
+
+        for value, text in themes:
+            tk.Radiobutton(theme_frame, text=text, variable=self._starship_theme,
+                           value=value, font=F["body"], fg=T["text_primary"],
+                           bg=T["bg_surface"], selectcolor=T["bg_surface"]).pack(anchor="w")
+
+        self._progress_bar = ProgressBar(container, height=8)
+        self._progress_bar.pack(fill="x", pady=(0, 16))
+
+        self._console = ConsoleWidget(container)
+        self._console.pack(fill="both", expand=True)
+
+        btn_frame = tk.Frame(container, bg=T["bg_surface"])
+        btn_frame.pack(fill="x", pady=(16, 0))
+
+        self._install_btn = Button(btn_frame, "⚡ Instalar Terminal",
+                                    command=lambda: self._run_install("terminal"),
+                                    variant="primary", size="lg")
+        self._install_btn.pack(side="left")
+
     def _build_install_page(self, component_id, title, description):
         container = tk.Frame(self.content, bg=T["bg_surface"])
         container.pack(fill="both", expand=True, padx=40, pady=40)
@@ -183,18 +234,25 @@ class App(tk.Tk):
         if not os.path.exists(script_path):
             script_path = os.path.join(SCRIPTS_DIR, f"gui-launcher.sh")
         
+        extra_args = []
+        if component_id == "terminal" and hasattr(self, "_starship_theme"):
+            extra_args.append(self._starship_theme.get())
+        
         self._install_btn.set_loading(True)
         self._progress_bar.set(0, animate=False)
         
-        thread = threading.Thread(target=self._install_thread, args=(script_path, component_id), daemon=True)
+        thread = threading.Thread(target=self._install_thread, args=(script_path, component_id, extra_args), daemon=True)
         thread.start()
 
-    def _install_thread(self, script_path, component_id):
+    def _install_thread(self, script_path, component_id, extra_args=None):
+        if extra_args is None:
+            extra_args = []
+        
         def update_ui(text, level="auto"):
             self.after(0, lambda: self._console.write(text, level))
 
         try:
-            cmd = ["bash", script_path, component_id]
+            cmd = ["bash", script_path, component_id] + extra_args
             proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                     stderr=subprocess.STDOUT, text=True,
                                     cwd=SCRIPTS_DIR)

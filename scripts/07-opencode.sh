@@ -14,21 +14,21 @@ section "OpenCode CLI"
 # 1. Verificar si ya está en el PATH y funciona
 if command -v opencode &>/dev/null; then
   success "OpenCode ya está instalado y configurado: $(which opencode)"
-  exit 0
-fi
-
-# 2. Verificar si el binario ya existe en la carpeta esperada (aunque no esté en PATH)
-if [ -f "$OPENCODE_BIN" ]; then
-  info "OpenCode ya existe en $OPENCODE_DIR pero no está en el PATH de esta sesión."
+  info "Verificando configuración del PATH..."
 else
-  # 3. Instalación usando el instalador oficial
-  info "Descargando e instalando OpenCode CLI..."
-  
-  if curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path; then
-    success "OpenCode instalado satisfactoriamente"
+  # 2. Verificar si el binario ya existe en la carpeta esperada (aunque no esté en PATH)
+  if [ -f "$OPENCODE_BIN" ]; then
+    info "OpenCode ya existe en $OPENCODE_DIR pero no está en el PATH de esta sesión."
   else
-    error "Error al ejecutar el instalador de OpenCode"
-    exit 1
+    # 3. Instalación usando el instalador oficial
+    info "Descargando e instalando OpenCode CLI..."
+    
+    if curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path; then
+      success "OpenCode instalado satisfactoriamente"
+    else
+      error "Error al ejecutar el instalador de OpenCode"
+      exit 1
+    fi
   fi
 fi
 

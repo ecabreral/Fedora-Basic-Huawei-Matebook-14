@@ -49,8 +49,40 @@ if [ -z "$SELECTED" ]; then
   exit 0
 fi
 
+# Si terminal está seleccionado, pedir tema de Starship
+if echo "$SELECTED" | grep -qw "terminal"; then
+  THEME=$(zenity --list --radiolist --title="Tema de Starship" \
+      --width=600 --height=450 \
+      --column="Seleccionar" --column="ID" --column="Tema" \
+      TRUE  "tokyo-night"            "🌙 Tokyo Night (oscuro, recomendado)" \
+      FALSE "pastel-powerline"        "🎨 Pastel Powerline (claro)" \
+      FALSE "gruvbox-rainbow"         "🟤 Gruvbox Rainbow (oscuro)" \
+      FALSE "catppuccin-powerline"    "🟣 Catppuccin Powerline (oscuro)" \
+      FALSE "jetpack"                 "🚀 Jetpack (minimalista)" \
+      FALSE "pure-preset"             "⚡ Pure Prompt (clásico)" \
+      FALSE "nerd-font-symbols"       "🔣 Nerd Font Symbols" \
+      FALSE "no-nerd-font"            "🔤 Sin Nerd Font" \
+      FALSE "bracketed-segments"      "🔲 Bracketed Segments" \
+      FALSE "plain-text"               "📝 Plain Text" \
+      FALSE "no-runtimes"             "🚫 Sin Runtime Versions" \
+      FALSE "no-empty-icons"          "🚫 Sin Iconos Vacíos" \
+      --hide-column=2)
+  
+  if [ -n "$THEME" ]; then
+    export TERMINAL_THEME="$THEME"
+    info "Tema seleccionado: $TERMINAL_THEME"
+  fi
+fi
+
 chmod +x "$SCRIPT_DIR"/scripts/*.sh
 info "Preparando la ejecución..."
+
+# Agregar tema de terminal si está seleccionado
+TERMINAL_ARG=""
+if [ -n "$TERMINAL_THEME" ]; then
+  SELECTED="$SELECTED"
+  TERMINAL_ARG="$TERMINAL_THEME"
+fi
 
 TERM_CMD=""
 if command -v gnome-terminal &>/dev/null; then
@@ -63,11 +95,19 @@ fi
 
 if [ -n "$TERM_CMD" ]; then
   info "Iniciando instalación en una nueva ventana de terminal..."
-  $TERM_CMD bash -c "$SCRIPT_DIR/scripts/gui-launcher.sh $SELECTED"
+  if [ -n "$TERMINAL_ARG" ]; then
+    $TERM_CMD bash -c "TERMINAL_THEME=$TERMINAL_ARG $SCRIPT_DIR/scripts/gui-launcher.sh $SELECTED"
+  else
+    $TERM_CMD bash -c "$SCRIPT_DIR/scripts/gui-launcher.sh $SELECTED"
+  fi
   zenity --info --title="Proceso Iniciado" --width=400 \
     --text="✅ La instalación ha comenzado en una ventana de terminal independiente.\n\nPor favor, sigue las instrucciones en esa ventana."
 else
-  info "No se detectó un emulador de terminal gráfico. Ejecutando en la terminal actual..."
+  info "No se detectÃ³ un emulador de terminal grÃ¡fico. Ejecutando en la terminal actual..."
   echo ""
-  bash "$SCRIPT_DIR/scripts/gui-launcher.sh" $SELECTED
+  if [ -n "$TERMINAL_ARG" ]; then
+    TERMINAL_THEME="$TERMINAL_ARG" bash "$SCRIPT_DIR/scripts/gui-launcher.sh" $SELECTED
+  else
+    bash "$SCRIPT_DIR/scripts/gui-launcher.sh" $SELECTED
+  fi
 fi

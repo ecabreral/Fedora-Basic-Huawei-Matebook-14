@@ -5,10 +5,12 @@ Colección de scripts para automatizar la configuración de Fedora Linux orienta
 ## Uso rápido
 
 ```bash
+./fedora-setup
+# o
 ./setup.sh
 ```
 
-> 🚀 **Novedad**: Ahora cuenta con una **interfaz gráfica profesional en Python**. Ejecuta `setup.sh` y se abrirá una GUI moderna donde podrás navegar por los componentes, ver su descripción e instalar cada uno con progreso en tiempo real.
+> 🚀 **Novedad**: Ahora cuenta con una **interfaz gráfica profesional en Python** y **Zenity**. Al ejecutar `./fedora-setup` se abrirá una GUI donde podrás navegar por los componentes, seleccionar opciones e instalar con progreso en tiempo real. También puedes elegir el **tema de Starship** que más te guste (12 presets disponibles).
 
 ---
 
@@ -16,7 +18,8 @@ Colección de scripts para automatizar la configuración de Fedora Linux orienta
 
 ```
 Fedora-Basic-Huawei-Matebook-14/
-├── setup.sh                    # ▶ Punto de entrada — ejecutar este
+├── fedora-setup                 # ▶ Punto de entrada ejecutable
+├── setup.sh                    # Script principal
 ├── main.py                     # Entry point de la GUI Python
 ├── gui/                        # Módulo de GUI profesional
 │   ├── app.py                  # Ventana principal
@@ -28,6 +31,7 @@ Fedora-Basic-Huawei-Matebook-14/
 │       └── progress.py         # Progress bar
 ├── scripts/
 │   ├── lib.sh                  # Librería compartida (colores, helpers)
+│   ├── gui-launcher.sh         # Ejecutor de scripts seleccionados
 │   ├── 01-terminal.sh          # Terminal moderna: zsh, Starship, eza…
 │   ├── 02-vscode.sh            # Visual Studio Code + configuración
 │   ├── 03-git.sh               # Git global + clave SSH para GitHub
@@ -45,6 +49,52 @@ Fedora-Basic-Huawei-Matebook-14/
 
 ---
 
+## Características Principales
+
+### 🎨 Selector de Tema Starship (12 Presets)
+
+Al instalar la Terminal, puedes elegir entre **12 temas diferentes** para Starship:
+
+| # | Preset | Estilo | Descripción |
+|---|--------|--------|-------------|
+| 1 | Tokyo Night | Oscuro | Inspirado en tokyo-night-vscode-theme |
+| 2 | Pastel Powerline | Claro | Inspirado en M365Princess |
+| 3 | Gruvbox Rainbow | Oscuro | Colores warm estilo retro |
+| 4 | Catppuccin Powerline | Oscuro | Paleta Catppuccin minimalista |
+| 5 | Jetpack | Minimalista | Inspirado en geometry/spaceship |
+| 6 | Pure Prompt | Clásico | Emula el look de Pure |
+| 7 | Nerd Font Symbols | Símbolos | Usa símbolos Nerd Font |
+| 8 | No Nerd Font | Sin símbolos | No usa Nerd Font |
+| 9 | Bracketed Segments | Formato | Segmentos entre paréntesis |
+| 10 | Plain Text | Texto | Solo texto plano |
+| 11 | No Runtime Versions | Utilidad | Oculta versiones de runtime |
+| 12 | No Empty Icons | Utilidad | No muestra iconos vacíos |
+
+**El selector aparece automáticamente** al elegir "Terminal Moderna" en:
+- **GUI Python**: RadioButtons para seleccionar tema
+- **GUI Zenity**: Lista de selección con `--hide-column=2`
+
+---
+
+### 🔄 Ejecución Idempotente
+
+Todos los scripts verifican si un componente ya está instalado antes de proceder:
+- Si ya está instalado → Omite la instalación
+- Si ya está configurado → Omite la configuración
+- Permite ejecutar múltiples veces sin efectos secundarios
+
+---
+
+### 📋 OpenCode PATH Automático
+
+Al final de cada instalación, automáticamente se agrega OpenCode al PATH:
+```bash
+export PATH="$HOME/.opencode/bin:$PATH"
+```
+Se ejecuta `source ~/.zshrc` para que esté disponible inmediatamente.
+
+---
+
 ## Qué instala cada script
 
 ### 1. Terminal — `scripts/01-terminal.sh`
@@ -52,7 +102,7 @@ Fedora-Basic-Huawei-Matebook-14/
 | Herramienta | Descripción |
 |---|---|
 | `zsh` + Oh My Zsh | Shell moderna con plugins |
-| `starship` | Prompt Pastel Powerline |
+| `starship` | Prompt configurable (12 temas) |
 | `eza` | `ls` moderno con iconos y colores |
 | `bat` | `cat` con syntax highlighting |
 | `fzf` | Búsqueda difusa en terminal |
@@ -78,20 +128,20 @@ Fedora-Basic-Huawei-Matebook-14/
 
 ### 2. Visual Studio Code — `scripts/02-vscode.sh`
 
-**INSTALAR VS CODE CORRECTAMENTE EN FEDORA 43**
+**INSTALAR VS CODE CORRECTAMENTE EN FEDORA**
 
 Método recomendado (OFICIAL Microsoft):
 
 1. Agregar repo de Microsoft:
-  ```bash
-  sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
-  sudo sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo'
-  ```
+   ```bash
+   sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
+   sudo sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo'
+   ```
 2. Instalar:
-  ```bash
-  sudo dnf check-update
-  sudo dnf install code
-  ```
+   ```bash
+   sudo dnf check-update
+   sudo dnf install code
+   ```
 ✔️ Este es el método oficial para Fedora.
 
 - El script también corrige permisos de `~/.config/Code` y `~/.vscode` para evitar problemas de propiedad.
@@ -128,14 +178,7 @@ Instala **GNOME Tweaks** y **GNOME Extensions** para gestionar temas y extension
 | Cursores | Adwaita |
 | MacTahoe Icons | Instalado (no activo por defecto) |
 
-El cambio automático claro↔oscuro se gestiona con **Night Theme Switcher**. Configurarlo así:
-
-```
-GTK Light  → WhiteSur-Light    GTK Dark  → WhiteSur-Dark
-Shell Light → WhiteSur-Light   Shell Dark → WhiteSur-Dark
-```
-
-> Activa *Ubicación automática del dispositivo* en Configuración → Privacidad → Ubicación para que el cambio sea por hora solar.
+El cambio automático claro↔oscuro se gestiona con **Night Theme Switcher**.
 
 ---
 
@@ -154,12 +197,10 @@ Shell Light → WhiteSur-Light   Shell Dark → WhiteSur-Dark
 
 | Extensión | Descripción |
 |---|---|
-| [Dash to Dock](https://extensions.gnome.org/extension/307/dash-to-dock/) | Dock estilo macOS (Autoconfigurado con clic para minimizar) |
-| [Compiz Alike Magic Lamp Effect](https://github.com/ecabreral/compiz-alike-magic-lamp-effect) | Efecto de lámpara al minimizar (instalado desde repositorio custom) |
+| [Dash to Dock](https://extensions.gnome.org/extension/307/dash-to-dock/) | Dock estilo macOS |
+| [Compiz Alike Magic Lamp Effect](https://github.com/ecabreral/compiz-alike-magic-lamp-effect) | Efecto de lámpara al minimizar |
 | [Night Theme Switcher](https://extensions.gnome.org/extension/2236/night-theme-switcher/) | Cambio automático claro/oscuro |
 | [Copyous](https://extensions.gnome.org/extension/8834/copyous/) | Historial de portapapeles |
-
-> 💡 **Automatización**: `setup.sh` configura automáticamente el dock para minimizar al hacer clic una vez activada. Ver [`docs/dash-to-dock.md`](docs/dash-to-dock.md) para más detalles.
 
 ---
 
@@ -169,9 +210,7 @@ Instala el intérprete de IA **OpenCode** para usar directamente desde la termin
 
 - Utiliza el instalador oficial de `opencode.ai`.
 - Configura automáticamente el PATH en `~/.zshrc`.
-- Permite ejecutar comandos de lenguaje natural, generar código y realizar tareas de sistema mediante el comando `opencode`.
-
-> 💡 **Idempotencia**: El script detecta si ya está instalado o si el PATH ya está configurado para evitar re-descargas innecesarias.
+- Permite ejecutar comandos de lenguaje natural mediante el comando `opencode`.
 
 ---
 
@@ -198,19 +237,28 @@ La GUI se inicia automáticamente. Si Python no está instalado, el script inten
 
 ## Interfaz Gráfica
 
-La aplicación incluye una **GUI profesional en Python** con las siguientes características:
+La aplicación incluye dos interfaces gráfica:
+
+### 1. GUI Python (Principal)
 
 - **Tema oscuro** con tokens de diseño Fedora (#60b0f4 accent)
 - **Navegación por sidebar** para explorar componentes
+- **Selector de tema Starship** con 12 opciones
 - **Consola en tiempo real** que muestra el output de la instalación
 - **Progress bar animada** con progreso en vivo
 - **Ejecución en background thread** para no bloquear la UI
+
+### 2. GUI Zenity (Fallback)
+
+- Selector de componentes con checkboxes
+- **Selector de tema Starship** con 12 opciones
+- Ejecución en terminal separada
 
 ### Capturas de pantalla
 
 La GUI incluye las siguientes páginas:
 - **Inicio**: Información general del proyecto
-- **Terminal**: Instalación de zsh, Starship, eza, bat, fzf, zoxide
+- **Terminal**: Instalación de zsh, Starship (12 temas), eza, bat, fzf, zoxide
 - **VS Code**: Editor configurado con extensiones
 - **Git**: SSH keys para GitHub
 - **Tema**: Apariencia estilo macOS
@@ -225,7 +273,9 @@ La GUI incluye las siguientes páginas:
 - Probado en **Fedora 43** con **GNOME**
 - `setup.sh` detecta automáticamente si hay GPU Intel y omite el fix si no aplica
 - Todos los scripts son **idempotentes**: verifican si cada componente ya está instalado antes de instalar
+- El PATH de OpenCode se agrega automáticamente al final de la instalación
 - `scripts/lib.sh` es la librería compartida usada por todos los scripts
+- El log de instalación se guarda en `install.log` para revisión
 
 ---
 

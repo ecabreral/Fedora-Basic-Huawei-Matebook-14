@@ -4,27 +4,31 @@
 # Ejecuta los scripts seleccionados en el instalador gráfico.
 # ==============================================================================
 
-set -e
-
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 source "$SCRIPT_DIR/scripts/lib.sh"
 
-# Función para reportar errores
-error_handler() {
-  echo ""
-  error "¡Error crítico detectado en la instalación!"
-  warn "El script falló en el comando: ${BOLD}${BASH_COMMAND}${RESET}"
-  echo ""
-  read -p "Presiona ENTER para salir..."
-  exit 1
-}
-trap 'error_handler' ERR
+# Configurar logging
+LOG_FILE="$SCRIPT_DIR/install.log"
+exec > >(tee -a "$LOG_FILE") 2>&1
 
-# Recibir los scripts seleccionados como argumentos (separados por espacios)
-# Ejemplo: ./gui-launcher.sh terminal vscode theme ...
+echo "=== $(date) - Inicio de instalación ==="
+echo "Log guardado en: $LOG_FILE"
+echo ""
+echo "Argumentos recibidos: $@"
+echo "TERMINAL_THEME (entorno): $TERMINAL_THEME"
+
+# Recibir los scripts seleccionados como argumentos
+# Ejemplo: ./gui-launcher.sh terminal vscode theme
 SELECTED_IDS=("$@")
 TOTAL=${#SELECTED_IDS[@]}
 CURRENT=0
+
+# El tema de terminal viene de la variable de entorno TERMINAL_THEME
+if [ -n "$TERMINAL_THEME" ]; then
+  TERMINAL_THEME="$TERMINAL_THEME"
+else
+  TERMINAL_THEME="tokyo-night"
+fi
 
 clear
 echo ""
@@ -42,39 +46,91 @@ for ID in "${SELECTED_IDS[@]}"; do
   case "$ID" in
     "terminal")
       step "Terminal & Herramientas"
-      "$SCRIPT_DIR/scripts/01-terminal.sh"
+      THEME="${TERMINAL_THEME:-tokyo-night}"
+      set +e
+      "$SCRIPT_DIR/scripts/01-terminal.sh" "$THEME"
+      RESULT=$?
+      set -e
+      if [ $RESULT -ne 0 ]; then
+        warn "Error en terminal. Continuando..."
+      fi
       ;;
     "vscode")
       step "Visual Studio Code"
-      sudo "$SCRIPT_DIR/scripts/02-vscode.sh"
+      set +e
+      "$SCRIPT_DIR/scripts/02-vscode.sh"
+      RESULT=$?
+      set -e
+      if [ $RESULT -ne 0 ]; then
+        warn "Error en VS Code. Continuando..."
+      fi
       ;;
     "git")
       step "Git + GitHub"
+      set +e
       "$SCRIPT_DIR/scripts/03-git.sh"
+      RESULT=$?
+      set -e
+      if [ $RESULT -ne 0 ]; then
+        warn "Error en Git. Continuando..."
+      fi
       ;;
     "theme")
       step "Temas GNOME estilo macOS"
+      set +e
       "$SCRIPT_DIR/scripts/04-gnome-theme.sh"
+      RESULT=$?
+      set -e
+      if [ $RESULT -ne 0 ]; then
+        warn "Error en tema. Continuando..."
+      fi
       ;;
     "intel")
       step "Fix Intel Screen Flicker"
       if lspci | grep -qi "intel.*graphics\|intel.*vga\|intel.*display"; then
-        sudo "$SCRIPT_DIR/scripts/05-intel-fix.sh"
+        set +e
+        "$SCRIPT_DIR/scripts/05-intel-fix.sh"
+        RESULT=$?
+        set -e
+        if [ $RESULT -ne 0 ]; then
+          warn "Error en Intel Fix. Continuando..."
+        fi
       else
         warn "GPU Intel no detectada. Omitiendo 05-intel-fix.sh"
       fi
       ;;
     "extensions")
       step "Extensiones GNOME"
+      set +e
       "$SCRIPT_DIR/scripts/06-extensions.sh"
+      RESULT=$?
+      set -e
+      if [ $RESULT -ne 0 ]; then
+        warn "Error en extensiones. Continuando..."
+      fi
       ;;
     "opencode")
       step "OpenCode CLI"
+      set +e
       "$SCRIPT_DIR/scripts/07-opencode.sh"
+      RESULT=$?
+      set -e
+      if [ $RESULT -ne 0 ]; then
+        warn "Error en OpenCode. Continuando..."
+      fi
       ;;
   esac
   echo ""
 done
+
+# ── Agregar OpenCode al PATH ─────────────────────────────────────────────
+if [ -d "$HOME/.opencode/bin" ]; then
+  if ! grep -q '\.opencode/bin' ~/.zshrc 2>/dev/null; then
+    info "Agregando OpenCode al PATH..."
+    echo 'export PATH="$HOME/.opencode/bin:$PATH"' >> ~/.zshrc
+  fi
+  source ~/.zshrc
+fi
 
 # ── Resumen Final ─────────────────────────────────────────────────────────────
 echo ""

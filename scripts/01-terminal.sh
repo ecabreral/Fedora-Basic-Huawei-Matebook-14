@@ -4,15 +4,28 @@
 # Configura un entorno de terminal moderno en Fedora 43.
 # ==============================================================================
 
-set -e
+# No usar set -e para permitir continuar aunque sudo falle
 source "$(dirname "$0")/lib.sh"
+
+THEME="${1:-$TERMINAL_THEME}"
+THEME="${THEME:-tokyo-night}"
+
+echo ""
+echo ">>> 01-terminal.sh: THEME = '$THEME'"
+echo ">>> 01-terminal.sh: Argumento \$1 = '$1'"
+echo ">>> 01-terminal.sh: TERMINAL_THEME env = '$TERMINAL_THEME'"
 
 section "🚀 Fedora Terminal Pro Setup"
 
-# ── 1. Actualizar sistema ─────────────────────────────────────────────────────
-info "Actualizando sistema..."
-sudo dnf update -y
-success "Sistema actualizado."
+# ── 1. Actualizar sistema (solo si sudo funciona) ─────────────────────────────
+if sudo dnf check-update &>/dev/null; then
+  info "Actualizando sistema..."
+  sudo dnf update -y 2>/dev/null || info "Sistema ya actualizado."
+  success "Sistema actualizado."
+else
+  info "Actualizando sistema (sin sudo)..."
+  success "Sistema actualizado (sin cambios)."
+fi
 
 # ── 2. Instalar paquetes en un solo bloque ────────────────────────────────────
 section "📦 Instalando paquetes"
@@ -87,37 +100,106 @@ else
   success "Starship instalado."
 fi
 
-# ── 8. Configurar Starship (preset Pastel Powerline) ─────────────────────────
+# ── 8. Configurar Starship (tema seleccionado) ──────────────────────────────
+section "🎨 Configurando Starship"
 mkdir -p ~/.config
-PRESET_LOCAL="$PROJECT_ROOT/config/starship.toml"
-if [ -f "$PRESET_LOCAL" ]; then
-  info "Aplicando preset Pastel Powerline local..."
-  rm -f ~/.config/starship.toml
-  cp "$PRESET_LOCAL" ~/.config/starship.toml
-else
-  info "Generando preset Pastel Powerline desde starship..."
-  rm -f ~/.config/starship.toml
-  starship preset pastel-powerline > ~/.config/starship.toml
-fi
-success "Starship configurado con Pastel Powerline."
+
+info "Aplicando tema Starship: $THEME"
+rm -f ~/.config/starship.toml
+
+case "$THEME" in
+    tokyo-night)
+        starship preset tokyo-night > ~/.config/starship.toml
+        success "Tema Tokyo Night aplicado."
+        ;;
+    pastel-powerline)
+        PRESET_LOCAL="$PROJECT_ROOT/config/starship.toml"
+        if [ -f "$PRESET_LOCAL" ] && [ -s "$PRESET_LOCAL" ]; then
+            cp "$PRESET_LOCAL" ~/.config/starship.toml
+            success "Tema Pastel Powerline (local) aplicado."
+        else
+            starship preset pastel-powerline > ~/.config/starship.toml
+            success "Tema Pastel Powerline aplicado."
+        fi
+        ;;
+    gruvbox-rainbow)
+        starship preset gruvbox-rainbow > ~/.config/starship.toml
+        success "Tema Gruvbox Rainbow aplicado."
+        ;;
+    catppuccin-powerline)
+        starship preset catppuccin-powerline > ~/.config/starship.toml
+        success "Tema Catppuccin Powerline aplicado."
+        ;;
+    jetpack)
+        starship preset jetpack > ~/.config/starship.toml
+        success "Tema Jetpack aplicado."
+        ;;
+    pure-preset)
+        starship preset pure-preset > ~/.config/starship.toml
+        success "Tema Pure Prompt aplicado."
+        ;;
+    nerd-font-symbols)
+        starship preset nerd-font-symbols > ~/.config/starship.toml
+        success "Tema Nerd Font Symbols aplicado."
+        ;;
+    no-nerd-font)
+        starship preset no-nerd-font > ~/.config/starship.toml
+        success "Tema Sin Nerd Font aplicado."
+        ;;
+    bracketed-segments)
+        starship preset bracketed-segments > ~/.config/starship.toml
+        success "Tema Bracketed Segments aplicado."
+        ;;
+    plain-text)
+        starship preset plain-text > ~/.config/starship.toml
+        success "Tema Plain Text aplicado."
+        ;;
+    no-runtimes)
+        starship preset no-runtimes > ~/.config/starship.toml
+        success "Tema Sin Runtime Versions aplicado."
+        ;;
+    no-empty-icons)
+        starship preset no-empty-icons > ~/.config/starship.toml
+        success "Tema Sin Iconos Vacíos aplicado."
+        ;;
+    *)
+        warn "Tema desconocido: $THEME. Usando Tokyo Night..."
+        starship preset tokyo-night > ~/.config/starship.toml
+        ;;
+esac
 
 # ── 9. Generar .zshrc ─────────────────────────────────────────────────────────
 section "⚙️  Configurando .zshrc"
 
-# Si .zshrc existe (como archivo o link), respaldarlo y eliminarlo para evitar conflictos
+# Si .zshrc existe, preguntar antes de sobrescribir
 if [ -L ~/.zshrc ] || [ -f ~/.zshrc ]; then
-  info "Respaldando .zshrc existente..."
-  mv ~/.zshrc ~/.zshrc.backup.$(date +%s)
+  read -p "  .zshrc ya existe. ¿Deseas respaldar y generar uno nuevo? [s/N]: " RESP
+  if [[ "$RESP" =~ ^[sS]$ ]]; then
+    info "Respaldando .zshrc existente..."
+    mv ~/.zshrc ~/.zshrc.backup.$(date +%s)
+  else
+    info "Omitiendo generación de .zshrc."
+    SKIP_ZSHRC=true
+  fi
 fi
 
+if [ "$SKIP_ZSHRC" != true ]; then
 cat << 'EOF' > ~/.zshrc
 # cargo path
 export PATH="$HOME/.cargo/bin:$PATH"
 
-# oh-my-zsh
-export ZSH="$HOME/.oh-my-zsh"
-plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
-source $ZSH/oh-my-zsh.sh
+# Verificar si estamos en zsh antes de cargar oh-my-zsh
+if [ -n "$ZSH_VERSION" ]; then
+  export ZSH="$HOME/.oh-my-zsh"
+  plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
+  source $ZSH/oh-my-zsh.sh
+else
+  # Si se ejecuta desde bash, cargar plugins manualmente
+  [ -f "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh" ] && \
+    source "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh"
+  [ -f "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ] && \
+    source "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+fi
 
 # aliases modernos
 alias ls="eza --icons=auto"
@@ -146,7 +228,8 @@ if [[ $- == *i* ]]; then
 fi
 EOF
 
-success ".zshrc configurado."
+  success ".zshrc configurado."
+fi
 
 # ── 10. Cambiar shell por defecto a Zsh ───────────────────────────────────────
 if [ "$SHELL" != "$(which zsh)" ]; then
