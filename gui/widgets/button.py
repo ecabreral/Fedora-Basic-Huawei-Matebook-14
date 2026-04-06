@@ -6,7 +6,7 @@ class Button(tk.Button):
     STYLES = {
         "primary":   {"fg": T["text_inverse"], "bg": T["accent"],       "hover": T["accent_hover"]},
         "secondary": {"fg": T["text_primary"],  "bg": T["bg_raised"],    "hover": T["bg_overlay"]},
-        "ghost":     {"fg": T["text_secondary"],"bg": "transparent",     "hover": T["bg_hover"]},
+        "ghost":     {"fg": T["text_secondary"],"bg": "",               "hover": T["bg_hover"]},
         "danger":    {"fg": "#ffffff",           "bg": T["error"],        "hover": "#dc2020"},
         "success":   {"fg": "#ffffff",           "bg": T["success"],      "hover": "#16a34a"},
     }
@@ -23,13 +23,13 @@ class Button(tk.Button):
         super().__init__(
             parent, text=label, command=command,
             font=z["font"],
-            fg=s["fg"], bg=s["bg"],
+            fg=s["fg"], bg=s["bg"] if s["bg"] else parent["bg"],
             activeforeground=s["fg"], activebackground=s["hover"],
             relief="flat", bd=0, cursor="hand2",
             padx=z["padx"], pady=z["pady"],
             **kw,
         )
-        self._bg_normal = s["bg"]
+        self._bg_normal = s["bg"] if s["bg"] else parent["bg"]
         self._bg_hover  = s["hover"]
         self.bind("<Enter>", lambda e: self.configure(bg=self._bg_hover))
         self.bind("<Leave>", lambda e: self.configure(bg=self._bg_normal))

@@ -1,6 +1,8 @@
 import json
 import os
 import platform
+import tkinter
+import tkinter.font as tkfont
 
 TOKENS = {
     "bg_base":      "#0d0d14",
@@ -66,13 +68,18 @@ def get_system_fonts():
         }[system],
     }
 
-import tkinter.font as tkfont
-
 def first_available_font(candidates):
-    available = set(tkfont.families())
-    for f in candidates:
-        if f in available:
-            return f
+    try:
+        # Create a temporary root window to get fonts (fixes PyInstaller issue)
+        temp_root = tkinter.Tk()
+        temp_root.withdraw()
+        available = set(tkfont.families())
+        temp_root.destroy()
+        for f in candidates:
+            if f in available:
+                return f
+    except Exception:
+        pass
     return candidates[-1]
 
 FONT_STACK = first_available_font(get_system_fonts()["sans"])

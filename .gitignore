@@ -12,3 +12,5 @@ venv/
 *.swp
 *.swo
 .DS_Store
+fedora-setup-gui
+install.log
