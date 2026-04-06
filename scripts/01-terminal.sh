@@ -113,14 +113,8 @@ case "$THEME" in
         success "Tema Tokyo Night aplicado."
         ;;
     pastel-powerline)
-        PRESET_LOCAL="$PROJECT_ROOT/config/starship.toml"
-        if [ -f "$PRESET_LOCAL" ] && [ -s "$PRESET_LOCAL" ]; then
-            cp "$PRESET_LOCAL" ~/.config/starship.toml
-            success "Tema Pastel Powerline (local) aplicado."
-        else
-            starship preset pastel-powerline > ~/.config/starship.toml
-            success "Tema Pastel Powerline aplicado."
-        fi
+        starship preset pastel-powerline > ~/.config/starship.toml
+        success "Tema Pastel Powerline aplicado."
         ;;
     gruvbox-rainbow)
         starship preset gruvbox-rainbow > ~/.config/starship.toml
