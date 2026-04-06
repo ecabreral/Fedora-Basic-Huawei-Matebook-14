@@ -44,10 +44,12 @@ REAL_USER="${SUDO_USER:-$USER}"
 if [ -z "$REAL_USER" ] || [ "$REAL_USER" = "root" ]; then
   REAL_USER="$USER"
 fi
-VSCODE_CONFIG="$HOME/.config/Code/User"
-mkdir -p "$VSCODE_CONFIG"
 
-cat > "$VSCODE_CONFIG/settings.json" << 'SETTINGS'
+# Crear directorio de configuración
+VSCODE_CONFIG_DIR="/home/$REAL_USER/.config/Code/User"
+mkdir -p "$VSCODE_CONFIG_DIR"
+
+cat > "$VSCODE_CONFIG_DIR/settings.json" << 'SETTINGS'
 {
   "window.autoDetectColorScheme": true,
   "workbench.preferredLightColorTheme": "GitHub Light",
@@ -68,20 +70,16 @@ cat > "$VSCODE_CONFIG/settings.json" << 'SETTINGS'
   "terminal.integrated.fontFamily": "JetBrains Mono"
 }
 SETTINGS
-chown -R "$REAL_USER":"$REAL_USER" "$VSCODE_CONFIG"
+
+chown -R "$REAL_USER":"$REAL_USER" "$VSCODE_CONFIG_DIR" 2>/dev/null || true
+
+# También asegurar permisos del directorio de usuario
+chown -R "$REAL_USER":"$REAL_USER" "/home/$REAL_USER/.config/Code" 2>/dev/null || true
+chown -R "$REAL_USER":"$REAL_USER" "/home/$REAL_USER/.vscode" 2>/dev/null || true
+
 success "Configuración de VS Code aplicada."
 
 section "✅ VS Code listo"
 echo -e "  Versión instalada: ${BOLD}$(code --version | head -1)${RESET}"
 echo -e "  Ejecuta ${BOLD}code${RESET} para abrir VS Code."
 echo ""
-
-read -p "¿VS Code mostró error de permisos al abrir? (s/N): " RESP
-if [[ "$RESP" =~ ^[sS]$ ]]; then
-  echo "Corrigiendo permisos de VS Code..."
-  sudo chown -R "$REAL_USER":"$REAL_USER" "$HOME/.config/Code"
-  sudo chown -R "$REAL_USER":"$REAL_USER" "$HOME/.vscode"
-  echo "Permisos corregidos. Intenta abrir VS Code de nuevo."
-else
-  echo "No se detectaron problemas de permisos. Instalación finalizada."
-fi
