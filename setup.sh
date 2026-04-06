@@ -80,6 +80,8 @@ show_menu_simple() {
     echo "  [2] Seleccionar componentes específicos"
     echo "  [3] Salir"
     echo ""
+    echo "  Escribe el número y presiona ENTER"
+    echo ""
     read -p "Selecciona una opción [1-3]: " choice
     echo ""
     echo "$choice"
