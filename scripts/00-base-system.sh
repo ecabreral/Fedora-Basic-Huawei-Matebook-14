@@ -25,18 +25,12 @@ else
   success "RPM Fusion Non-Free instalado."
 fi
 
-info "Eliminando repositorios rawhide de RPM Fusion..."
-if [ -f /etc/yum.repos.d/rpmfusion-nonfree-rawhide.repo ]; then
-  sudo rm -f /etc/yum.repos.d/rpmfusion-nonfree-rawhide.repo
-  sudo rm -f /etc/yum.repos.d/rpmfusion-free-rawhide.repo
-  success "Archivos de repositorio rawhide eliminados."
-elif sudo dnf repolist all 2>/dev/null | grep -q "rawhide"; then
-  sudo dnf config-manager --set-disabled rpmfusion-nonfree-rawhide 2>/dev/null || true
-  sudo dnf config-manager --set-disabled rpmfusion-free-rawhide 2>/dev/null || true
-  success "Repositorios rawhide deshabilitados."
-else
-  success "Repositorios rawhide no presentes."
-fi
+info "Configurando repositorios RPM Fusion (deshabilitar rawhide)..."
+sudo dnf config-manager --set-disabled rpmfusion-free-rawhide 2>/dev/null || true
+sudo dnf config-manager --set-disabled rpmfusion-nonfree-rawhide 2>/dev/null || true
+sudo dnf config-manager --set-enabled rpmfusion-free 2>/dev/null || true
+sudo dnf config-manager --set-enabled rpmfusion-nonfree 2>/dev/null || true
+success "Repositorios RPM Fusion configurados correctamente."
 
 section "📊 Actualizando sistema"
 
