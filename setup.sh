@@ -119,7 +119,7 @@ main() {
     
     case "$choice" in
         1)
-            SELECTED="base terminal vscode git theme intel extensions opencode"
+            SELECTED="base terminal vscode git theme intel extensions opencode spotify"
             ;;
         2)
             SELECTED=$(show_component_menu_simple)
