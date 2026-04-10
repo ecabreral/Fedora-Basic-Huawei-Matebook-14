@@ -212,6 +212,7 @@ sudo dnf install code
 | [Alphabetical App Grid](https://extensions.gnome.org/extension/4269/alphabetical-app-grid/) | Cuadrícula de apps en orden alfabético |
 | [Custom Hot Corners Extended](https://extensions.gnome.org/extension/4167/custom-hot-corners-extended/) | Esquinas activas personalizables |
 | [TopHat](https://extensions.gnome.org/extension/5219/tophat/) | Iconos de sistema personalizables en la barra superior |
+| [Media Controls](https://extensions.gnome.org/extension/4470/media-controls/) | Controles de reproductor multimedia en la barra superior |
 
 ---
 

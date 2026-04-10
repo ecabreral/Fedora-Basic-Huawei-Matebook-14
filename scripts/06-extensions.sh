@@ -146,6 +146,15 @@ else
       info "TopHat ya instalado o requiere instalación manual"
 fi
 
+# ── Media Controls ────────────────────────────────────────────────────────────
+info "Instalando Media Controls..."
+if [ -d "$EXTENSIONS_DIR/media-controls@cliffniff.github.com" ]; then
+    success "Media Controls ya instalado."
+else
+    gnome-extensions install "https://extensions.gnome.org/extension/4470/media-controls/" 2>/dev/null || \
+      info "Media Controls ya instalado o requiere instalación manual"
+fi
+
 # ── Función helper para abrir URLs ─────────────────────────────────────────────
 open_url() {
     local url="$1"
@@ -172,6 +181,7 @@ echo "  9. Desktop Cube"
 echo " 10. Alphabetical App Grid"
 echo " 11. Custom Hot Corners Extended"
 echo " 12. TopHat"
+echo " 13. Media Controls"
 echo ""
 
 open_url "https://extensions.gnome.org/extension/307/dash-to-dock/"
@@ -186,6 +196,7 @@ open_url "https://extensions.gnome.org/extension/4648/desktop-cube/"
 open_url "https://extensions.gnome.org/extension/4269/alphabetical-app-grid/"
 open_url "https://extensions.gnome.org/extension/4167/custom-hot-corners-extended/"
 open_url "https://extensions.gnome.org/extension/5219/tophat/"
+open_url "https://extensions.gnome.org/extension/4470/media-controls/"
 
 if ! command -v xdg-open &>/dev/null; then
     echo ""
