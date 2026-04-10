@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# setup.sh - Instalador en CONSOLA para Fedora 43 en Matebook 14
+# setup.sh - Instalador en CONSOLA para Fedora 44 en Matebook 14
 # ==============================================================================
 
 set +e
@@ -11,7 +11,7 @@ source "$SCRIPT_DIR/scripts/lib.sh"
 print_banner() {
     echo ""
     echo "╔═══════════════════════════════════════════════════════════════╗"
-    echo "║     Fedora 43 Setup - Huawei Matebook 14                     ║"
+    echo "║     Fedora 44 Setup - Huawei Matebook 14                     ║"
     echo "║     Configuración automatizada en terminal                   ║"
     echo "╚═══════════════════════════════════════════════════════════════╝"
     echo ""

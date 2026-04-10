@@ -165,7 +165,7 @@ for ID in "${SELECTED_IDS[@]}"; do
     "git")        echo "   • Git & Clave SSH para GitHub" ;;
     "theme")      echo "   • Temas GTK/Icons/GDM WhiteSur" ;;
     "intel")      echo "   • Parámetros del kernel Intel (Flicker Fix)" ;;
-    "extensions") echo "   • Extensiones GNOME (Dash to Dock...)" ;;
+    "extensions") echo "   • Extensiones GNOME (13 extensiones)" ;;
     "opencode")   echo "   • OpenCode CLI (IA Assistant)" ;;
   esac
 done

@@ -54,7 +54,7 @@ El instalador funciona completamente en terminal:
 ```
 
 - **Menú interactivo** - Escribe el número y presiona ENTER
-- **Selección de componentes** - Toggles con números 1-7, [A] continuar, [Q] salir
+- **Selección de componentes** - Toggles con números 0-7, [A] continuar, [Q] salir
 - **Selector de tema Starship** - 6 presets disponibles
 
 ---
@@ -224,14 +224,14 @@ Instala el intérprete de IA **OpenCode** para usar directamente desde la termin
 
 ## Requisitos
 
-- **Fedora 43/44** con **GNOME**
+- **Fedora 44** con **GNOME**
 - Ninguna dependencia adicional requerida (todo funciona en consola)
 
 ---
 
 ## Notas
 
-- Probado en **Fedora 43 y 44** con **GNOME**
+- Probado en **Fedora 44** con **GNOME**
 - `setup.sh` detecta automáticamente si hay GPU Intel y omite el fix si no aplica
 - Todos los scripts son **idempotentes**
 - El PATH de OpenCode se agrega automáticamente solo si está instalado
