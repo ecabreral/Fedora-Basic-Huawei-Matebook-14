@@ -137,6 +137,16 @@ for ID in "${SELECTED_IDS[@]}"; do
         warn "Error en OpenCode. Continuando..."
       fi
       ;;
+    "spotify")
+      step "Spotify"
+      set +e
+      "$SCRIPT_DIR/scripts/08-spotify.sh"
+      RESULT=$?
+      set -e
+      if [ $RESULT -ne 0 ]; then
+        warn "Error en Spotify. Continuando..."
+      fi
+      ;;
   esac
   echo ""
 done
@@ -167,6 +177,7 @@ for ID in "${SELECTED_IDS[@]}"; do
     "intel")      echo "   • Parámetros del kernel Intel (Flicker Fix)" ;;
     "extensions") echo "   • Extensiones GNOME (13 extensiones)" ;;
     "opencode")   echo "   • OpenCode CLI (IA Assistant)" ;;
+    "spotify")    echo "   • Spotify" ;;
   esac
 done
 echo ""

@@ -71,6 +71,7 @@ El instalador funciona completamente en terminal:
 | 5 | Intel Fix | Solución parpadeo pantalla (opcional) |
 | 6 | Extensiones | Dash to Dock, Magic Lamp, Night Theme Switcher, Copyous, Dynamic Music Pill, Coverflow, Burn My Windows, Tiling Shell, Desktop Cube, Alphabetical App Grid, Custom Hot Corners, TopHat |
 | 7 | OpenCode CLI | Asistente de IA para terminal |
+| 8 | Spotify | Cliente de música desde Flathub |
 
 ---
 
@@ -219,6 +220,16 @@ sudo dnf install code
 ## OpenCode CLI — `scripts/07-opencode.sh`
 
 Instala el intérprete de IA **OpenCode** para usar directamente desde la terminal.
+
+---
+
+## Spotify — `scripts/08-spotify.sh`
+
+Instala **Spotify** desde Flathub como cliente de música.
+
+```bash
+flatpak install -y flathub com.spotify.Client
+```
 
 ---
 

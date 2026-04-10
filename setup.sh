@@ -27,6 +27,7 @@ show_component_menu_simple() {
     selected[intel]=false
     selected[extensions]=false
     selected[opencode]=false
+    selected[spotify]=false
     
     while true; do
         echo "" >&2
@@ -43,6 +44,7 @@ show_component_menu_simple() {
         echo "  [5] Fix Intel Screen Flicker                             $([ "${selected[intel]}" = true ] && echo "[✓]" || echo "[ ]")" >&2
         echo "  [6] Extensiones GNOME                                    $([ "${selected[extensions]}" = true ] && echo "[✓]" || echo "[ ]")" >&2
         echo "  [7] OpenCode CLI (Asistente IA)                         $([ "${selected[opencode]}" = true ] && echo "[✓]" || echo "[ ]")" >&2
+        echo "  [8] Spotify (Cliente de música)                          $([ "${selected[spotify]}" = true ] && echo "[✓]" || echo "[ ]")" >&2
         echo "" >&2
         echo "  [A] Continuar con la instalación" >&2
         echo "  [Q] Cancelar y salir" >&2
@@ -58,14 +60,15 @@ show_component_menu_simple() {
             5)   selected[intel]=$([ "${selected[intel]}" = true ] && echo false || echo true) ;;
             6)   selected[extensions]=$([ "${selected[extensions]}" = true ] && echo false || echo true) ;;
             7)   selected[opencode]=$([ "${selected[opencode]}" = true ] && echo false || echo true) ;;
+            8)   selected[spotify]=$([ "${selected[spotify]}" = true ] && echo false || echo true) ;;
             a|A) break ;;
             q|Q) exit 0 ;;
-            *)   echo "  ⚠ Opción inválida. Usa 0-7, A o Q" >&2 ;;
+            *)   echo "  ⚠ Opción inválida. Usa 0-8, A o Q" >&2 ;;
         esac
     done
     
     local result=""
-    for key in base terminal vscode git theme intel extensions opencode; do
+    for key in base terminal vscode git theme intel extensions opencode spotify; do
         if [ "${selected[$key]}" = true ]; then
             result="$result $key"
         fi
