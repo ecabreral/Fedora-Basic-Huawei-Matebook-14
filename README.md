@@ -69,7 +69,7 @@ El instalador funciona completamente en terminal:
 | 3 | Git | Configuración global + clave SSH para GitHub |
 | 4 | Temas | GTK, Iconos, Shell estilo macOS |
 | 5 | Intel Fix | Solución parpadeo pantalla (opcional) |
-| 6 | Extensiones | Dash to Dock, Magic Lamp, Night Theme Switcher, Copyous |
+| 6 | Extensiones | Dash to Dock, Magic Lamp, Night Theme Switcher, Copyous, Dynamic Music Pill, Coverflow, Burn My Windows, Tiling Shell, Desktop Cube, Alphabetical App Grid, Custom Hot Corners, TopHat |
 | 7 | OpenCode CLI | Asistente de IA para terminal |
 
 ---
@@ -204,6 +204,14 @@ sudo dnf install code
 | [Compiz Alike Magic Lamp Effect](https://github.com/ecabreral/compiz-alike-magic-lamp-effect) | Efecto de lámpara al minimizar |
 | [Night Theme Switcher](https://extensions.gnome.org/extension/2236/night-theme-switcher/) | Cambio automático claro/oscuro |
 | [Copyous](https://extensions.gnome.org/extension/8834/copyous/) | Historial de portapapeles |
+| [Dynamic Music Pill](https://extensions.gnome.org/extension/9334/dynamic-music-pill/) | Reproductor de música en la barra superior |
+| [Coverflow Alt-Tab](https://extensions.gnome.org/extension/97/coverflow-alt-tab/) | Alternador de ventanas estilo Coverflow |
+| [Burn My Windows](https://extensions.gnome.org/extension/4679/burn-my-windows/) | Efectos de apertura/cierre de ventanas |
+| [Tiling Shell](https://extensions.gnome.org/extension/7065/tiling-shell/) | Tileado de ventanas estilo i3/sway |
+| [Desktop Cube](https://extensions.gnome.org/extension/4648/desktop-cube/) | Cubo de escritorios con efectos 3D |
+| [Alphabetical App Grid](https://extensions.gnome.org/extension/4269/alphabetical-app-grid/) | Cuadrícula de apps en orden alfabético |
+| [Custom Hot Corners Extended](https://extensions.gnome.org/extension/4167/custom-hot-corners-extended/) | Esquinas activas personalizables |
+| [TopHat](https://extensions.gnome.org/extension/5219/tophat/) | Iconos de sistema personalizables en la barra superior |
 
 ---
 
