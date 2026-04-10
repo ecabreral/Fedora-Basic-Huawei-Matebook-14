@@ -26,6 +26,7 @@ Fedora-Basic-Huawei-Matebook-14/
 │   ├── 05-intel-fix.sh         # Fix parpadeo pantalla Intel (opcional)
 │   ├── 06-extensions.sh        # Extensiones GNOME
 │   ├── 07-opencode.sh          # OpenCode CLI: Asistente de IA para terminal
+│   ├── 08-spotify.sh           # Spotify desde Flathub
 │   └── cleanup.sh              # Elimina Oh My Zsh (opcional)
 ├── config/
 │   └── starship.toml           # Preset para Starship (sin uso)
