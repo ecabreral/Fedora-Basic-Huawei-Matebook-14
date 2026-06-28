@@ -7,7 +7,17 @@
 set -e
 source "$(dirname "$0")/lib.sh"
 
-section "🧩 Extensiones GNOME"
+section "🧩 Extensiones GNOME ($OS_NAME)"
+
+# Asegurar que gnome-extensions esté disponible
+if ! command -v gnome-extensions &>/dev/null; then
+  info "Instalando gnome-extensions..."
+  if is_fedora; then
+    pkg_install gnome-extensions-app
+  elif is_ubuntu; then
+    pkg_install gnome-shell-extension-prefs
+  fi
+fi
 
 EXTENSIONS_DIR="$HOME/.local/share/gnome-shell/extensions"
 

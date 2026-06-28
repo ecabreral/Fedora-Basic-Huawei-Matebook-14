@@ -40,9 +40,9 @@ fi
 
 clear
 echo ""
-echo -e "${BLUE}${BOLD}╔════════════════════════════════════════╗${RESET}"
-echo -e "${BLUE}${BOLD}║     🚀  Ejecutando Instalación...      ║${RESET}"
-echo -e "${BLUE}${BOLD}╚════════════════════════════════════════╝${RESET}"
+echo -e "${BLUE}${BOLD}╔══════════════════════════════════════════════╗${RESET}"
+echo -e "${BLUE}${BOLD}║     🚀  Ejecutando Instalación ($OS_NAME)    ║${RESET}"
+echo -e "${BLUE}${BOLD}╚══════════════════════════════════════════════╝${RESET}"
 echo ""
 
 step() { 
@@ -169,7 +169,7 @@ echo ""
 echo "  Resumen de lo configurado:"
 for ID in "${SELECTED_IDS[@]}"; do
   case "$ID" in
-    "base")        echo "   • Sistema Base (RPM Fusion, códecs, VA-API, Flatpak)" ;;
+    "base")        echo "   • Sistema Base (repositorios, códecs, VA-API, Flatpak)" ;;
     "terminal")   echo "   • Terminal moderna (zsh, Starship, eza...)" ;;
     "vscode")     echo "   • Visual Studio Code + Configuración" ;;
     "git")        echo "   • Git & Clave SSH para GitHub" ;;

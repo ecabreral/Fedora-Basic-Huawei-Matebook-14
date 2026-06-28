@@ -2,6 +2,7 @@
 # ==============================================================================
 # 05-intel-fix.sh
 # Corrige el parpadeo de pantalla en GPUs Intel aplicando parámetros de kernel.
+# Compatible con Fedora (grubby) y Ubuntu (update-grub).
 # Requiere: sudo, reinicio
 # ==============================================================================
 
@@ -9,7 +10,9 @@ set -e
 source "$(dirname "$0")/lib.sh"
 require_root
 
-section "🔧 Fix Intel Screen Flicker"
+KERNEL_PARAMS="i915.enable_psr=0 i915.enable_dc=0 intel_idle.max_cstate=2"
+
+section "🔧 Fix Intel Screen Flicker ($OS_NAME)"
 
 # ── 1. Detectar GPU Intel ─────────────────────────────────────────────────────
 if ! lspci | grep -qi "intel.*graphics\|intel.*vga\|intel.*display"; then
@@ -20,20 +23,42 @@ if ! lspci | grep -qi "intel.*graphics\|intel.*vga\|intel.*display"; then
   [[ "$FORCE" != "s" && "$FORCE" != "S" ]] && exit 0
 fi
 
-# ── 2. Verificar grubby ────────────────────────────────────────────────────────
-if ! command -v grubby &>/dev/null; then
-  info "Instalando grubby..."
-  dnf install -y grubby
+# ── 2. Aplicar parámetros del kernel ──────────────────────────────────────────
+if is_fedora; then
+  # ── Fedora: grubby ──────────────────────────────────────────────────────────
+  if ! command -v grubby &>/dev/null; then
+    info "Instalando grubby..."
+    dnf install -y grubby
+  fi
+
+  info "Aplicando parámetros del kernel con grubby..."
+  grubby --update-kernel=ALL --args="$KERNEL_PARAMS"
+  success "Parámetros aplicados correctamente."
+
+  info "Parámetros activos en el kernel:"
+  grubby --info=DEFAULT | grep args
+
+elif is_ubuntu; then
+  # ── Ubuntu: /etc/default/grub + update-grub ─────────────────────────────────
+  info "Aplicando parámetros del kernel en /etc/default/grub..."
+
+  if grep -q "^GRUB_CMDLINE_LINUX=" /etc/default/grub; then
+    if grep -q "$KERNEL_PARAMS" /etc/default/grub; then
+      success "Parámetros ya están presentes en GRUB_CMDLINE_LINUX."
+    else
+      # Añadir parámetros a la línea existente
+      sudo sed -i 's/^GRUB_CMDLINE_LINUX="\(.*\)"/GRUB_CMDLINE_LINUX="\1 '"$KERNEL_PARAMS"'"/' /etc/default/grub
+      success "Parámetros agregados a GRUB_CMDLINE_LINUX."
+    fi
+  else
+    echo "GRUB_CMDLINE_LINUX=\"$KERNEL_PARAMS\"" | sudo tee -a /etc/default/grub > /dev/null
+    success "GRUB_CMDLINE_LINUX creado con parámetros."
+  fi
+
+  info "Actualizando GRUB..."
+  sudo update-grub
+  success "GRUB actualizado."
 fi
-
-# ── 3. Aplicar parámetros del kernel ──────────────────────────────────────────
-info "Aplicando parámetros del kernel con grubby..."
-grubby --update-kernel=ALL --args="i915.enable_psr=0 i915.enable_dc=0 intel_idle.max_cstate=2"
-success "Parámetros aplicados correctamente."
-
-# ── 4. Verificar que se aplicaron ─────────────────────────────────────────────
-info "Parámetros activos en el kernel:"
-grubby --info=DEFAULT | grep args
 
 section "✅ Configuración completa"
 warn "Debes reiniciar el sistema para aplicar los cambios:"

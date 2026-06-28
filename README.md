@@ -1,6 +1,6 @@
-# Fedora Setup - Huawei Matebook 14
+# Fedora/Ubuntu Setup - Huawei Matebook 14
 
-Colección de scripts para automatizar la configuración de Fedora Linux orientada a desarrollo, con una experiencia de escritorio GNOME similar a macOS.
+Colección de scripts para automatizar la configuración de Fedora o Ubuntu Linux orientada a desarrollo, con una experiencia de escritorio GNOME similar a macOS.
 
 ## Uso rápido
 
@@ -236,14 +236,15 @@ flatpak install -y flathub com.spotify.Client
 
 ## Requisitos
 
-- **Fedora 44** con **GNOME**
+- **Fedora 44+** o **Ubuntu 24.04+** con **GNOME**
 - Ninguna dependencia adicional requerida (todo funciona en consola)
 
 ---
 
 ## Notas
 
-- Probado en **Fedora 44** con **GNOME**
+- Probado en **Fedora 44** y **Ubuntu 24.04** con **GNOME**
+- `setup.sh` detecta automáticamente el sistema operativo (Fedora/Ubuntu) y usa el gestor de paquetes adecuado
 - `setup.sh` detecta automáticamente si hay GPU Intel y omite el fix si no aplica
 - Todos los scripts son **idempotentes**
 - El PATH de OpenCode se agrega automáticamente solo si está instalado

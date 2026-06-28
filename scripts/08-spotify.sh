@@ -11,7 +11,7 @@ section "🎵 Spotify"
 
 if ! command -v flatpak &>/dev/null; then
     info "Flatpak no está instalado. Instalando..."
-    sudo dnf install -y flatpak
+    pkg_install flatpak
     flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 fi
 

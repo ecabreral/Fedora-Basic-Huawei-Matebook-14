@@ -27,7 +27,7 @@ fi
 # ── 2. Instalar git si no está ────────────────────────────────────────────────
 if ! command -v git &>/dev/null; then
   info "Git no está instalado. Instalando..."
-  sudo dnf install -y git
+  pkg_install git
 fi
 
 # ── 3. Solicitar datos ─────────────────────────────────────────────────────────

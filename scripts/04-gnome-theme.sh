@@ -24,12 +24,22 @@ if [ -d "$HOME/.themes/WhiteSur-Light" ] && [ -d "$HOME/.themes/WhiteSur-Dark" ]
 else
     # ── 1. Dependencias ───────────────────────────────────────────────────────────
     info "Instalando dependencias del sistema..."
-    sudo dnf install -y \
-      git sassc glib2-devel libxml2 \
-      ImageMagick optipng inkscape \
-      gnome-shell-extension-user-theme \
-      gnome-tweaks \
-      gnome-extensions-app
+    if is_fedora; then
+      pkg_install \
+        git sassc glib2-devel libxml2 \
+        ImageMagick optipng inkscape \
+        gnome-shell-extension-user-theme \
+        gnome-tweaks \
+        gnome-extensions-app
+    elif is_ubuntu; then
+      pkg_install \
+        git sassc libglib2.0-dev-bin libxml2-utils \
+        imagemagick optipng inkscape \
+        gnome-shell-extension-prefs \
+        gnome-tweaks \
+        gnome-shell-extensions \
+        chrome-gnome-shell
+    fi
     success "Dependencias instaladas."
 
     # ── 2. Limpiar repos anteriores ───────────────────────────────────────────────

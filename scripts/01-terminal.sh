@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # 01-terminal.sh
-# Configura un entorno de terminal moderno en Fedora 43.
+# Configura un entorno de terminal moderno en Fedora o Ubuntu.
 # ==============================================================================
 
 # No usar set -e para permitir continuar aunque sudo falle
@@ -12,37 +12,46 @@ THEME="${THEME:-tokyo-night}"
 
 echo ""
 echo ">>> 01-terminal.sh: THEME = '$THEME'"
-echo ">>> 01-terminal.sh: Argumento \$1 = '$1'"
 echo ">>> 01-terminal.sh: TERMINAL_THEME env = '$TERMINAL_THEME'"
 
-section "🚀 Fedora Terminal Pro Setup"
+section "🚀 Terminal Pro Setup ($OS_NAME $OS_VERSION)"
 
-# ── 1. Actualizar sistema (solo si sudo funciona) ─────────────────────────────
-if sudo dnf check-update &>/dev/null; then
-  info "Actualizando sistema..."
-  sudo dnf update -y 2>/dev/null || info "Sistema ya actualizado."
-  success "Sistema actualizado."
-else
-  info "Actualizando sistema (sin sudo)..."
-  success "Sistema actualizado (sin cambios)."
-fi
+# ── 1. Actualizar sistema ─────────────────────────────────────────────────────
+info "Actualizando lista de paquetes..."
+pkg_update
+info "Actualizando sistema..."
+system_upgrade 2>/dev/null || success "Sistema ya actualizado."
 
 # ── 2. Instalar paquetes en un solo bloque ────────────────────────────────────
 section "📦 Instalando paquetes"
-dnf_install \
-  git curl wget unzip \
-  zsh \
-  fastfetch fzf bat zoxide micro \
-  libgda libgda-sqlite \
-  rust cargo
+
+if is_fedora; then
+  pkg_install \
+    git curl wget unzip \
+    zsh \
+    fastfetch fzf bat zoxide micro \
+    libgda libgda-sqlite \
+    rust cargo
+
+elif is_ubuntu; then
+  pkg_install \
+    git curl wget unzip \
+    zsh \
+    fastfetch fzf bat zoxide micro \
+    cargo
+
+  if ! command -v rustc &>/dev/null; then
+    pkg_install rustc
+  fi
+fi
 
 # ── 3. eza (reemplazo moderno de ls) ─────────────────────────────────────────
 section "📦 Instalando eza"
 if command -v eza &>/dev/null; then
   success "eza ya está instalado."
 else
-  if sudo dnf install -y eza 2>/dev/null; then
-    success "eza instalado desde dnf."
+  if pkg_install eza 2>/dev/null; then
+    success "eza instalado desde paquetes."
   else
     info "Instalando eza via cargo (puede tardar varios minutos)..."
     cargo install eza
@@ -177,22 +186,24 @@ if [ -L ~/.zshrc ] || [ -f ~/.zshrc ]; then
   fi
 fi
 
+UPDATE_ALIAS=$(system_update_alias)
+
 if [ "$SKIP_ZSHRC" != true ]; then
-cat << 'EOF' > ~/.zshrc
+cat << EOF > ~/.zshrc
 # cargo path
-export PATH="$HOME/.cargo/bin:$PATH"
+export PATH="\$HOME/.cargo/bin:\$PATH"
 
 # Verificar si estamos en zsh antes de cargar oh-my-zsh
-if [ -n "$ZSH_VERSION" ]; then
-  export ZSH="$HOME/.oh-my-zsh"
+if [ -n "\$ZSH_VERSION" ]; then
+  export ZSH="\$HOME/.oh-my-zsh"
   plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
-  source $ZSH/oh-my-zsh.sh
+  source \$ZSH/oh-my-zsh.sh
 else
   # Si se ejecuta desde bash, cargar plugins manualmente
-  [ -f "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh" ] && \
-    source "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh"
-  [ -f "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ] && \
-    source "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+  [ -f "\$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh" ] && \
+    source "\$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh"
+  [ -f "\$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ] && \
+    source "\$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 fi
 
 # aliases modernos
@@ -204,20 +215,20 @@ alias cd="z"
 alias cls="clear"
 
 # atajo de actualización del sistema
-alias update="sudo dnf update -y && flatpak update -y"
+$UPDATE_ALIAS
 
 # zoxide (cd inteligente)
-eval "$(zoxide init zsh)"
+eval "\$(zoxide init zsh)"
 
 # fzf (búsqueda difusa)
 [ -f /usr/share/fzf/shell/key-bindings.zsh ] && source /usr/share/fzf/shell/key-bindings.zsh
 
 # starship prompt
-eval "$(starship init zsh)"
+eval "\$(starship init zsh)"
 
 # fastfetch al iniciar terminal interactiva
 clear
-if [[ $- == *i* ]]; then
+if [[ \$- == *i* ]]; then
   fastfetch
 fi
 EOF

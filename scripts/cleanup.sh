@@ -53,7 +53,9 @@ else
 fi
 
 # ── 4. Verificar dependencias antes de generar .zshrc ─────────────────────────
-section "⚙️  Generando nuevo .zshrc"
+source "$(dirname "$0")/lib.sh"
+
+section "⚙️ Generando nuevo .zshrc"
 MISSING=()
 command -v eza      &>/dev/null || MISSING+=("eza")
 command -v starship &>/dev/null || MISSING+=("starship")
@@ -69,9 +71,11 @@ if [ ${#MISSING[@]} -gt 0 ]; then
   [[ "$FORCE" != "s" && "$FORCE" != "S" ]] && exit 1
 fi
 
-cat << 'EOF' > ~/.zshrc
+UPDATE_ALIAS=$(system_update_alias)
+
+cat << EOF > ~/.zshrc
 # cargo path
-export PATH="$HOME/.cargo/bin:$PATH"
+export PATH="\$HOME/.cargo/bin:\$PATH"
 
 # zsh plugins (sin Oh My Zsh)
 source ~/.zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
@@ -86,20 +90,20 @@ alias cd="z"
 alias cls="clear"
 
 # atajo de actualización del sistema
-alias update="sudo dnf update -y && flatpak update -y"
+$UPDATE_ALIAS
 
 # zoxide (cd inteligente)
-eval "$(zoxide init zsh)"
+eval "\$(zoxide init zsh)"
 
 # fzf (búsqueda difusa)
 [ -f /usr/share/fzf/shell/key-bindings.zsh ] && source /usr/share/fzf/shell/key-bindings.zsh
 
 # starship prompt
-eval "$(starship init zsh)"
+eval "\$(starship init zsh)"
 
 # fastfetch al iniciar terminal interactiva
 clear
-if [[ $- == *i* ]]; then
+if [[ \$- == *i* ]]; then
   fastfetch
 fi
 EOF

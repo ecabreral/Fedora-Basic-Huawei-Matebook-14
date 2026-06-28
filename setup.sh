@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# setup.sh - Instalador en CONSOLA para Fedora 44 en Matebook 14
+# setup.sh - Instalador en CONSOLA para Fedora/Ubuntu en Matebook 14
 # ==============================================================================
 
 set +e
@@ -8,10 +8,13 @@ set +e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/scripts/lib.sh"
 
+DETECTED_OS="$OS_NAME $OS_VERSION"
+
 print_banner() {
     echo ""
     echo "╔═══════════════════════════════════════════════════════════════╗"
-    echo "║     Fedora 44 Setup - Huawei Matebook 14                     ║"
+    echo "║     Linux Setup - Huawei Matebook 14                         ║"
+    printf "║     %-45s║\n" "$DETECTED_OS"
     echo "║     Configuración automatizada en terminal                   ║"
     echo "╚═══════════════════════════════════════════════════════════════╝"
     echo ""
@@ -133,6 +136,12 @@ main() {
     if [ -z "$SELECTED" ]; then
         info "No se seleccionaron componentes."
         exit 0
+    fi
+    
+    if ! is_fedora && ! is_ubuntu; then
+        warn "Sistema operativo no soportado: $OS_ID"
+        warn "Este instalador funciona en Fedora o Ubuntu."
+        exit 1
     fi
     
     if echo "$SELECTED" | grep -qw "terminal"; then
