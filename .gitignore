@@ -1,0 +1,17 @@
+build/
+dist/
+logs/
+__pycache__/
+*.pyc
+*.bin
+*.spec
+.venv/
+venv/
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+fedora-setup-gui
+install.log
+*.apk
