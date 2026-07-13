@@ -31,6 +31,7 @@ show_component_menu_simple() {
     selected[extensions]=false
     selected[opencode]=false
     selected[spotify]=false
+    selected[icons]=false
     
     while true; do
         echo "" >&2
@@ -40,7 +41,7 @@ show_component_menu_simple() {
         echo "" >&2
         
         echo "  [0] Sistema Base (Repositorios, Códecs, VA-API, Flatpak) $([ "${selected[base]}" = true ] && echo "[✓]" || echo "[ ]")" >&2
-        echo "  [1] Terminal Moderna (zsh, Starship, eza, bat, fzf...)   $([ "${selected[terminal]}" = true ] && echo "[✓]" || echo "[ ]")" >&2
+        echo "  [1] Terminal Moderna (zsh, Starship, Kitty, eza...)     $([ "${selected[terminal]}" = true ] && echo "[✓]" || echo "[ ]")" >&2
         echo "  [2] Visual Studio Code + Extensiones                      $([ "${selected[vscode]}" = true ] && echo "[✓]" || echo "[ ]")" >&2
         echo "  [3] Git + Clave SSH para GitHub                           $([ "${selected[git]}" = true ] && echo "[✓]" || echo "[ ]")" >&2
         echo "  [4] Temas macOS (GTK, Iconos, GDM, Firefox)              $([ "${selected[theme]}" = true ] && echo "[✓]" || echo "[ ]")" >&2
@@ -48,6 +49,7 @@ show_component_menu_simple() {
         echo "  [6] Extensiones GNOME                                    $([ "${selected[extensions]}" = true ] && echo "[✓]" || echo "[ ]")" >&2
         echo "  [7] OpenCode CLI (Asistente IA)                         $([ "${selected[opencode]}" = true ] && echo "[✓]" || echo "[ ]")" >&2
         echo "  [8] Spotify (Cliente de música)                          $([ "${selected[spotify]}" = true ] && echo "[✓]" || echo "[ ]")" >&2
+        echo "  [9] Iconos GNOME (WhiteSur, Pebble, Papirus...)         $([ "${selected[icons]}" = true ] && echo "[✓]" || echo "[ ]")" >&2
         echo "" >&2
         echo "  [A] Continuar con la instalación" >&2
         echo "  [Q] Cancelar y salir" >&2
@@ -64,14 +66,15 @@ show_component_menu_simple() {
             6)   selected[extensions]=$([ "${selected[extensions]}" = true ] && echo false || echo true) ;;
             7)   selected[opencode]=$([ "${selected[opencode]}" = true ] && echo false || echo true) ;;
             8)   selected[spotify]=$([ "${selected[spotify]}" = true ] && echo false || echo true) ;;
+            9)   selected[icons]=$([ "${selected[icons]}" = true ] && echo false || echo true) ;;
             a|A) break ;;
             q|Q) exit 0 ;;
-            *)   echo "  ⚠ Opción inválida. Usa 0-8, A o Q" >&2 ;;
+            *)   echo "  ⚠ Opción inválida. Usa 0-9, A o Q" >&2 ;;
         esac
     done
     
     local result=""
-    for key in base terminal vscode git theme intel extensions opencode spotify; do
+    for key in base terminal vscode git theme intel extensions opencode spotify icons; do
         if [ "${selected[$key]}" = true ]; then
             result="$result $key"
         fi
@@ -93,8 +96,11 @@ show_starship_menu_simple() {
         echo "  [4] 🟣 Catppuccin Powerline (oscuro)" >&2
         echo "  [5] 🚀 Jetpack (minimalista)" >&2
         echo "  [6] ⚡ Pure Prompt (clásico)" >&2
+        echo "  [7] 🌃 Cyberpunk Storm (neón intenso)" >&2
+        echo "  [8] ⚡ Cyberpunk Neon (máxima saturación)" >&2
+        echo "  [9] 🌙 Cyberpunk Night (sutel elegante)" >&2
         echo "" >&2
-        read -p "Selecciona tema [1-6]: " choice
+        read -p "Selecciona tema [1-9]: " choice
         
         case "$choice" in
             1)  theme="tokyo-night"; break ;;
@@ -103,6 +109,9 @@ show_starship_menu_simple() {
             4)  theme="catppuccin-powerline"; break ;;
             5)  theme="jetpack"; break ;;
             6)  theme="pure-preset"; break ;;
+            7)  theme="cyberpunk-storm"; break ;;
+            8)  theme="cyberpunk-neon"; break ;;
+            9)  theme="cyberpunk-night"; break ;;
         esac
     done
     echo "$theme"
@@ -113,21 +122,27 @@ main() {
     
     echo "  [1] Instalar TODOS los componentes"
     echo "  [2] Seleccionar componentes específicos"
-    echo "  [3] Salir"
+    echo "  [3] Cambiar tema de terminal"
+    echo "  [4] Salir"
     echo ""
     echo "  Escribe el número y presiona ENTER"
     echo ""
-    read -p "Selecciona una opción [1-3]: " choice
+    read -p "Selecciona una opción [1-4]: " choice
     echo ""
     
     case "$choice" in
         1)
-            SELECTED="base terminal vscode git theme intel extensions opencode spotify"
+            SELECTED="base terminal vscode git theme intel extensions opencode spotify icons"
             ;;
         2)
             SELECTED=$(show_component_menu_simple)
             ;;
-        3|*)
+        3)
+            # Cambio rápido de tema
+            bash "$SCRIPT_DIR/scripts/change-theme.sh"
+            exit 0
+            ;;
+        4|*)
             info "Instalación cancelada."
             exit 0
             ;;

@@ -147,6 +147,26 @@ for ID in "${SELECTED_IDS[@]}"; do
         warn "Error en Spotify. Continuando..."
       fi
       ;;
+    "icons")
+      step "Iconos GNOME"
+      set +e
+      "$SCRIPT_DIR/scripts/09-gnome-icons.sh"
+      RESULT=$?
+      set -e
+      if [ $RESULT -ne 0 ]; then
+        warn "Error en Iconos. Continuando..."
+      fi
+      ;;
+    "change-theme")
+      step "Cambio de Tema"
+      set +e
+      "$SCRIPT_DIR/scripts/change-theme.sh"
+      RESULT=$?
+      set -e
+      if [ $RESULT -ne 0 ]; then
+        warn "Error en cambio de tema. Continuando..."
+      fi
+      ;;
   esac
   echo ""
 done
@@ -170,7 +190,7 @@ echo "  Resumen de lo configurado:"
 for ID in "${SELECTED_IDS[@]}"; do
   case "$ID" in
     "base")        echo "   • Sistema Base (repositorios, códecs, VA-API, Flatpak)" ;;
-    "terminal")   echo "   • Terminal moderna (zsh, Starship, eza...)" ;;
+    "terminal")   echo "   • Terminal moderna (zsh, Starship, Kitty, eza...)" ;;
     "vscode")     echo "   • Visual Studio Code + Configuración" ;;
     "git")        echo "   • Git & Clave SSH para GitHub" ;;
     "theme")      echo "   • Temas GTK/Icons/GDM WhiteSur" ;;
@@ -178,6 +198,8 @@ for ID in "${SELECTED_IDS[@]}"; do
     "extensions") echo "   • Extensiones GNOME (13 extensiones)" ;;
     "opencode")   echo "   • OpenCode CLI (IA Assistant)" ;;
     "spotify")    echo "   • Spotify" ;;
+    "icons")      echo "   • Iconos GNOME (WhiteSur, Pebble, Papirus...)" ;;
+    "change-theme") echo "   • Tema de terminal actualizado" ;;
   esac
 done
 echo ""
