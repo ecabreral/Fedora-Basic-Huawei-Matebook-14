@@ -1,0 +1,152 @@
+# ==============================================================================
+# Starship Prompt - Cyberpunk Night Theme
+# Sutel elegante: azul, púrpura, cyan tenue
+# ==============================================================================
+
+palette = "cyberpunk_night"
+
+format = """
+[](bg:#1f6feb)\
+$os\
+$username\
+[](bg:#1f6feb fg:#0d1117)\
+$directory\
+[](fg:#1f6feb bg:#8b5cf6)\
+$git_branch\
+$git_status\
+[](fg:#8b5cf6 bg:#39d353)\
+$c\
+$elixir\
+$elm\
+$golang\
+$gradle\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$n nim\
+$rust\
+$scala\
+[](fg:#39d353 bg:#58a6ff)\
+$docker_context\
+[](fg:#58a6ff bg:#0d1117)\
+$time\
+[](fg:#0d1117)\
+"""
+
+[palettes.cyberpunk_night]
+blue = "#1f6feb"
+cyan = "#39d353"
+green = "#39d353"
+magenta = "#8b5cf6"
+red = "#f85149"
+yellow = "#d29922"
+orange = "#db6d28"
+purple = "#8b5cf6"
+
+[username]
+show_always = true
+style_user = "bg:#1f6feb"
+style_root = "bg:#1f6feb"
+format = '[ $user ]($style)'
+disabled = false
+
+[os]
+style = "bg:#1f6feb"
+disabled = true
+
+[directory]
+style = "bg:#1f6feb"
+format = '[ $path ]($style)'
+truncation_length = 3
+truncation_symbol = '…/'
+
+[directory.substitutions]
+"Documents" = '󰈙 '
+"Downloads" = ''
+"Music" = ''
+"Pictures" = ''
+
+[c]
+symbol = ' '
+style = "bg:#39d353"
+format = '[ $symbol ($version) ]($style)'
+
+[cpp]
+symbol = ' '
+style = "bg:#39d353"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = ' '
+style = "bg:#58a6ff"
+format = '[ $symbol $context ]($style)'
+
+[elixir]
+symbol = ' '
+style = "bg:#39d353"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = ' '
+style = "bg:#39d353"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ''
+style = "bg:#8b5cf6"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#8b5cf6"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = ' '
+style = "bg:#39d353"
+format = '[ $symbol ($version) ]($style)'
+
+[gradle]
+style = "bg:#39d353"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = ' '
+style = "bg:#39d353"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = ' '
+style = "bg:#39d353"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = ' '
+style = "bg:#39d353"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ''
+style = "bg:#39d353"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = '󰆥 '
+style = "bg:#39d353"
+format = '[ $symbol ($version) ]($style)'
+
+[rust]
+symbol = ''
+style = "bg:#39d353"
+format = '[ $symbol ($version) ]($style)'
+
+[scala]
+symbol = ' '
+style = "bg:#39d353"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R"
+style = "bg:#0d1117"
+format = '[ ♥ $time ]($style)'

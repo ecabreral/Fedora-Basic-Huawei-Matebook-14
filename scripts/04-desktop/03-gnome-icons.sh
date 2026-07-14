@@ -12,7 +12,7 @@
 # ==============================================================================
 
 set -e
-source "$(dirname "$0")/lib.sh"
+source "$(dirname "$0")/../../lib/common.sh"
 
 section "🎨 Instalador de Iconos GNOME"
 

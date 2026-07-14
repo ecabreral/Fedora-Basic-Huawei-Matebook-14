@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# 01-terminal.sh
+# 01-terminal-setup.sh
 # Configura un entorno de terminal moderno en Fedora o Ubuntu.
 # ==============================================================================
 
 # No usar set -e para permitir continuar aunque sudo falle
-source "$(dirname "$0")/lib.sh"
+source "$(dirname "$0")/../../lib/common.sh"
+source "$(dirname "$0")/../../lib/gnome-terminal-colors.sh"
 
 THEME="${1:-$TERMINAL_THEME}"
 THEME="${THEME:-tokyo-night}"
@@ -45,7 +46,26 @@ elif is_ubuntu; then
   fi
 fi
 
-# ── 3. eza (reemplazo moderno de ls) ─────────────────────────────────────────
+# ── 3. Verificar GNOME Terminal ──────────────────────────────────────────────
+section "🖥️  GNOME Terminal"
+if command -v gnome-terminal &>/dev/null; then
+  success "GNOME Terminal ya está instalado."
+else
+  info "Instalando GNOME Terminal..."
+  if is_fedora; then
+    pkg_install gnome-terminal
+  elif is_ubuntu; then
+    pkg_install gnome-terminal
+  fi
+
+  if command -v gnome-terminal &>/dev/null; then
+    success "GNOME Terminal instalado correctamente."
+  else
+    error "Error al instalar GNOME Terminal."
+  fi
+fi
+
+# ── 4. eza (reemplazo moderno de ls) ─────────────────────────────────────────
 section "📦 Instalando eza"
 if command -v eza &>/dev/null; then
   success "eza ya está instalado."
@@ -114,6 +134,21 @@ section "🎨 Configurando Starship"
 mkdir -p ~/.config
 
 info "Aplicando tema Starship: $THEME"
+
+# Respaldo automático si ya existe configuración
+if [ -f ~/.config/starship.toml ]; then
+  read -p "  starship.toml ya existe. ¿Deseas respaldar y generar uno nuevo? [s/N]: " RESP
+  if [[ "$RESP" =~ ^[sS]$ ]]; then
+    mkdir -p ~/.config/theme-backups
+    cp ~/.config/starship.toml ~/.config/theme-backups/starship.toml.backup.$(date +%s)
+    success "Starship respaldado."
+  else
+    info "Omitiendo generación de starship.toml."
+    SKIP_STARSHIP=true
+  fi
+fi
+
+if [ "$SKIP_STARSHIP" != true ]; then
 rm -f ~/.config/starship.toml
 
 case "$THEME" in
@@ -140,6 +175,21 @@ case "$THEME" in
     pure-preset)
         starship preset pure-preset > ~/.config/starship.toml
         success "Tema Pure Prompt aplicado."
+        ;;
+    cyberpunk-storm)
+        SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+        cp "$SCRIPT_DIR/config/starship-cyberpunk-storm.toml" ~/.config/starship.toml
+        success "Tema Cyberpunk Storm aplicado."
+        ;;
+    cyberpunk-neon)
+        SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+        cp "$SCRIPT_DIR/config/starship-cyberpunk-neon.toml" ~/.config/starship.toml
+        success "Tema Cyberpunk Neon aplicado."
+        ;;
+    cyberpunk-night)
+        SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+        cp "$SCRIPT_DIR/config/starship-cyberpunk-night.toml" ~/.config/starship.toml
+        success "Tema Cyberpunk Night aplicado."
         ;;
     nerd-font-symbols)
         starship preset nerd-font-symbols > ~/.config/starship.toml
@@ -170,8 +220,48 @@ case "$THEME" in
         starship preset tokyo-night > ~/.config/starship.toml
         ;;
 esac
+fi
 
-# ── 9. Generar .zshrc ─────────────────────────────────────────────────────────
+# ── 9. Configurar GNOME Terminal con tema seleccionado ───────────────────────
+section "🎨 Configurando GNOME Terminal: $THEME"
+
+if command -v gnome-terminal &>/dev/null && command -v dconf &>/dev/null; then
+  # Obtener el perfil por defecto
+  PROFILE=$(get_default_profile)
+
+  if [ -n "$PROFILE" ]; then
+    PROFILE_PATH="/org/gnome/terminal/legacy/profiles:/:$PROFILE"
+
+    info "Aplicando tema '$THEME' al perfil: $PROFILE"
+    apply_gnome_terminal_theme "$PROFILE_PATH"
+    success "GNOME Terminal configurado con tema: $THEME"
+  else
+    # Crear un nuevo perfil si no existe ninguno
+    info "No se encontró perfil de GNOME Terminal. Creando uno nuevo..."
+
+    # Generar UUID para el nuevo perfil
+    NEW_UUID=$(uuidgen)
+    NEW_UUID_LOWER=$(echo "$NEW_UUID" | tr '[:upper:]' '[:lower:]')
+
+    # Crear el perfil
+    dconf write /org/gnome/terminal/legacy/profiles: "['$NEW_UUID_LOWER']"
+    dconf write "/org/gnome/terminal/legacy/profiles:/:$NEW_UUID_LOWER/visible-name" "'$THEME'"
+    dconf write "/org/gnome/terminal/legacy/profiles:/:$NEW_UUID_LOWER/default-size-columns" "120"
+    dconf write "/org/gnome/terminal/legacy/profiles:/:$NEW_UUID_LOWER/default-size-rows" "35"
+    dconf write "/org/gnome/terminal/legacy/profiles:/:$NEW_UUID_LOWER/use-system-font" "false"
+    dconf write "/org/gnome/terminal/legacy/profiles:/:$NEW_UUID_LOWER/font" "'JetBrainsMono Nerd Font 11'"
+
+    # Aplicar el tema
+    PROFILE_PATH="/org/gnome/terminal/legacy/profiles:/:$NEW_UUID_LOWER"
+    apply_gnome_terminal_theme "$PROFILE_PATH"
+
+    success "Nuevo perfil de GNOME Terminal creado con tema: $THEME"
+  fi
+else
+  warn "GNOME Terminal o dconf no están disponibles. Omitiendo configuración de tema."
+fi
+
+# ── 10. Generar .zshrc ────────────────────────────────────────────────────────
 section "⚙️  Configurando .zshrc"
 
 # Si .zshrc existe, preguntar antes de sobrescribir
@@ -243,6 +333,34 @@ if [ "$SHELL" != "$(which zsh)" ]; then
   success "Zsh configurado como shell por defecto."
 fi
 
-section "✅ Terminal Setup completo"
-echo -e "  Ejecuta ${BOLD}exec zsh${RESET} o abre una nueva terminal para aplicar los cambios."
+# ── 12. Establecer GNOME Terminal como terminal por defecto ──────────────────
+if command -v gnome-terminal &>/dev/null; then
+  section "Estableciendo GNOME Terminal como terminal por defecto"
+
+  if command -v gsettings &>/dev/null; then
+    gsettings set org.gnome.desktop.default-applications.terminal exec 'gnome-terminal'
+    success "GNOME Terminal configurado como terminal por defecto en GNOME."
+  fi
+
+  if [ -f "$(which gnome-terminal)" ]; then
+    sudo ln -sf "$(which gnome-terminal)" /usr/local/bin/x-terminal-emulator 2>/dev/null || true
+    success "Symlink x-terminal-emulator creado."
+  fi
+fi
+
+section "Terminal Setup completo"
+echo ""
+echo "  Terminal: GNOME Terminal (default Fedora)"
+echo "  Fuente: JetBrainsMono Nerd Font"
+echo "  Tema: $THEME"
+echo ""
+echo "  Atajos de teclado (GNOME Terminal):"
+echo "    Ctrl+Shift+T       Nueva pestaña"
+echo "    Ctrl+Shift+W       Cerrar pestaña"
+echo "    Ctrl+Shift+E       Nueva ventana"
+echo "    Ctrl+Shift+O       Nuevo split horizontal"
+echo "    Ctrl+Shift+J       Nuevo split vertical"
+echo "    Alt+←/→            Navegar paneles"
+echo ""
+echo "  Ejecuta exec zsh o abre una nueva terminal para aplicar los cambios."
 echo ""

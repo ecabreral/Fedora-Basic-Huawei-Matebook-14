@@ -5,7 +5,7 @@
 # Incluye: Repositorios, códecs, VA-API Intel, Flatpak, optimizaciones.
 # ==============================================================================
 
-source "$(dirname "$0")/lib.sh"
+source "$(dirname "$0")/../../lib/common.sh"
 
 OS="$(detect_os)"
 section "💻 Sistema operativo detectado: $OS_NAME $OS_VERSION"

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # lib.sh — Librería compartida para scripts del proyecto Fedora/Ubuntu Setup
-# Uso: source "$(dirname "$0")/lib.sh"
+# Uso: source "$(dirname "$0")/../../lib/common.sh"
 # ==============================================================================
 
-# ── Colores ───────────────────────────────────────────────────────────────────
+# ── Colores (compatibilidad hacia atrás) ──────────────────────────────────────
 BOLD="\e[1m"
 DIM="\e[2m"
 GREEN="\e[32m"
@@ -17,15 +17,23 @@ RESET="\e[0m"
 # ── Directorio raíz del proyecto ──────────────────────────────────────────────
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
-# ── Funciones de log ──────────────────────────────────────────────────────────
-info()    { echo -e "${CYAN}${BOLD}  ·${RESET}  $1"; }
-success() { echo -e "${GREEN}${BOLD}  ✔${RESET}  $1"; }
-warn()    { echo -e "${YELLOW}${BOLD}  !${RESET}  $1"; }
-error()   { echo -e "${RED}${BOLD}  ✗${RESET}  $1" >&2; }
+# ── Cargar logger si existe ──────────────────────────────────────────────────
+_LOGGER_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/logger.sh"
+if [ -f "$_LOGGER_FILE" ]; then
+  source "$_LOGGER_FILE"
+fi
+
+# ── Funciones de log (compatibilidad hacia atrás) ────────────────────────────
+info()    { log_info "$@" 2>/dev/null || echo -e "${CYAN}${BOLD}  ·${RESET}  $1"; }
+success() { log_success "$@" 2>/dev/null || echo -e "${GREEN}${BOLD}  ✔${RESET}  $1"; }
+warn()    { log_warn "$@" 2>/dev/null || echo -e "${YELLOW}${BOLD}  !${RESET}  $1"; }
+error()   { log_error "$@" 2>/dev/null || echo -e "${RED}${BOLD}  ✗${RESET}  $1" >&2; }
 section() {
-  echo ""
-  echo -e "${BLUE}${BOLD}══ $1${RESET}"
-  echo ""
+  log_section "$@" 2>/dev/null || {
+    echo ""
+    echo -e "${BLUE}${BOLD}══ $1${RESET}"
+    echo ""
+  }
 }
 
 # ── OS Detection ──────────────────────────────────────────────────────────────

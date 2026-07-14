@@ -7,7 +7,7 @@
 # ==============================================================================
 
 set -e
-source "$(dirname "$0")/lib.sh"
+source "$(dirname "$0")/../../lib/common.sh"
 require_root
 
 KERNEL_PARAMS="i915.enable_psr=0 i915.enable_dc=0 intel_idle.max_cstate=2"

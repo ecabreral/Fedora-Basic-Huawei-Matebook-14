@@ -4,7 +4,7 @@
 # ==============================================================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/lib.sh"
+source "$(dirname "$0")/../../lib/common.sh"
 
 OPENCODE_DIR="$HOME/.opencode/bin"
 OPENCODE_BIN="$OPENCODE_DIR/opencode"

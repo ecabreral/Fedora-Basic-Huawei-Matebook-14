@@ -5,7 +5,7 @@
 # ==============================================================================
 
 set -e
-source "$(dirname "$0")/lib.sh"
+source "$(dirname "$0")/../../lib/common.sh"
 require_root
 
 section "💻 Instalando Visual Studio Code en $OS_NAME"

@@ -15,24 +15,40 @@ Colección de scripts para automatizar la configuración de Fedora o Ubuntu Linu
 ```
 Fedora-Basic-Huawei-Matebook-14/
 ├── setup.sh                    # Instalador interactivo en consola
+├── lib/
+│   ├── common.sh               # Librería compartida (colores, helpers)
+│   └── kitty-colors.sh         # Definiciones de colores para Kitty
 ├── scripts/
-│   ├── lib.sh                  # Librería compartida (colores, helpers)
-│   ├── gui-launcher.sh         # Ejecutor de scripts seleccionados
-│   ├── 00-base-system.sh       # Sistema base: repositorios, códecs, VA-API, Flatpak
-│   ├── 01-terminal.sh          # Terminal moderna: zsh, Starship, eza…
-│   ├── 02-vscode.sh            # Visual Studio Code + configuración
-│   ├── 03-git.sh               # Git global + clave SSH para GitHub
-│   ├── 04-gnome-theme.sh       # Temas GNOME estilo macOS
-│   ├── 05-intel-fix.sh         # Fix parpadeo pantalla Intel (opcional)
-│   ├── 06-extensions.sh        # Extensiones GNOME
-│   ├── 07-opencode.sh          # OpenCode CLI: Asistente de IA para terminal
-│   ├── 08-spotify.sh           # Spotify desde Flathub
-│   └── cleanup.sh              # Elimina Oh My Zsh (opcional)
+│   ├── runner.sh               # Ejecutor de scripts seleccionados
+│   ├── 01-system/
+│   │   └── 01-base-system.sh   # Sistema base: repositorios, códecs, VA-API, Flatpak
+│   ├── 02-terminal/
+│   │   ├── 01-terminal-setup.sh # Terminal moderna: zsh, Starship, Kitty, eza…
+│   │   └── 02-change-theme.sh  # Cambio rápido de tema (Starship + Kitty)
+│   ├── 03-development/
+│   │   ├── 01-vscode.sh        # Visual Studio Code + configuración
+│   │   └── 02-git-ssh.sh       # Git global + clave SSH para GitHub
+│   ├── 04-desktop/
+│   │   ├── 01-gnome-theme.sh   # Temas GNOME estilo macOS
+│   │   ├── 02-gnome-extensions.sh # Extensiones GNOME
+│   │   └── 03-gnome-icons.sh   # Iconos GNOME (WhiteSur, McMojave, etc.)
+│   ├── 05-hardware/
+│   │   └── 01-intel-fix.sh     # Fix parpadeo pantalla Intel (opcional)
+│   └── 06-apps/
+│       ├── 01-opencode.sh      # OpenCode CLI: Asistente de IA para terminal
+│       └── 02-spotify.sh       # Spotify desde Flathub
 ├── config/
-│   └── starship.toml           # Preset para Starship (sin uso)
-└── docs/
-    ├── dash-to-dock.md         # Guía de configuración de Dash to Dock
-    └── copyous-troubleshooting.md  # Solución de problemas de Copyous
+│   ├── kitty.conf              # Configuración base de Kitty
+│   └── starship/
+│       ├── tokyo-night.toml    # Tema Tokyo Night
+│       ├── pastel-powerline.toml # Tema Pastel Powerline
+│       ├── gruvbox-rainbow.toml # Tema Gruvbox Rainbow
+│       ├── catppuccin-powerline.toml # Tema Catppuccin Powerline
+│       ├── jetpack.toml        # Tema Jetpack
+│       ├── pure-preset.toml    # Tema Pure Prompt
+│       ├── cyberpunk-storm.toml # Tema Cyberpunk Storm
+│       ├── cyberpunk-neon.toml # Tema Cyberpunk Neon
+│       └── cyberpunk-night.toml # Tema Cyberpunk Night
 ```
 
 ---
@@ -49,14 +65,16 @@ El instalador funciona completamente en terminal:
 
   [1] Instalar TODOS los componentes
   [2] Seleccionar componentes específicos
-  [3] Salir
+  [3] Cambiar tema de terminal
+  [4] Salir
 
   Escribe el número y presiona ENTER
 ```
 
 - **Menú interactivo** - Escribe el número y presiona ENTER
-- **Selección de componentes** - Toggles con números 0-7, [A] continuar, [Q] salir
-- **Selector de tema Starship** - 6 presets disponibles
+- **Selección de componentes** - Toggles con números 0-8, [A] continuar, [Q] salir
+- **Selector de tema Starship** - 9 presets disponibles (incluye Cyberpunk)
+- **Cambio rápido de tema** - Opción [3] para cambiar solo el tema sin reinstalar
 
 ---
 
@@ -65,7 +83,7 @@ El instalador funciona completamente en terminal:
 | # | Componente | Descripción |
 |---|------------|-------------|
 | 0 | Sistema Base | Repositorios (RPM Fusion), códecs, VA-API Intel, Flatpak |
-| 1 | Terminal | zsh, Starship (6 temas), eza, bat, fzf, zoxide, fastfetch |
+| 1 | Terminal | zsh, Starship (9 temas), Kitty (tabs, splits), eza, bat, fzf, zoxide, fastfetch |
 | 2 | VS Code | Editor con configuración optimizada |
 | 3 | Git | Configuración global + clave SSH para GitHub |
 | 4 | Temas | GTK, Iconos, Shell estilo macOS |
@@ -76,7 +94,7 @@ El instalador funciona completamente en terminal:
 
 ---
 
-## Selector de Tema Starship (6 Presets)
+## Selector de Tema Starship (9 Presets)
 
 | # | Preset | Estilo |
 |---|--------|--------|
@@ -86,6 +104,11 @@ El instalador funciona completamente en terminal:
 | 4 | Catppuccin Powerline | Oscuro |
 | 5 | Jetpack | Minimalista |
 | 6 | Pure Prompt | Clásico |
+| 7 | Cyberpunk Storm | Neón intenso (rosa, cyan, verde matrix) |
+| 8 | Cyberpunk Neon | Máxima saturación |
+| 9 | Cyberpunk Night | Sutel elegante (azul, púrpura) |
+
+> **Cambio rápido:** Usa `./setup.sh → [3] Cambiar tema` para cambiar el tema sin reinstalar todo.
 
 ---
 
@@ -110,7 +133,7 @@ Solo se agrega si el comando `opencode` está disponible en el sistema.
 
 ## Qué instala cada script
 
-### 0. Sistema Base — `scripts/00-base-system.sh`
+### 0. Sistema Base — `scripts/01-system/01-base-system.sh`
 
 | Categoría | Paquetes/Acciones |
 |-----------|-------------------|
@@ -123,12 +146,13 @@ Solo se agrega si el comando `opencode` está disponible en el sistema.
 
 > **Importante**: Este script debe ejecutarse primero (opción 0 o al instalar todos). Esencial para MateBook 14 con Intel Core Ultra.
 
-### 1. Terminal — `scripts/01-terminal.sh`
+### 1. Terminal — `scripts/02-terminal/01-terminal-setup.sh`
 
 | Herramienta | Descripción |
 |---|---|
 | `zsh` + Oh My Zsh | Shell moderna con plugins |
-| `starship` | Prompt configurable (6 temas) |
+| `starship` | Prompt configurable (9 temas) |
+| `Kitty` | Terminal GPU con tabs, splits, TrueColor |
 | `eza` | `ls` moderno con iconos y colores |
 | `bat` | `cat` con syntax highlighting |
 | `fzf` | Búsqueda difusa en terminal |
@@ -152,7 +176,7 @@ Solo se agrega si el comando `opencode` está disponible en el sistema.
 
 ---
 
-### 2. Visual Studio Code — `scripts/02-vscode.sh`
+### 2. Visual Studio Code — `scripts/03-development/01-vscode.sh`
 
 Instala VS Code desde el repositorio oficial de Microsoft:
 ```bash
@@ -165,7 +189,7 @@ sudo dnf install code
 
 ---
 
-### 3. Git + GitHub — `scripts/03-git.sh`
+### 3. Git + GitHub — `scripts/03-development/02-git-ssh.sh`
 
 - Configura nombre, email y rama por defecto (`main`)
 - Genera clave SSH **ed25519**
@@ -175,7 +199,7 @@ sudo dnf install code
 
 ---
 
-### 4. Temas GNOME — `scripts/04-gnome-theme.sh`
+### 4. Temas GNOME — `scripts/04-desktop/01-gnome-theme.sh`
 
 | Componente | Tema |
 |---|---|
@@ -187,7 +211,7 @@ sudo dnf install code
 
 ---
 
-### 5. Fix Intel Flicker — `scripts/05-intel-fix.sh`
+### 5. Fix Intel Flicker — `scripts/05-hardware/01-intel-fix.sh`
 
 - Detecta GPU Intel automáticamente
 - Aplica parámetros de kernel:
@@ -218,19 +242,52 @@ sudo dnf install code
 
 ---
 
-## OpenCode CLI — `scripts/07-opencode.sh`
+## OpenCode CLI — `scripts/06-apps/01-opencode.sh`
 
 Instala el intérprete de IA **OpenCode** para usar directamente desde la terminal.
 
 ---
 
-## Spotify — `scripts/08-spotify.sh`
+## Spotify — `scripts/06-apps/02-spotify.sh`
 
 Instala **Spotify** desde Flathub como cliente de música.
 
 ```bash
 flatpak install -y flathub com.spotify.Client
 ```
+
+---
+
+## Kitty — Terminal GPU con Tabs y Splits
+
+Kitty es la terminal por defecto del proyecto. Se instala y configura automáticamente con el script `01-terminal.sh`.
+
+| Característica | Descripción |
+|---|---|
+| **Motor** | GPU-accelerado (OpenGL) |
+| **Tabs** | Pestañas con `Ctrl+Shift+T`, cerrar con `Ctrl+Shift+W` |
+| **Splits** | Horizontal `Ctrl+Shift+Enter`, Vertical `Ctrl+Shift+-` |
+| **Navegación** | `Ctrl+Shift+←/→/↑/↓` entre paneles |
+| **Colores** | TrueColor (16 millones de colores) |
+| **Fuente** | JetBrainsMono Nerd Font |
+| **Visual** | Opacidad 0.95, padding 10px |
+| **Default** | Reemplaza GNOME Terminal como terminal principal |
+| **Temas** | Integra con Starship: Tokyo Night, Gruvbox, Catppuccin, Cyberpunk, etc. |
+
+**Atajos de teclado:**
+
+| Atajo | Acción |
+|---|---|
+| `Ctrl+Shift+T` | Nueva pestaña |
+| `Ctrl+Shift+W` | Cerrar pestaña |
+| `Ctrl+Shift+Enter` | Split horizontal |
+| `Ctrl+Shift+-` | Split vertical |
+| `Ctrl+Shift+←/→` | Navegar entre paneles |
+| `Ctrl+Shift+L` | Navegar entre layouts |
+| `Ctrl+Shift+C/V` | Copiar/Pegar |
+| `Ctrl++/-/0` | Aumentar/Reducir/Reset font size |
+
+**Configuración:** `~/.config/kitty/kitty.conf`
 
 ---
 
