@@ -15,7 +15,7 @@ BLUE="\e[34m"
 RESET="\e[0m"
 
 # ── Directorio raíz del proyecto ──────────────────────────────────────────────
-PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # ── Cargar logger si existe ──────────────────────────────────────────────────
 _LOGGER_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/logger.sh"
@@ -149,6 +149,98 @@ clipboard_copy() {
     return 0
   fi
   return 1
+}
+
+# ── install_nerd_font: Instala JetBrainsMono Nerd Font si no existe ───────────
+install_nerd_font() {
+  if fc-list | grep -qi "JetBrainsMono Nerd"; then
+    success "JetBrainsMono Nerd Font ya instalada."
+    return 0
+  fi
+  info "Instalando JetBrainsMono Nerd Font..."
+  mkdir -p ~/.local/share/fonts
+  curl -fsSL https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip -o /tmp/JetBrainsMono.zip
+  unzip -o /tmp/JetBrainsMono.zip -d ~/.local/share/fonts > /dev/null
+  rm -f /tmp/JetBrainsMono.zip
+  fc-cache -fv > /dev/null
+  success "JetBrainsMono Nerd Font instalada."
+}
+
+# ── open_url: Abre una URL en el navegador predeterminado ─────────────────────
+open_url() {
+  local url="$1"
+  if command -v xdg-open &>/dev/null; then
+    xdg-open "$url" 2>/dev/null
+  elif command -v gnome-open &>/dev/null; then
+    gnome-open "$url" 2>/dev/null
+  else
+    info "Abre esta URL manualmente: $url"
+    return 1
+  fi
+}
+
+# ── apply_starship_theme: Aplica un tema de Starship ──────────────────────────
+apply_starship_theme() {
+  local theme="$1"
+  local config_dir="${2:-$HOME/.config}"
+
+  mkdir -p "$config_dir"
+
+  case "$theme" in
+    tokyo-night|pastel-powerline|gruvbox-rainbow|catppuccin-powerline|jetpack|pure-preset| \
+    nerd-font-symbols|no-nerd-font|bracketed-segments|plain-text|no-runtimes|no-empty-icons)
+      starship preset "$theme" > "$config_dir/starship.toml"
+      ;;
+    cyberpunk-storm|cyberpunk-neon|cyberpunk-night)
+      local toml_file="$PROJECT_ROOT/config/starship/starship-${theme}.toml"
+      if [ -f "$toml_file" ]; then
+        cp "$toml_file" "$config_dir/starship.toml"
+      else
+        error "No se encontró starship-${theme}.toml"
+        return 1
+      fi
+      ;;
+    *)
+      error "Tema desconocido: $theme"
+      return 1
+      ;;
+  esac
+  success "Tema Starship '$theme' aplicado."
+}
+
+# ── show_theme_selector: Muestra menú whiptail de selección de temas ──────────
+show_theme_selector() {
+  local theme
+  theme=$(whiptail --title "Selecciona el tema de Starship" \
+      --radiolist "Elige un tema para tu terminal:" 22 60 12 \
+      "1" "Tokyo Night (oscuro, recomendado)" ON \
+      "2" "Pastel Powerline (claro)" OFF \
+      "3" "Gruvbox Rainbow (oscuro calido)" OFF \
+      "4" "Catppuccin Powerline (oscuro pastel)" OFF \
+      "5" "Jetpack (minimalista)" OFF \
+      "6" "Pure Prompt (clasico)" OFF \
+      "7" "Cyberpunk Storm (neon intenso)" OFF \
+      "8" "Cyberpunk Neon (maxima saturacion)" OFF \
+      "9" "Cyberpunk Night (sutel elegante)" OFF \
+      3>&1 1>&2 2>&3)
+
+  if [ $? -ne 0 ] || [ -z "$theme" ]; then
+    echo ""
+    return 1
+  fi
+
+  case "$theme" in
+    1) echo "tokyo-night" ;;
+    2) echo "pastel-powerline" ;;
+    3) echo "gruvbox-rainbow" ;;
+    4) echo "catppuccin-powerline" ;;
+    5) echo "jetpack" ;;
+    6) echo "pure-preset" ;;
+    7) echo "cyberpunk-storm" ;;
+    8) echo "cyberpunk-neon" ;;
+    9) echo "cyberpunk-night" ;;
+    *) echo "" ;;
+  esac
 }
 
 # ── Inicializar detección de SO al cargar ────────────────────────────────────

@@ -86,50 +86,52 @@ get_gnome_terminal_colors() {
 apply_gnome_terminal_theme() {
     local profile_path="$1"
 
-    # Leer colores del tema
-    eval "$(get_gnome_terminal_colors)"
+    # Leer colores del tema sin eval (seguro)
+    local palette="" foreground_color="" background_color="" bold_color="" bold_color_same_as_fg=""
+    while IFS='=' read -r key value; do
+        case "$key" in
+            palette) palette="$value" ;;
+            foreground_color) foreground_color="$value" ;;
+            background_color) background_color="$value" ;;
+            bold_color) bold_color="$value" ;;
+            bold_color_same_as_fg) bold_color_same_as_fg="$value" ;;
+        esac
+    done < <(get_gnome_terminal_colors)
 
     # Aplicar via dconf
     dconf write "${profile_path}/palette" "$palette"
-    dconf write "${profile_path}/foreground_color" "$foreground_color"
-    dconf write "${profile_path}/background_color" "$background_color"
-    dconf write "${profile_path}/bold_color" "$bold_color"
-    dconf write "${profile_path}/bold_color_same_as_fg" "$bold_color_same_as_fg"
+    dconf write "${profile_path}/foreground-color" "$foreground_color"
+    dconf write "${profile_path}/background-color" "$background_color"
+    dconf write "${profile_path}/bold-color" "$bold_color"
+    dconf write "${profile_path}/bold-color-same-as-fg" "$bold_color_same_as_fg"
     dconf write "${profile_path}/use-theme-colors" "false"
     dconf write "${profile_path}/visible-name" "'$THEME'"
 
     # Configurar fuente Nerd Font
-    if ! fc-list | grep -qi "JetBrainsMono Nerd"; then
-        mkdir -p ~/.local/share/fonts
-        wget -q https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip -O /tmp/JetBrainsMono.zip
-        unzip -o /tmp/JetBrainsMono.zip -d ~/.local/share/fonts > /dev/null
-        rm -f /tmp/JetBrainsMono.zip
-        fc-cache -fv > /dev/null
-    fi
+    install_nerd_font
     dconf write "${profile_path}/use-system-font" "false"
     dconf write "${profile_path}/font" "'JetBrainsMono Nerd Font 11'"
 }
 
 # Función para obtener el perfil por defecto de GNOME Terminal
 get_default_profile() {
-    # Intentar obtener el perfil marcado como predeterminado
-    local default
-    default=$(dconf read /org/gnome/terminal/legacy/profiles:/ 2>/dev/null | tr -d "'" | tr -d '/')
+    # Usar gsettings para obtener el UUID del perfil por defecto (más confiable)
+    local default_uuid
+    default_uuid=$(gsettings get org.gnome.Terminal.ProfilesList default 2>/dev/null | tr -d "'")
 
-    if [ -n "$default" ] && [ "$default" != "" ]; then
-        echo "$default"
+    if [ -n "$default_uuid" ] && [ "$default_uuid" != "" ]; then
+        echo "$default_uuid"
         return
     fi
 
-    # Si no hay perfil por defecto, tomar el primero disponible
+    # Fallback: obtener el primer perfil de la lista
     local first_profile
-    first_profile=$(dconf list /org/gnome/terminal/legacy/profiles:/ 2>/dev/null | head -1 | tr -d '/')
+    first_profile=$(gsettings get org.gnome.Terminal.ProfilesList list 2>/dev/null | grep -oP "^[^']*" | head -1 | tr -d "[]' ")
 
     if [ -n "$first_profile" ]; then
         echo "$first_profile"
         return
     fi
 
-    # Si no hay perfiles, crear uno nuevo
     echo ""
 }

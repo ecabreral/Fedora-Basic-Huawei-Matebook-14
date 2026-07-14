@@ -35,6 +35,29 @@ step() {
     log_step "$CURRENT" "$TOTAL" "$1"
 }
 
+# ── Función reutilizable para ejecutar scripts ────────────────────────────────
+run_script() {
+    local name="$1"
+    local script_path="$2"
+    local use_sudo="${3:-false}"
+
+    set +e
+    if [ "$use_sudo" = "true" ]; then
+        sudo "$SCRIPT_DIR/$script_path" 2>&1 | tee -a "$LOG_FILE"
+    else
+        "$SCRIPT_DIR/$script_path" 2>&1 | tee -a "$LOG_FILE"
+    fi
+    local result=${PIPESTATUS[0]}
+    set -e
+
+    if [ $result -ne 0 ]; then
+        warn "Error en $name. Continuando..."
+        RESULTS+=("$name [FAIL]")
+    else
+        RESULTS+=("$name [OK]")
+    fi
+}
+
 # ── Array de resultados ───────────────────────────────────────────────────────
 declare -a RESULTS=()
 
@@ -43,82 +66,28 @@ for ID in "${SELECTED_IDS[@]}"; do
     case "$ID" in
         "base")
             step "Sistema Base (Repositorios, Códecs, VA-API, Flatpak)"
-            set +e
-            sudo "$SCRIPT_DIR/scripts/01-system/01-base-system.sh" 2>&1 | tee -a "$LOG_FILE"
-            RESULT=$?
-            set -e
-            if [ $RESULT -ne 0 ]; then
-                warn "Error en sistema base. Continuando..."
-                RESULTS+=("Sistema Base [FAIL]")
-            else
-                RESULTS+=("Sistema Base [OK]")
-            fi
+            run_script "Sistema Base" "scripts/01-system/01-base-system.sh" "true"
             ;;
         "terminal")
             step "Terminal & Herramientas (tema: $THEME_NAME)"
-            set +e
-            "$SCRIPT_DIR/scripts/02-terminal/01-terminal-setup.sh" "$THEME_NAME" 2>&1 | tee -a "$LOG_FILE"
-            RESULT=$?
-            set -e
-            if [ $RESULT -ne 0 ]; then
-                warn "Error en terminal. Continuando..."
-                RESULTS+=("Terminal ($THEME_NAME) [FAIL]")
-            else
-                RESULTS+=("Terminal ($THEME_NAME) [OK]")
-            fi
+            run_script "Terminal ($THEME_NAME)" "scripts/02-terminal/01-terminal-setup.sh" "false"
             ;;
         "vscode")
             step "Visual Studio Code"
-            set +e
-            sudo "$SCRIPT_DIR/scripts/03-development/01-vscode.sh" 2>&1 | tee -a "$LOG_FILE"
-            RESULT=$?
-            set -e
-            if [ $RESULT -ne 0 ]; then
-                warn "Error en VS Code. Continuando..."
-                RESULTS+=("Visual Studio Code [FAIL]")
-            else
-                RESULTS+=("Visual Studio Code [OK]")
-            fi
+            run_script "Visual Studio Code" "scripts/03-development/01-vscode.sh" "true"
             ;;
         "git")
             step "Git + GitHub"
-            set +e
-            "$SCRIPT_DIR/scripts/03-development/02-git-ssh.sh" 2>&1 | tee -a "$LOG_FILE"
-            RESULT=$?
-            set -e
-            if [ $RESULT -ne 0 ]; then
-                warn "Error en Git. Continuando..."
-                RESULTS+=("Git + SSH [FAIL]")
-            else
-                RESULTS+=("Git + SSH [OK]")
-            fi
+            run_script "Git + SSH" "scripts/03-development/02-git-ssh.sh" "false"
             ;;
         "theme")
             step "Temas GNOME estilo macOS"
-            set +e
-            "$SCRIPT_DIR/scripts/04-desktop/01-gnome-theme.sh" 2>&1 | tee -a "$LOG_FILE"
-            RESULT=$?
-            set -e
-            if [ $RESULT -ne 0 ]; then
-                warn "Error en tema. Continuando..."
-                RESULTS+=("Temas GNOME [FAIL]")
-            else
-                RESULTS+=("Temas GNOME [OK]")
-            fi
+            run_script "Temas GNOME" "scripts/04-desktop/01-gnome-theme.sh" "false"
             ;;
         "intel")
             step "Fix Intel Screen Flicker"
             if lspci | grep -qi "intel.*graphics\|intel.*vga\|intel.*display"; then
-                set +e
-                sudo "$SCRIPT_DIR/scripts/05-hardware/01-intel-fix.sh" 2>&1 | tee -a "$LOG_FILE"
-                RESULT=$?
-                set -e
-                if [ $RESULT -ne 0 ]; then
-                    warn "Error en Intel Fix. Continuando..."
-                    RESULTS+=("Intel Flicker Fix [FAIL]")
-                else
-                    RESULTS+=("Intel Flicker Fix [OK]")
-                fi
+                run_script "Intel Flicker Fix" "scripts/05-hardware/01-intel-fix.sh" "true"
             else
                 warn "GPU Intel no detectada. Omitiendo intel-fix"
                 RESULTS+=("Intel Flicker Fix [SKIP]")
@@ -126,81 +95,23 @@ for ID in "${SELECTED_IDS[@]}"; do
             ;;
         "extensions")
             step "Extensiones GNOME"
-            set +e
-            "$SCRIPT_DIR/scripts/04-desktop/02-gnome-extensions.sh" 2>&1 | tee -a "$LOG_FILE"
-            RESULT=$?
-            set -e
-            if [ $RESULT -ne 0 ]; then
-                warn "Error en extensiones. Continuando..."
-                RESULTS+=("Extensiones GNOME [FAIL]")
-            else
-                RESULTS+=("Extensiones GNOME [OK]")
-            fi
+            run_script "Extensiones GNOME" "scripts/04-desktop/02-gnome-extensions.sh" "false"
             ;;
         "opencode")
             step "OpenCode CLI"
-            set +e
-            "$SCRIPT_DIR/scripts/06-apps/01-opencode.sh" 2>&1 | tee -a "$LOG_FILE"
-            RESULT=$?
-            set -e
-            if [ $RESULT -ne 0 ]; then
-                warn "Error en OpenCode. Continuando..."
-                RESULTS+=("OpenCode CLI [FAIL]")
-            else
-                RESULTS+=("OpenCode CLI [OK]")
-            fi
+            run_script "OpenCode CLI" "scripts/06-apps/01-opencode.sh" "false"
             ;;
         "spotify")
             step "Spotify"
-            set +e
-            "$SCRIPT_DIR/scripts/06-apps/02-spotify.sh" 2>&1 | tee -a "$LOG_FILE"
-            RESULT=$?
-            set -e
-            if [ $RESULT -ne 0 ]; then
-                warn "Error en Spotify. Continuando..."
-                RESULTS+=("Spotify [FAIL]")
-            else
-                RESULTS+=("Spotify [OK]")
-            fi
+            run_script "Spotify" "scripts/06-apps/02-spotify.sh" "false"
             ;;
         "brave")
             step "Brave Browser"
-            set +e
-            "$SCRIPT_DIR/scripts/06-apps/03-brave.sh" 2>&1 | tee -a "$LOG_FILE"
-            RESULT=$?
-            set -e
-            if [ $RESULT -ne 0 ]; then
-                warn "Error en Brave Browser. Continuando..."
-                RESULTS+=("Brave Browser [FAIL]")
-            else
-                RESULTS+=("Brave Browser [OK]")
-            fi
+            run_script "Brave Browser" "scripts/06-apps/03-brave.sh" "false"
             ;;
         "icons")
             step "Iconos GNOME"
-            set +e
-            "$SCRIPT_DIR/scripts/04-desktop/03-gnome-icons.sh" 2>&1 | tee -a "$LOG_FILE"
-            RESULT=$?
-            set -e
-            if [ $RESULT -ne 0 ]; then
-                warn "Error en Iconos. Continuando..."
-                RESULTS+=("Iconos GNOME [FAIL]")
-            else
-                RESULTS+=("Iconos GNOME [OK]")
-            fi
-            ;;
-        "change-theme")
-            step "Cambio de Tema"
-            set +e
-            "$SCRIPT_DIR/scripts/02-terminal/02-change-theme.sh" 2>&1 | tee -a "$LOG_FILE"
-            RESULT=$?
-            set -e
-            if [ $RESULT -ne 0 ]; then
-                warn "Error en cambio de tema. Continuando..."
-                RESULTS+=("Cambio de Tema [FAIL]")
-            else
-                RESULTS+=("Cambio de Tema [OK]")
-            fi
+            run_script "Iconos GNOME" "scripts/04-desktop/03-gnome-icons.sh" "false"
             ;;
     esac
 done

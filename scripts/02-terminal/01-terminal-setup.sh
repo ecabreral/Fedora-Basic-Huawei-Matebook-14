@@ -11,10 +11,6 @@ source "$(dirname "$0")/../../lib/gnome-terminal-colors.sh"
 THEME="${1:-$TERMINAL_THEME}"
 THEME="${THEME:-tokyo-night}"
 
-echo ""
-echo ">>> 01-terminal.sh: THEME = '$THEME'"
-echo ">>> 01-terminal.sh: TERMINAL_THEME env = '$TERMINAL_THEME'"
-
 section "🚀 Terminal Pro Setup ($OS_NAME $OS_VERSION)"
 
 # ── 1. Actualizar sistema ─────────────────────────────────────────────────────
@@ -81,19 +77,7 @@ fi
 
 # ── 4. Fuente JetBrainsMono Nerd ──────────────────────────────────────────────
 section "🔤 Fuente Nerd"
-if fc-list | grep -qi "JetBrainsMono Nerd"; then
-  success "JetBrainsMono Nerd Font ya instalada."
-else
-  info "Instalando JetBrainsMono Nerd Font..."
-  mkdir -p ~/.local/share/fonts
-  cd ~/.local/share/fonts
-  wget -q https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip
-  unzip -o JetBrainsMono.zip > /dev/null
-  rm JetBrainsMono.zip
-  fc-cache -fv > /dev/null
-  cd ~
-  success "JetBrainsMono Nerd Font instalada."
-fi
+install_nerd_font
 
 # ── 5. Oh My Zsh ──────────────────────────────────────────────────────────────
 section "🐚 Oh My Zsh"
@@ -125,7 +109,9 @@ if command -v starship &>/dev/null; then
   success "Starship ya está instalado."
 else
   info "Instalando Starship..."
-  curl -sS https://starship.rs/install.sh | sh -s -- --yes
+  curl -sS https://starship.rs/install.sh -o /tmp/starship-install.sh
+  sh /tmp/starship-install.sh -s -- --yes
+  rm -f /tmp/starship-install.sh
   success "Starship instalado."
 fi
 
@@ -150,76 +136,7 @@ fi
 
 if [ "$SKIP_STARSHIP" != true ]; then
 rm -f ~/.config/starship.toml
-
-case "$THEME" in
-    tokyo-night)
-        starship preset tokyo-night > ~/.config/starship.toml
-        success "Tema Tokyo Night aplicado."
-        ;;
-    pastel-powerline)
-        starship preset pastel-powerline > ~/.config/starship.toml
-        success "Tema Pastel Powerline aplicado."
-        ;;
-    gruvbox-rainbow)
-        starship preset gruvbox-rainbow > ~/.config/starship.toml
-        success "Tema Gruvbox Rainbow aplicado."
-        ;;
-    catppuccin-powerline)
-        starship preset catppuccin-powerline > ~/.config/starship.toml
-        success "Tema Catppuccin Powerline aplicado."
-        ;;
-    jetpack)
-        starship preset jetpack > ~/.config/starship.toml
-        success "Tema Jetpack aplicado."
-        ;;
-    pure-preset)
-        starship preset pure-preset > ~/.config/starship.toml
-        success "Tema Pure Prompt aplicado."
-        ;;
-    cyberpunk-storm)
-        SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-        cp "$SCRIPT_DIR/config/starship-cyberpunk-storm.toml" ~/.config/starship.toml
-        success "Tema Cyberpunk Storm aplicado."
-        ;;
-    cyberpunk-neon)
-        SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-        cp "$SCRIPT_DIR/config/starship-cyberpunk-neon.toml" ~/.config/starship.toml
-        success "Tema Cyberpunk Neon aplicado."
-        ;;
-    cyberpunk-night)
-        SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-        cp "$SCRIPT_DIR/config/starship-cyberpunk-night.toml" ~/.config/starship.toml
-        success "Tema Cyberpunk Night aplicado."
-        ;;
-    nerd-font-symbols)
-        starship preset nerd-font-symbols > ~/.config/starship.toml
-        success "Tema Nerd Font Symbols aplicado."
-        ;;
-    no-nerd-font)
-        starship preset no-nerd-font > ~/.config/starship.toml
-        success "Tema Sin Nerd Font aplicado."
-        ;;
-    bracketed-segments)
-        starship preset bracketed-segments > ~/.config/starship.toml
-        success "Tema Bracketed Segments aplicado."
-        ;;
-    plain-text)
-        starship preset plain-text > ~/.config/starship.toml
-        success "Tema Plain Text aplicado."
-        ;;
-    no-runtimes)
-        starship preset no-runtimes > ~/.config/starship.toml
-        success "Tema Sin Runtime Versions aplicado."
-        ;;
-    no-empty-icons)
-        starship preset no-empty-icons > ~/.config/starship.toml
-        success "Tema Sin Iconos Vacíos aplicado."
-        ;;
-    *)
-        warn "Tema desconocido: $THEME. Usando Tokyo Night..."
-        starship preset tokyo-night > ~/.config/starship.toml
-        ;;
-esac
+apply_starship_theme "$THEME"
 fi
 
 # ── 9. Configurar GNOME Terminal con tema seleccionado ───────────────────────

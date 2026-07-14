@@ -15,12 +15,15 @@ else
   # 2. Instalación usando el instalador oficial
   info "Descargando e instalando Brave Browser..."
 
-  if curl -fsS https://dl.brave.com/install.sh | sh; then
+  curl -fsS https://dl.brave.com/install.sh -o /tmp/brave-install.sh
+  if sh /tmp/brave-install.sh; then
     success "Brave Browser instalado satisfactoriamente"
   else
     error "Error al ejecutar el instalador de Brave Browser"
+    rm -f /tmp/brave-install.sh
     exit 1
   fi
+  rm -f /tmp/brave-install.sh
 fi
 
 # 3. Configurar alias bravefix en ~/.zshrc (idempotente)

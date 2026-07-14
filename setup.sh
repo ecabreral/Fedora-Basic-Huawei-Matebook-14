@@ -3,13 +3,65 @@
 # setup.sh - Instalador con whiptail para Fedora/Ubuntu en Matebook 14
 # ==============================================================================
 
-set +e
-
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/lib/common.sh"
 source "$SCRIPT_DIR/lib/logger.sh"
 
 DETECTED_OS="$OS_NAME $OS_VERSION"
+
+# ── Flags de línea de comandos ───────────────────────────────────────────────
+DRY_RUN=false
+SHOW_HELP=false
+UNINSTALL_MODE=false
+CLI_COMPONENTS=""
+CLI_THEME=""
+
+show_help() {
+    echo "Uso: ./setup.sh [OPCIONES]"
+    echo ""
+    echo "Opciones:"
+    echo "  --help              Muestra esta ayuda"
+    echo "  --dry-run           Muestra qué haría sin ejecutar nada"
+    echo "  --component <name>  Instala un componente específico (base, terminal, vscode, git, theme, extensions, icons, intel, brave, spotify, opencode)"
+    echo "  --theme <name>      Selecciona tema para terminal (tokyo-night, pastel-powerline, gruvbox-rainbow, catppuccin-powerline, jetpack, pure-preset, cyberpunk-storm, cyberpunk-neon, cyberpunk-night)"
+    echo "  --uninstall         Modo desinstalación interactiva"
+    echo ""
+    echo "Ejemplos:"
+    echo "  ./setup.sh                                    # Modo interactivo (whiptail)"
+    echo "  ./setup.sh --component base --theme tokyo-night  # Instala solo base con tema"
+    echo "  ./setup.sh --dry-run                          # Solo muestra qué haría"
+    echo "  ./setup.sh --uninstall                        # Desinstalar componentes"
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --help|-h)
+            show_help
+            exit 0
+            ;;
+        --dry-run)
+            DRY_RUN=true
+            shift
+            ;;
+        --component)
+            CLI_COMPONENTS="$CLI_COMPONENTS $2"
+            shift 2
+            ;;
+        --theme)
+            CLI_THEME="$2"
+            shift 2
+            ;;
+        --uninstall)
+            UNINSTALL_MODE=true
+            shift
+            ;;
+        *)
+            error "Opción desconocida: $1"
+            show_help
+            exit 1
+            ;;
+    esac
+done
 
 # ── Verificar whiptail ────────────────────────────────────────────────────────
 if ! command -v whiptail &>/dev/null; then
@@ -78,32 +130,7 @@ show_component_menu() {
 
 # ── Menú de temas con whiptail (radiolist) ────────────────────────────────────
 show_theme_menu() {
-    local theme
-    theme=$(whiptail --title "Selecciona el tema de Starship" \
-        --radiolist "Elige un tema para tu terminal:" 20 60 10 \
-        "1" "Tokyo Night (oscuro, recomendado)" ON \
-        "2" "Pastel Powerline (claro)" OFF \
-        "3" "Gruvbox Rainbow (oscuro cálido)" OFF \
-        "4" "Catppuccin Powerline (oscuro pastel)" OFF \
-        "5" "Jetpack (minimalista)" OFF \
-        "6" "Pure Prompt (clásico)" OFF \
-        "7" "Cyberpunk Storm (neón intenso)" OFF \
-        "8" "Cyberpunk Neon (máxima saturación)" OFF \
-        "9" "Cyberpunk Night (sutel elegante)" OFF \
-        3>&1 1>&2 2>&3)
-    
-    case "$theme" in
-        1)  echo "tokyo-night" ;;
-        2)  echo "pastel-powerline" ;;
-        3)  echo "gruvbox-rainbow" ;;
-        4)  echo "catppuccin-powerline" ;;
-        5)  echo "jetpack" ;;
-        6)  echo "pure-preset" ;;
-        7)  echo "cyberpunk-storm" ;;
-        8)  echo "cyberpunk-neon" ;;
-        9)  echo "cyberpunk-night" ;;
-        *)  echo "" ;;
-    esac
+    show_theme_selector
 }
 
 # ── Menú de desinstalación ────────────────────────────────────────────────────
@@ -158,6 +185,37 @@ main() {
         exit 1
     fi
     
+    # Modo CLI (sin whiptail)
+    if [ -n "$CLI_COMPONENTS" ]; then
+        local SELECTED=$(echo "$CLI_COMPONENTS" | xargs)
+        local THEME="$CLI_THEME"
+        
+        if [ "$DRY_RUN" = true ]; then
+            info "[DRY RUN] Se instalarían: $SELECTED"
+            [ -n "$THEME" ] && info "[DRY RUN] Tema: $THEME"
+            return 0
+        fi
+        
+        if [ -n "$THEME" ]; then
+            export TERMINAL_THEME="$THEME"
+        fi
+        
+        run_installation
+        return $?
+    fi
+    
+    # Modo desinstalación
+    if [ "$UNINSTALL_MODE" = true ]; then
+        run_full_uninstall
+        return $?
+    fi
+    
+    # Modo dry-run sin componentes
+    if [ "$DRY_RUN" = true ]; then
+        info "[DRY RUN] Modo interactivo — ejecuta sin --dry-run para instalar"
+        return 0
+    fi
+    
     while true; do
         local main_choice
         main_choice=$(show_main_menu)
@@ -165,7 +223,8 @@ main() {
         case "$main_choice" in
             1)
                 # Instalar todos
-                SELECTED="base terminal vscode git theme extensions icons intel brave spotify opencode"
+                local SELECTED="base terminal vscode git theme extensions icons intel brave spotify opencode"
+                local THEME=""
                 
                 if echo "$SELECTED" | grep -qw "terminal"; then
                     THEME=$(show_theme_menu)
@@ -181,7 +240,8 @@ main() {
                 ;;
             2)
                 # Selección personalizada
-                SELECTED=$(show_component_menu)
+                local SELECTED=$(show_component_menu)
+                local THEME=""
                 
                 if [ -z "$SELECTED" ]; then
                     continue
@@ -265,6 +325,84 @@ run_uninstall() {
     fi
     
     whiptail --title "Listo" --msgbox "Terminales desinstaladas correctamente." 8 50
+}
+
+# ── Desinstalación completa de componentes ─────────────────────────────────────
+run_full_uninstall() {
+    local COMPONENTS=$(whiptail --title "Desinstalar Componentes" --checklist \
+        "Selecciona los componentes a desinstalar:" 18 60 12 \
+        "vscode" "Visual Studio Code" OFF \
+        "brave" "Brave Browser" OFF \
+        "spotify" "Spotify" OFF \
+        "starship" "Starship Prompt" OFF \
+        "ohmyzsh" "Oh My Zsh" OFF \
+        "extensions" "Extensiones GNOME" OFF \
+        "themes" "Temas GNOME" OFF \
+        "icons" "Iconos" OFF \
+        "opencode" "OpenCode CLI" OFF \
+        3>&1 1>&2 2>&3)
+    
+    if [ -z "$COMPONENTS" ]; then
+        return 0
+    fi
+    
+    for item in $COMPONENTS; do
+        local comp=$(echo "$item" | tr -d '"')
+        case "$comp" in
+            vscode)
+                sudo dnf remove -y code 2>/dev/null || sudo snap remove code 2>/dev/null
+                rm -rf ~/.config/Code ~/.vscode
+                log_success "VS Code desinstalado"
+                ;;
+            brave)
+                sudo dnf remove -y brave-browser 2>/dev/null
+                rm -rf ~/.config/BraveSoftware
+                log_success "Brave desinstalado"
+                ;;
+            spotify)
+                sudo dnf remove -y spotify 2>/dev/null || sudo snap remove spotify 2>/dev/null
+                log_success "Spotify desinstalado"
+                ;;
+            starship)
+                rm -f ~/.local/bin/starship
+                rm -f ~/.config/starship.toml
+                log_success "Starship desinstalado"
+                ;;
+            ohmyzsh)
+                rm -rf ~/.oh-my-zsh
+                if [ -f ~/.zshrc.pre-oh-my-zsh ]; then
+                    mv ~/.zshrc.pre-oh-my-zsh ~/.zshrc
+                fi
+                log_success "Oh My Zsh desinstalado"
+                ;;
+            extensions)
+                if command -v gnome-extensions &>/dev/null; then
+                    gnome-extensions disable tiling-assistant@ubuntu.com 2>/dev/null
+                    gnome-extensions disable gsconnect@andyholmes.github.io 2>/dev/null
+                    gnome-extensions disable dash-to-dock@micxios.gmail.com 2>/dev/null
+                fi
+                log_success "Extensiones deshabilitadas"
+                ;;
+            themes)
+                gsettings reset org.gnome.desktop.interface gtk-theme 2>/dev/null
+                gsettings reset org.gnome.shell.extensions.user-theme name 2>/dev/null
+                rm -rf ~/.themes/* ~/.local/share/themes/*
+                log_success "Temas GNOME restaurados"
+                ;;
+            icons)
+                gsettings reset org.gnome.desktop.interface icon-theme 2>/dev/null
+                rm -rf ~/.icons/* ~/.local/share/icons/*
+                log_success "Iconos restaurados"
+                ;;
+            opencode)
+                sudo dnf remove -y opencode 2>/dev/null || sudo snap remove opencode 2>/dev/null
+                rm -rf ~/.config/opencode
+                log_success "OpenCode desinstalado"
+                ;;
+        esac
+    done
+    
+    whiptail --title "Desinstalación Completa" --msgbox "Componentes desinstalados correctamente." 8 50
 }
 
 main "$@"

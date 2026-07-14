@@ -107,66 +107,13 @@ fi
 
 # ── Aplicar tema Starship ──────────────────────────────────────────────────
 section "🎨 Aplicando tema Starship: $THEME"
-
-SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
-
-case "$THEME" in
-  tokyo-night)
-    starship preset tokyo-night > ~/.config/starship.toml
-    ;;
-  pastel-powerline)
-    starship preset pastel-powerline > ~/.config/starship.toml
-    ;;
-  gruvbox-rainbow)
-    starship preset gruvbox-rainbow > ~/.config/starship.toml
-    ;;
-  catppuccin-powerline)
-    starship preset catppuccin-powerline > ~/.config/starship.toml
-    ;;
-  jetpack)
-    starship preset jetpack > ~/.config/starship.toml
-    ;;
-  pure-preset)
-    starship preset pure-preset > ~/.config/starship.toml
-    ;;
-  cyberpunk-storm)
-    if [ -f "$SCRIPT_DIR/config/starship-cyberpunk-storm.toml" ]; then
-      cp "$SCRIPT_DIR/config/starship-cyberpunk-storm.toml" ~/.config/starship.toml
-    else
-      error "No se encontró starship-cyberpunk-storm.toml"
-      exit 1
-    fi
-    ;;
-  cyberpunk-neon)
-    if [ -f "$SCRIPT_DIR/config/starship-cyberpunk-neon.toml" ]; then
-      cp "$SCRIPT_DIR/config/starship-cyberpunk-neon.toml" ~/.config/starship.toml
-    else
-      error "No se encontró starship-cyberpunk-neon.toml"
-      exit 1
-    fi
-    ;;
-  cyberpunk-night)
-    if [ -f "$SCRIPT_DIR/config/starship-cyberpunk-night.toml" ]; then
-      cp "$SCRIPT_DIR/config/starship-cyberpunk-night.toml" ~/.config/starship.toml
-    else
-      error "No se encontró starship-cyberpunk-night.toml"
-      exit 1
-    fi
-    ;;
-esac
+apply_starship_theme "$THEME"
 
 success "Starship actualizado: $THEME"
 
 # ── Verificar e instalar fuente Nerd Font ───────────────────────────────────
-if ! fc-list | grep -qi "JetBrainsMono Nerd"; then
-  section "🔤 Instalando JetBrainsMono Nerd Font"
-  mkdir -p ~/.local/share/fonts
-  wget -q https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip -O /tmp/JetBrainsMono.zip
-  unzip -o /tmp/JetBrainsMono.zip -d ~/.local/share/fonts > /dev/null
-  rm -f /tmp/JetBrainsMono.zip
-  fc-cache -fv > /dev/null
-  success "JetBrainsMono Nerd Font instalada."
-fi
+section "🔤 Verificando fuente Nerd Font"
+install_nerd_font
 
 # ── Aplicar tema GNOME Terminal ────────────────────────────────────────────
 if command -v gnome-terminal &>/dev/null && command -v dconf &>/dev/null; then

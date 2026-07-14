@@ -1,313 +1,75 @@
-# Fedora/Ubuntu Setup - Huawei Matebook 14
+# Fedora Basic Setup - Huawei Matebook 14
 
-Colección de scripts para automatizar la configuración de Fedora o Ubuntu Linux orientada a desarrollo, con una experiencia de escritorio GNOME similar a macOS.
+Script de instalación automatizada para Fedora/Ubuntu con interfaz whiptail.
 
-## Uso rápido
+## Uso Rápido
 
 ```bash
+# Instalación interactiva (menú whiptail)
 ./setup.sh
+
+# Instalación con flags
+./setup.sh --component base terminal vscode --theme tokyo-night
+
+# Ver qué haría sin ejecutar
+./setup.sh --dry-run
+
+# Desinstalar componentes
+./setup.sh --uninstall
+
+# Ayuda
+./setup.sh --help
 ```
-
----
-
-## Estructura del Proyecto
-
-```
-Fedora-Basic-Huawei-Matebook-14/
-├── setup.sh                    # Instalador interactivo en consola
-├── lib/
-│   ├── common.sh               # Librería compartida (colores, helpers)
-│   └── kitty-colors.sh         # Definiciones de colores para Kitty
-├── scripts/
-│   ├── runner.sh               # Ejecutor de scripts seleccionados
-│   ├── 01-system/
-│   │   └── 01-base-system.sh   # Sistema base: repositorios, códecs, VA-API, Flatpak
-│   ├── 02-terminal/
-│   │   ├── 01-terminal-setup.sh # Terminal moderna: zsh, Starship, Kitty, eza…
-│   │   └── 02-change-theme.sh  # Cambio rápido de tema (Starship + Kitty)
-│   ├── 03-development/
-│   │   ├── 01-vscode.sh        # Visual Studio Code + configuración
-│   │   └── 02-git-ssh.sh       # Git global + clave SSH para GitHub
-│   ├── 04-desktop/
-│   │   ├── 01-gnome-theme.sh   # Temas GNOME estilo macOS
-│   │   ├── 02-gnome-extensions.sh # Extensiones GNOME
-│   │   └── 03-gnome-icons.sh   # Iconos GNOME (WhiteSur, McMojave, etc.)
-│   ├── 05-hardware/
-│   │   └── 01-intel-fix.sh     # Fix parpadeo pantalla Intel (opcional)
-│   └── 06-apps/
-│       ├── 01-opencode.sh      # OpenCode CLI: Asistente de IA para terminal
-│       └── 02-spotify.sh       # Spotify desde Flathub
-├── config/
-│   ├── kitty.conf              # Configuración base de Kitty
-│   └── starship/
-│       ├── tokyo-night.toml    # Tema Tokyo Night
-│       ├── pastel-powerline.toml # Tema Pastel Powerline
-│       ├── gruvbox-rainbow.toml # Tema Gruvbox Rainbow
-│       ├── catppuccin-powerline.toml # Tema Catppuccin Powerline
-│       ├── jetpack.toml        # Tema Jetpack
-│       ├── pure-preset.toml    # Tema Pure Prompt
-│       ├── cyberpunk-storm.toml # Tema Cyberpunk Storm
-│       ├── cyberpunk-neon.toml # Tema Cyberpunk Neon
-│       └── cyberpunk-night.toml # Tema Cyberpunk Night
-```
-
----
-
-## Interfaz de Consola (TUI)
-
-El instalador funciona completamente en terminal:
-
-```
-╔═══════════════════════════════════════════════════════════════╗
-║     Fedora Setup - Huawei Matebook 14                        ║
-║     Configuración automatizada en terminal                   ║
-╚═══════════════════════════════════════════════════════════════╝
-
-  [1] Instalar TODOS los componentes
-  [2] Seleccionar componentes específicos
-  [3] Cambiar tema de terminal
-  [4] Salir
-
-  Escribe el número y presiona ENTER
-```
-
-- **Menú interactivo** - Escribe el número y presiona ENTER
-- **Selección de componentes** - Toggles con números 0-8, [A] continuar, [Q] salir
-- **Selector de tema Starship** - 9 presets disponibles (incluye Cyberpunk)
-- **Cambio rápido de tema** - Opción [3] para cambiar solo el tema sin reinstalar
-
----
 
 ## Componentes
 
-| # | Componente | Descripción |
-|---|------------|-------------|
-| 0 | Sistema Base | Repositorios (RPM Fusion), códecs, VA-API Intel, Flatpak |
-| 1 | Terminal | zsh, Starship (9 temas), Kitty (tabs, splits), eza, bat, fzf, zoxide, fastfetch |
-| 2 | VS Code | Editor con configuración optimizada |
-| 3 | Git | Configuración global + clave SSH para GitHub |
-| 4 | Temas | GTK, Iconos, Shell estilo macOS |
-| 5 | Intel Fix | Solución parpadeo pantalla (opcional) |
-| 6 | Extensiones | Dash to Dock, Magic Lamp, Night Theme Switcher, Copyous, Dynamic Music Pill, Coverflow, Burn My Windows, Tiling Shell, Desktop Cube, Alphabetical App Grid, Custom Hot Corners, TopHat |
-| 7 | OpenCode CLI | Asistente de IA para terminal |
-| 8 | Spotify | Cliente de música desde Flathub |
+| Componente | Descripción |
+|-----------|-------------|
+| `base` | Paquetes base del sistema (curl, git, htop, etc.) |
+| `terminal` | Configuración de terminal + Starship + Nerd Fonts |
+| `vscode` | Visual Studio Code |
+| `git` | Git + SSH + GitHub CLI |
+| `theme` | Temas GNOME (Colloid, Dracula, etc.) |
+| `extensions` | Extensiones GNOME (Tiling, GSConnect, etc.) |
+| `icons` | Iconos (Colloid, Papirus, etc.) |
+| `intel` | Drivers Intel Arc |
+| `brave` | Brave Browser |
+| `spotify` | Spotify |
+| `opencode` | OpenCode CLI |
 
----
+## Temas Disponibles
 
-## Selector de Tema Starship (9 Presets)
+- `tokyo-night`, `pastel-powerline`, `gruvbox-rainbow`, `catppuccin-powerline`
+- `jetpack`, `pure-preset`, `nerd-font-symbols`, `no-nerd-font`
+- `bracketed-segments`, `plain-text`, `no-runtimes`, `no-empty-icons`
+- `cyberpunk-storm`, `cyberpunk-neon`, `cyberpunk-night`
 
-| # | Preset | Estilo |
-|---|--------|--------|
-| 1 | Tokyo Night | Oscuro (recomendado) |
-| 2 | Pastel Powerline | Claro |
-| 3 | Gruvbox Rainbow | Oscuro |
-| 4 | Catppuccin Powerline | Oscuro |
-| 5 | Jetpack | Minimalista |
-| 6 | Pure Prompt | Clásico |
-| 7 | Cyberpunk Storm | Neón intenso (rosa, cyan, verde matrix) |
-| 8 | Cyberpunk Neon | Máxima saturación |
-| 9 | Cyberpunk Night | Sutel elegante (azul, púrpura) |
+## Estructura
 
-> **Cambio rápido:** Usa `./setup.sh → [3] Cambiar tema` para cambiar el tema sin reinstalar todo.
-
----
-
-## Características
-
-### 🔄 Ejecución Idempotente
-
-Todos los scripts verifican si un componente ya está instalado antes de proceder:
-- Si ya está instalado → Omite la instalación
-- Si ya está configurado → Omite la configuración
-
-### 📋 OpenCode PATH Automático
-
-Al final de la instalación, si OpenCode está instalado y funciona, se agrega automáticamente al PATH:
-```bash
-export PATH="$HOME/.opencode/bin:$PATH"
 ```
-
-Solo se agrega si el comando `opencode` está disponible en el sistema.
-
----
-
-## Qué instala cada script
-
-### 0. Sistema Base — `scripts/01-system/01-base-system.sh`
-
-| Categoría | Paquetes/Acciones |
-|-----------|-------------------|
-| **Repositorios** | RPM Fusion Free + Non-Free |
-| **Códecs multimedia** | ffmpeg, gstreamer plugins (base, good, bad, ugly) |
-| **VA-API Intel** | libva, libva-utils, intel-media-driver, libva-intel-driver |
-| **OpenH264** | Para Firefox |
-| **Flatpak** | Instalación + Flathub |
-| **Optimizaciones** | NetworkManager-wait-online deshabilitado, Gnome Software removido del autostart |
-
-> **Importante**: Este script debe ejecutarse primero (opción 0 o al instalar todos). Esencial para MateBook 14 con Intel Core Ultra.
-
-### 1. Terminal — `scripts/02-terminal/01-terminal-setup.sh`
-
-| Herramienta | Descripción |
-|---|---|
-| `zsh` + Oh My Zsh | Shell moderna con plugins |
-| `starship` | Prompt configurable (9 temas) |
-| `Kitty` | Terminal GPU con tabs, splits, TrueColor |
-| `eza` | `ls` moderno con iconos y colores |
-| `bat` | `cat` con syntax highlighting |
-| `fzf` | Búsqueda difusa en terminal |
-| `zoxide` | `cd` inteligente con historial |
-| `fastfetch` | Info del sistema al abrir terminal |
-| `micro` | Editor de texto en terminal |
-| `rust` + `cargo` | Toolchain de Rust |
-| JetBrainsMono Nerd Font | Fuente con soporte de iconos |
-
-**Aliases configurados en `.zshrc`:**
-
-| Alias | Comando |
-|---|---|
-| `ls` | `eza --icons=auto` |
-| `ll` | `eza -lah --icons --git` |
-| `lt` | `eza --tree --icons` |
-| `cat` | `bat --paging=never` |
-| `cd` | `z` (zoxide) |
-| `cls` | `clear` |
-| `update` | `sudo dnf update -y && flatpak update -y` |
-
----
-
-### 2. Visual Studio Code — `scripts/03-development/01-vscode.sh`
-
-Instala VS Code desde el repositorio oficial de Microsoft:
-```bash
-sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
-sudo dnf install code
+├── setup.sh              # Entry point principal
+├── lib/
+│   ├── common.sh         # Funciones compartidas
+│   ├── logger.sh         # Logging con timestamps
+│   └── gnome-terminal-colors.sh  # Colores GNOME Terminal
+├── scripts/
+│   ├── runner.sh         # Orquestador de scripts
+│   ├── 01-system/        # Configuración del sistema
+│   ├── 02-terminal/      # Terminal y temas
+│   ├── 03-development/   # Desarrollo (VS Code, Git)
+│   ├── 04-desktop/       # GNOME themes/extensions
+│   ├── 05-media/         # Codecs multimedia
+│   └── 06-apps/          # Aplicaciones (Brave, Spotify, OpenCode)
+└── config/
+    └── starship/         # Temas Starship personalizados
 ```
-
-- Configura tema, fuente JetBrains Mono con ligaduras
-- Configura `formatOnSave`, `autoSave`, minimap desactivado
-
----
-
-### 3. Git + GitHub — `scripts/03-development/02-git-ssh.sh`
-
-- Configura nombre, email y rama por defecto (`main`)
-- Genera clave SSH **ed25519**
-- Copia la clave al portapapeles automáticamente
-- Abre `github.com/settings/keys` en el navegador
-- Verifica la conexión SSH
-
----
-
-### 4. Temas GNOME — `scripts/04-desktop/01-gnome-theme.sh`
-
-| Componente | Tema |
-|---|---|
-| GTK Theme | **WhiteSur-Light** + **WhiteSur-Dark** |
-| GNOME Shell | **WhiteSur-Light** |
-| Icon Theme | **WhiteSur** |
-| GDM | **MacTahoe** |
-| Firefox | **WhiteSur Firefox Theme** |
-
----
-
-### 5. Fix Intel Flicker — `scripts/05-hardware/01-intel-fix.sh`
-
-- Detecta GPU Intel automáticamente
-- Aplica parámetros de kernel:
-  ```
-  i915.enable_psr=0 i915.enable_dc=0 intel_idle.max_cstate=2
-  ```
-- **Requiere reinicio**
-
----
-
-## Extensiones GNOME
-
-| Extensión | Descripción |
-|---|---|
-| [Dash to Dock](https://extensions.gnome.org/extension/307/dash-to-dock/) | Dock estilo macOS |
-| [Compiz Alike Magic Lamp Effect](https://github.com/ecabreral/compiz-alike-magic-lamp-effect) | Efecto de lámpara al minimizar |
-| [Night Theme Switcher](https://extensions.gnome.org/extension/2236/night-theme-switcher/) | Cambio automático claro/oscuro |
-| [Copyous](https://extensions.gnome.org/extension/8834/copyous/) | Historial de portapapeles |
-| [Dynamic Music Pill](https://extensions.gnome.org/extension/9334/dynamic-music-pill/) | Reproductor de música en la barra superior |
-| [Coverflow Alt-Tab](https://extensions.gnome.org/extension/97/coverflow-alt-tab/) | Alternador de ventanas estilo Coverflow |
-| [Burn My Windows](https://extensions.gnome.org/extension/4679/burn-my-windows/) | Efectos de apertura/cierre de ventanas |
-| [Tiling Shell](https://extensions.gnome.org/extension/7065/tiling-shell/) | Tileado de ventanas estilo i3/sway |
-| [Desktop Cube](https://extensions.gnome.org/extension/4648/desktop-cube/) | Cubo de escritorios con efectos 3D |
-| [Alphabetical App Grid](https://extensions.gnome.org/extension/4269/alphabetical-app-grid/) | Cuadrícula de apps en orden alfabético |
-| [Custom Hot Corners Extended](https://extensions.gnome.org/extension/4167/custom-hot-corners-extended/) | Esquinas activas personalizables |
-| [TopHat](https://extensions.gnome.org/extension/5219/tophat/) | Iconos de sistema personalizables en la barra superior |
-| [Media Controls](https://extensions.gnome.org/extension/4470/media-controls/) | Controles de reproductor multimedia en la barra superior |
-
----
-
-## OpenCode CLI — `scripts/06-apps/01-opencode.sh`
-
-Instala el intérprete de IA **OpenCode** para usar directamente desde la terminal.
-
----
-
-## Spotify — `scripts/06-apps/02-spotify.sh`
-
-Instala **Spotify** desde Flathub como cliente de música.
-
-```bash
-flatpak install -y flathub com.spotify.Client
-```
-
----
-
-## Kitty — Terminal GPU con Tabs y Splits
-
-Kitty es la terminal por defecto del proyecto. Se instala y configura automáticamente con el script `01-terminal.sh`.
-
-| Característica | Descripción |
-|---|---|
-| **Motor** | GPU-accelerado (OpenGL) |
-| **Tabs** | Pestañas con `Ctrl+Shift+T`, cerrar con `Ctrl+Shift+W` |
-| **Splits** | Horizontal `Ctrl+Shift+Enter`, Vertical `Ctrl+Shift+-` |
-| **Navegación** | `Ctrl+Shift+←/→/↑/↓` entre paneles |
-| **Colores** | TrueColor (16 millones de colores) |
-| **Fuente** | JetBrainsMono Nerd Font |
-| **Visual** | Opacidad 0.95, padding 10px |
-| **Default** | Reemplaza GNOME Terminal como terminal principal |
-| **Temas** | Integra con Starship: Tokyo Night, Gruvbox, Catppuccin, Cyberpunk, etc. |
-
-**Atajos de teclado:**
-
-| Atajo | Acción |
-|---|---|
-| `Ctrl+Shift+T` | Nueva pestaña |
-| `Ctrl+Shift+W` | Cerrar pestaña |
-| `Ctrl+Shift+Enter` | Split horizontal |
-| `Ctrl+Shift+-` | Split vertical |
-| `Ctrl+Shift+←/→` | Navegar entre paneles |
-| `Ctrl+Shift+L` | Navegar entre layouts |
-| `Ctrl+Shift+C/V` | Copiar/Pegar |
-| `Ctrl++/-/0` | Aumentar/Reducir/Reset font size |
-
-**Configuración:** `~/.config/kitty/kitty.conf`
-
----
 
 ## Requisitos
 
-- **Fedora 44+** o **Ubuntu 24.04+** con **GNOME**
-- Ninguna dependencia adicional requerida (todo funciona en consola)
+- Fedora 40+ o Ubuntu 22.04+
+- Conexión a internet
+- Permisos sudo
 
----
+## Logs
 
-## Notas
-
-- Probado en **Fedora 44** y **Ubuntu 24.04** con **GNOME**
-- `setup.sh` detecta automáticamente el sistema operativo (Fedora/Ubuntu) y usa el gestor de paquetes adecuado
-- `setup.sh` detecta automáticamente si hay GPU Intel y omite el fix si no aplica
-- Todos los scripts son **idempotentes**
-- El PATH de OpenCode se agrega automáticamente solo si está instalado
-
----
-
-## Licencia
-
-MIT
+Los logs se guardan en `scripts/logs/` con rotación automática (máx 5 archivos, 1MB cada uno).

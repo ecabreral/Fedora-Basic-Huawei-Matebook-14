@@ -23,12 +23,15 @@ else
     # 3. Instalación usando el instalador oficial
     info "Descargando e instalando OpenCode CLI..."
     
-    if curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path; then
+    curl -fsSL https://opencode.ai/install -o /tmp/opencode-install.sh
+    if bash /tmp/opencode-install.sh --no-modify-path; then
       success "OpenCode instalado satisfactoriamente"
     else
       error "Error al ejecutar el instalador de OpenCode"
+      rm -f /tmp/opencode-install.sh
       exit 1
     fi
+    rm -f /tmp/opencode-install.sh
   fi
 fi
 
