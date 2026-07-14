@@ -266,13 +266,18 @@ section "⚙️  Configurando .zshrc"
 
 # Si .zshrc existe, preguntar antes de sobrescribir
 if [ -L ~/.zshrc ] || [ -f ~/.zshrc ]; then
-  read -p "  .zshrc ya existe. ¿Deseas respaldar y generar uno nuevo? [s/N]: " RESP
-  if [[ "$RESP" =~ ^[sS]$ ]]; then
-    info "Respaldando .zshrc existente..."
-    mv ~/.zshrc ~/.zshrc.backup.$(date +%s)
-  else
-    info "Omitiendo generación de .zshrc."
+  if [ ! -t 0 ]; then
+    info ".zshrc ya existe. Omitiendo generación (modo automatizado)."
     SKIP_ZSHRC=true
+  else
+    read -p "  .zshrc ya existe. ¿Deseas respaldar y generar uno nuevo? [s/N]: " RESP
+    if [[ "$RESP" =~ ^[sS]$ ]]; then
+      info "Respaldando .zshrc existente..."
+      mv ~/.zshrc ~/.zshrc.backup.$(date +%s)
+    else
+      info "Omitiendo generación de .zshrc."
+      SKIP_ZSHRC=true
+    fi
   fi
 fi
 

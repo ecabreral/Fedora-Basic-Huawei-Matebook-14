@@ -62,7 +62,10 @@ VSCODE_CONFIG_DIR="/home/$REAL_USER/.config/Code/User"
 mkdir -p "$VSCODE_CONFIG_DIR"
 chown -R "$REAL_USER":"$REAL_USER" "/home/$REAL_USER/.config" 2>/dev/null || true
 
-cat > "$VSCODE_CONFIG_DIR/settings.json" << 'SETTINGS'
+if [ -f "$VSCODE_CONFIG_DIR/settings.json" ]; then
+  info "settings.json ya existe. Omitiendo sobrescribir."
+else
+  cat > "$VSCODE_CONFIG_DIR/settings.json" << 'SETTINGS'
 {
   "window.autoDetectColorScheme": true,
   "workbench.preferredLightColorTheme": "GitHub Light",
@@ -83,6 +86,7 @@ cat > "$VSCODE_CONFIG_DIR/settings.json" << 'SETTINGS'
   "terminal.integrated.fontFamily": "JetBrains Mono"
 }
 SETTINGS
+fi
 
 chown -R "$REAL_USER":"$REAL_USER" "$VSCODE_CONFIG_DIR" 2>/dev/null || true
 chown -R "$REAL_USER":"$REAL_USER" "/home/$REAL_USER/.config/Code" 2>/dev/null || true

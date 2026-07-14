@@ -92,9 +92,13 @@ if is_fedora; then
   fi
 
 elif is_ubuntu; then
-  info "Instalando ubuntu-restricted-extras..."
-  sudo DEBIAN_FRONTEND=noninteractive apt install -y ubuntu-restricted-extras 2>/dev/null || \
-    sudo DEBIAN_FRONTEND=noninteractive apt install -y ubuntu-restricted-addons
+  if dpkg -l ubuntu-restricted-extras 2>/dev/null | grep -q "^ii"; then
+    success "ubuntu-restricted-extras ya está instalado."
+  else
+    info "Instalando ubuntu-restricted-extras..."
+    sudo DEBIAN_FRONTEND=noninteractive apt install -y ubuntu-restricted-extras 2>/dev/null || \
+      sudo DEBIAN_FRONTEND=noninteractive apt install -y ubuntu-restricted-addons
+  fi
 
   pkg_install \
     ffmpeg \

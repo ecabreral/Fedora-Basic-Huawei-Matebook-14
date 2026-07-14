@@ -112,20 +112,27 @@ gnome-extensions enable user-theme@gnome-shell-extensions.gcampax.github.com || 
 # ── 11. Aplicar configuración de apariencia GNOME ────────────────────────────
 info "Aplicando apariencia GNOME (modo claro por defecto)..."
 
-gsettings set org.gnome.desktop.interface color-scheme 'prefer-light'
-gsettings set org.gnome.desktop.interface gtk-theme "WhiteSur-Light"
-gsettings set org.gnome.shell.extensions.user-theme name "WhiteSur-Light"
-gsettings set org.gnome.desktop.interface icon-theme "WhiteSur"
-gsettings set org.gnome.desktop.interface cursor-theme "Adwaita"
-gsettings set org.gnome.desktop.wm.preferences button-layout 'close,minimize,maximize:'
-
-success "Apariencia aplicada."
+CURRENT_GTK_THEME=$(gsettings get org.gnome.desktop.interface gtk-theme 2>/dev/null | tr -d "'")
+if [ "$CURRENT_GTK_THEME" = "WhiteSur-Light" ]; then
+  success "Apariencia GNOME ya configurada."
+else
+  gsettings set org.gnome.desktop.interface color-scheme 'prefer-light'
+  gsettings set org.gnome.desktop.interface gtk-theme "WhiteSur-Light"
+  gsettings set org.gnome.shell.extensions.user-theme name "WhiteSur-Light"
+  gsettings set org.gnome.desktop.interface icon-theme "WhiteSur"
+  gsettings set org.gnome.desktop.interface cursor-theme "Adwaita"
+  gsettings set org.gnome.desktop.wm.preferences button-layout 'close,minimize,maximize:'
+  success "Apariencia aplicada."
+fi
 
 # ── 12. Sincronización Automática de Temas Claro/Oscuro ──────────────────────
-info "Configurando script de sincronización automática para GNOME Shell y GTK..."
+if [ -f "$HOME/.local/bin/whitesur-theme-sync.sh" ]; then
+  success "Script de sincronización ya existe."
+else
+  info "Configurando script de sincronización automática para GNOME Shell y GTK..."
 
-mkdir -p ~/.local/bin
-mkdir -p ~/.config/autostart
+  mkdir -p ~/.local/bin
+  mkdir -p ~/.config/autostart
 
 cat << 'EOF' > "$HOME/.local/bin/whitesur-theme-sync.sh"
 #!/bin/bash
@@ -211,7 +218,8 @@ if ! pgrep -f whitesur-theme-sync.sh > /dev/null; then
     ~/.local/bin/whitesur-theme-sync.sh &
 fi
 
-success "Script de sincronización configurado en ~/.local/bin/ y autostart."
+  success "Script de sincronización configurado en ~/.local/bin/ y autostart."
+fi
 
 # ── 13. Resumen final ─────────────────────────────────────────────────────────
 echo ""
