@@ -83,51 +83,119 @@ show_main_menu() {
     echo "$choice"
 }
 
-# ── Menú de componentes con whiptail (checklist) ──────────────────────────────
+# ── Menú de componentes por categoría ────────────────────────────────────────
 show_component_menu() {
-    local result
-    result=$(whiptail --title "Selecciona los componentes" \
-        --checklist "Usa ESPACIO para seleccionar y ENTER para continuar:" 22 70 13 \
-        "1" "Sistema Base (Repositorios, Códecs, VA-API, Flatpak)" ON \
-        "2" "Terminal (GNOME Terminal, zsh, Starship, eza...)" ON \
-        "3" "Visual Studio Code + Extensiones" ON \
-        "4" "Git + Clave SSH para GitHub" ON \
-        "5" "Temas GNOME estilo macOS" OFF \
-        "6" "Extensiones GNOME" OFF \
-        "7" "Iconos GNOME (WhiteSur, Papirus...)" OFF \
-        "8" "Fix Intel Screen Flicker" OFF \
-        "9" "Brave Browser + alias bravefix" ON \
-        "10" "Spotify (Cliente de música)" ON \
-        "11" "OpenCode CLI (Asistente IA)" ON \
-        "12" "Google Chrome" OFF \
-        3>&1 1>&2 2>&3)
+    local SELECTED=""
     
-    if [ -z "$result" ]; then
-        echo ""
-        return
-    fi
-    
-    # Convertir resultado de whiptail a IDs internos
-    local selected=""
-    local items
-    IFS='"' read -ra items <<< "$result"
-    for item in "${items[@]}"; do
-        case "$item" in
-            1)  selected="$selected base" ;;
-            2)  selected="$selected terminal" ;;
-            3)  selected="$selected vscode" ;;
-            4)  selected="$selected git" ;;
-            5)  selected="$selected theme" ;;
-            6)  selected="$selected extensions" ;;
-            7)  selected="$selected icons" ;;
-            8)  selected="$selected intel" ;;
-            9)  selected="$selected brave" ;;
-            10) selected="$selected spotify" ;;
-            11) selected="$selected opencode" ;;
-            12) selected="$selected chrome" ;;
+    while true; do
+        local cat_choice
+        cat_choice=$(whiptail --title "Selecciona componentes" \
+            --menu "Elige una categoría para agregar componentes:" 18 60 8 \
+            "1" "🖥️  Sistema" \
+            "2" "🐚 Terminal" \
+            "3" "💻 Desarrollo" \
+            "4" "🌐 Navegadores" \
+            "5" "🎵 Multimedia" \
+            "6" "🎨 Escritorio GNOME" \
+            "7" "🔧 Hardware" \
+            "8" "✅ Seleccionar TODO" \
+            "9" "▶️  Continuar con la instalación" \
+            3>&1 1>&2 2>&3)
+        
+        case "$cat_choice" in
+            1) # Sistema
+                local r
+                r=$(whiptail --title "Sistema" --checklist \
+                    "Selecciona componentes del sistema:" 10 60 2 \
+                    "base" "Sistema Base (Repositorios, Códecs, VA-API, Flatpak)" ON \
+                    3>&1 1>&2 2>&3)
+                if [ -n "$r" ]; then
+                    SELECTED="$SELECTED $r"
+                fi
+                ;;
+            2) # Terminal
+                local r
+                r=$(whiptail --title "Terminal" --checklist \
+                    "Selecciona componentes de terminal:" 10 60 2 \
+                    "terminal" "Terminal (GNOME Terminal, zsh, Starship, eza...)" ON \
+                    3>&1 1>&2 2>&3)
+                if [ -n "$r" ]; then
+                    SELECTED="$SELECTED $r"
+                fi
+                ;;
+            3) # Desarrollo
+                local r
+                r=$(whiptail --title "Desarrollo" --checklist \
+                    "Selecciona herramientas de desarrollo:" 14 60 4 \
+                    "vscode" "Visual Studio Code + Extensiones" ON \
+                    "git" "Git + Clave SSH para GitHub" ON \
+                    "opencode" "OpenCode CLI (Asistente IA)" ON \
+                    3>&1 1>&2 2>&3)
+                if [ -n "$r" ]; then
+                    SELECTED="$SELECTED $r"
+                fi
+                ;;
+            4) # Navegadores
+                local r
+                r=$(whiptail --title "Navegadores" --checklist \
+                    "Selecciona navegadores:" 10 60 3 \
+                    "brave" "Brave Browser + alias bravefix" ON \
+                    "chrome" "Google Chrome" OFF \
+                    3>&1 1>&2 2>&3)
+                if [ -n "$r" ]; then
+                    SELECTED="$SELECTED $r"
+                fi
+                ;;
+            5) # Multimedia
+                local r
+                r=$(whiptail --title "Multimedia" --checklist \
+                    "Selecciona apps multimedia:" 10 60 2 \
+                    "spotify" "Spotify (Cliente de música)" ON \
+                    3>&1 1>&2 2>&3)
+                if [ -n "$r" ]; then
+                    SELECTED="$SELECTED $r"
+                fi
+                ;;
+            6) # Escritorio GNOME
+                local r
+                r=$(whiptail --title "Escritorio GNOME" --checklist \
+                    "Selecciona componentes de escritorio:" 14 60 4 \
+                    "theme" "Temas GNOME estilo macOS" OFF \
+                    "extensions" "Extensiones GNOME" OFF \
+                    "icons" "Iconos GNOME (WhiteSur, Papirus...)" OFF \
+                    3>&1 1>&2 2>&3)
+                if [ -n "$r" ]; then
+                    SELECTED="$SELECTED $r"
+                fi
+                ;;
+            7) # Hardware
+                local r
+                r=$(whiptail --title "Hardware" --checklist \
+                    "Selecciona fixes de hardware:" 10 60 2 \
+                    "intel" "Fix Intel Screen Flicker" OFF \
+                    3>&1 1>&2 2>&3)
+                if [ -n "$r" ]; then
+                    SELECTED="$SELECTED $r"
+                fi
+                ;;
+            8) # Seleccionar TODO
+                SELECTED="base terminal vscode git theme extensions icons intel brave spotify opencode chrome"
+                whiptail --title "TODO seleccionado" --msgbox "Todos los componentes seleccionados." 8 50
+                ;;
+            9) # Continuar
+                if [ -z "$SELECTED" ]; then
+                    whiptail --title "Sin componentes" --msgbox "No seleccionaste ningún componente." 8 50
+                else
+                    echo "$SELECTED"
+                    return 0
+                fi
+                ;;
+            *)
+                echo ""
+                return 1
+                ;;
         esac
     done
-    echo "$selected"
 }
 
 # ── Menú de temas con whiptail (radiolist) ────────────────────────────────────
@@ -165,6 +233,7 @@ show_confirm_dialog() {
             icons)       msg+="  • Iconos GNOME\\n" ;;
             intel)       msg+="  • Intel Flicker Fix\\n" ;;
             brave)       msg+="  • Brave Browser\\n" ;;
+            chrome)      msg+="  • Google Chrome\\n" ;;
             spotify)     msg+="  • Spotify\\n" ;;
             opencode)    msg+="  • OpenCode CLI\\n" ;;
         esac
