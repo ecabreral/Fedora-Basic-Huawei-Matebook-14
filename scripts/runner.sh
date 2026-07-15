@@ -109,6 +109,10 @@ for ID in "${SELECTED_IDS[@]}"; do
             step "Brave Browser"
             run_script "Brave Browser" "scripts/06-apps/03-brave.sh" "false"
             ;;
+        "chrome")
+            step "Google Chrome"
+            run_script "Google Chrome" "scripts/06-apps/04-chrome.sh" "false"
+            ;;
         "icons")
             step "Iconos GNOME"
             run_script "Iconos GNOME" "scripts/04-desktop/03-gnome-icons.sh" "false"

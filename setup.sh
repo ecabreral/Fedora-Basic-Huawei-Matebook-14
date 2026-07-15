@@ -99,6 +99,7 @@ show_component_menu() {
         "9" "Brave Browser + alias bravefix" ON \
         "10" "Spotify (Cliente de música)" ON \
         "11" "OpenCode CLI (Asistente IA)" ON \
+        "12" "Google Chrome" OFF \
         3>&1 1>&2 2>&3)
     
     if [ -z "$result" ]; then
@@ -123,6 +124,7 @@ show_component_menu() {
             9)  selected="$selected brave" ;;
             10) selected="$selected spotify" ;;
             11) selected="$selected opencode" ;;
+            12) selected="$selected chrome" ;;
         esac
     done
     echo "$selected"
@@ -333,6 +335,7 @@ run_full_uninstall() {
         "Selecciona los componentes a desinstalar:" 18 60 12 \
         "vscode" "Visual Studio Code" OFF \
         "brave" "Brave Browser" OFF \
+        "chrome" "Google Chrome" OFF \
         "spotify" "Spotify" OFF \
         "starship" "Starship Prompt" OFF \
         "ohmyzsh" "Oh My Zsh" OFF \
@@ -358,6 +361,12 @@ run_full_uninstall() {
                 sudo dnf remove -y brave-browser 2>/dev/null
                 rm -rf ~/.config/BraveSoftware
                 log_success "Brave desinstalado"
+                ;;
+            chrome)
+                sudo dnf remove -y google-chrome-stable 2>/dev/null
+                sudo dnf config-manager disable google-chrome 2>/dev/null
+                rm -rf ~/.config/google-chrome
+                log_success "Google Chrome desinstalado"
                 ;;
             spotify)
                 sudo dnf remove -y spotify 2>/dev/null || sudo snap remove spotify 2>/dev/null
