@@ -68,6 +68,7 @@ La opción 2 organiza los componentes en 7 categorías (Sistema, Terminal, Desar
 | `terminal` | Terminal Pro | Instala Ptyxis, zsh, Oh My Zsh + plugins (`zsh-autosuggestions`, `zsh-syntax-highlighting`), **Starship**, `eza`, `fastfetch`, `fzf`, `bat`, `zoxide`, `micro`, JetBrainsMono **Nerd Font**. Genera `.zshrc` con aliases modernos (`ls`→eza, `cat`→bat, `cd`→zoxide, `update`), aplica el tema elegido a Starship y Ptyxis, cambia la shell por defecto a zsh y establece Ptyxis como terminal por defecto de GNOME. |
 | `vscode` | VS Code | Instala **Visual Studio Code** desde el repositorio oficial de Microsoft (RPM en Fedora / apt en Ubuntu). Crea `settings.json` si no existe (temas GitHub Light/Dark auto, JetBrains Mono, ligaduras, formatOnSave, autoSave, minimap off). Respeta configuración existente. |
 | `git` | Git + GitHub | Configura `user.name`/`user.email`, rama por defecto `main`, genera clave **SSH ed25519**, la carga en ssh-agent, la copia al portapapeles y guía paso a paso para añadirla a GitHub. Prueba la conexión con `ssh -T git@github.com`. |
+| `gh` | GitHub CLI | Instala **`gh`** (dnf en Fedora / repositorio oficial de GitHub CLI en Ubuntu). Desinstalable desde `--uninstall`. Autenticación posterior con `gh auth login`. |
 | `theme` | Temas GNOME | Instala apariencia estilo macOS: **WhiteSur GTK** (Light + Dark), iconos **WhiteSur**, tema **MacTahoe** para GTK y GDM (pantalla de login), **WhiteSur Firefox Theme**. Activa la extensión User Themes, aplica modo claro por defecto con botones a la izquierda (`close,minimize,maximize:`) e instala un **script de sincronización automática claro/oscuro** en `~/.local/bin/whitesur-theme-sync.sh` + autostart, que mantiene sincronizados GTK y GNOME Shell al cambiar el modo de color. |
 | `extensions` | Extensiones GNOME | Instala 13 extensiones: Dash to Dock, Magic Lamp Effect, Copyous, Night Theme Switcher, Dynamic Music Pill, Coverflow Alt-Tab, Burn My Windows, Tiling Shell, Desktop Cube, Alphabetical App Grid, Custom Hot Corners Extended, TopHat y Media Controls. Abre las páginas de extensions.gnome.org para activarlas en el navegador. |
 | `icons` | Iconos GNOME | Menú interactivo para instalar uno o varios de: **WhiteSur** (macOS), **McMojave-circle**, **Tela-circle**, **Papirus**, **BeautyLine**. Permite elegir el tema activo al final. Cambiable después con `gnome-tweaks`. |
@@ -149,7 +150,8 @@ Además, el menú principal (opción 4) permite desinstalar terminales alternati
 │   │   └── 02-change-theme.sh        # Cambio de tema en caliente
 │   ├── 03-development/
 │   │   ├── 01-vscode.sh              # VS Code + settings.json
-│   │   └── 02-git-ssh.sh             # Git config + clave SSH + GitHub
+│   │   ├── 02-git-ssh.sh             # Git config + clave SSH + GitHub
+│   │   └── 03-github-cli.sh          # GitHub CLI (gh)
 │   ├── 04-desktop/
 │   │   ├── 01-gnome-theme.sh         # WhiteSur/MacTahoe + sync claro/oscuro
 │   │   ├── 02-gnome-extensions.sh    # 13 extensiones GNOME

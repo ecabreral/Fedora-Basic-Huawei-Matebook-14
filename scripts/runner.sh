@@ -87,6 +87,10 @@ for ID in "${SELECTED_IDS[@]}"; do
             step "Git + GitHub"
             run_script "Git + SSH" "scripts/03-development/02-git-ssh.sh" "false"
             ;;
+        "gh")
+            step "GitHub CLI"
+            run_script "GitHub CLI" "scripts/03-development/03-github-cli.sh" "false"
+            ;;
         "theme")
             step "Temas GNOME estilo macOS"
             run_script "Temas GNOME" "scripts/04-desktop/01-gnome-theme.sh" "false"

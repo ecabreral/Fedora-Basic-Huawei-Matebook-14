@@ -22,7 +22,7 @@ show_help() {
     echo "Opciones:"
     echo "  --help              Muestra esta ayuda"
     echo "  --dry-run           Muestra qué haría sin ejecutar nada"
-    echo "  --component <name>  Instala un componente específico (base, terminal, vscode, git, theme, extensions, icons, intel, brave, spotify, opencode)"
+    echo "  --component <name>  Instala un componente específico (base, terminal, vscode, git, gh, theme, extensions, icons, intel, brave, spotify, opencode)"
     echo "  --theme <name>      Selecciona tema para terminal (tokyo-night, pastel-powerline, gruvbox-rainbow, catppuccin-powerline, jetpack, pure-preset, cyberpunk-storm, cyberpunk-neon, cyberpunk-night)"
     echo "  --uninstall         Modo desinstalación interactiva"
     echo ""
@@ -155,6 +155,7 @@ show_component_menu() {
                 r=$(run_checklist "Desarrollo" "Selecciona herramientas de desarrollo:" 14 \
                     "vscode|Visual Studio Code + Extensiones|ON" \
                     "git|Git + Clave SSH para GitHub|ON" \
+                    "gh|GitHub CLI (gh)|ON" \
                     "opencode|OpenCode CLI (Asistente IA)|ON")
                 if [ -n "$r" ]; then
                     SELECTED="$SELECTED $r"
@@ -196,7 +197,7 @@ show_component_menu() {
                 fi
                 ;;
             8) # Seleccionar TODO
-                SELECTED="base terminal vscode git theme extensions icons intel brave spotify opencode chrome"
+                SELECTED="base terminal vscode git gh theme extensions icons intel brave spotify opencode chrome"
                 whiptail --title "TODO seleccionado" --msgbox "Todos los componentes seleccionados." 8 50
                 ;;
             9) # Continuar
@@ -242,6 +243,7 @@ show_confirm_dialog() {
             terminal)    msg+="  • Terminal (Ptyxis)\\n" ;;
             vscode)      msg+="  • Visual Studio Code\\n" ;;
             git)         msg+="  • Git + SSH\\n" ;;
+            gh)          msg+="  • GitHub CLI\\n" ;;
             theme)       msg+="  • Temas GNOME\\n" ;;
             extensions)  msg+="  • Extensiones GNOME\\n" ;;
             icons)       msg+="  • Iconos GNOME\\n" ;;
@@ -308,7 +310,7 @@ main() {
         case "$main_choice" in
             1)
                 # Instalar todos
-                local SELECTED="base terminal vscode git theme extensions icons intel brave spotify opencode"
+                local SELECTED="base terminal vscode git gh theme extensions icons intel brave spotify opencode"
                 local THEME=""
                 
                 if echo "$SELECTED" | grep -qw "terminal"; then
@@ -418,6 +420,7 @@ run_full_uninstall() {
     COMPONENTS=$(run_checklist "Desinstalar Componentes" \
         "Selecciona los componentes a desinstalar:" 18 \
         "vscode|Visual Studio Code|OFF" \
+        "gh|GitHub CLI|OFF" \
         "brave|Brave Browser|OFF" \
         "chrome|Google Chrome|OFF" \
         "spotify|Spotify|OFF" \
@@ -438,6 +441,10 @@ run_full_uninstall() {
                 sudo dnf remove -y code 2>/dev/null || sudo snap remove code 2>/dev/null
                 rm -rf ~/.config/Code ~/.vscode
                 log_success "VS Code desinstalado"
+                ;;
+            gh)
+                sudo dnf remove -y gh 2>/dev/null || sudo apt remove -y gh 2>/dev/null
+                log_success "GitHub CLI desinstalado"
                 ;;
             brave)
                 sudo dnf remove -y brave-browser 2>/dev/null
