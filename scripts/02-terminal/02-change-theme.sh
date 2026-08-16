@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # 02-change-theme.sh
-# Cambio rápido de tema para Starship y GNOME Terminal.
+# Cambio rápido de tema para Starship y Ptyxis.
 # Respalda automáticamente las configuraciones anteriores.
 # ==============================================================================
 
 source "$(dirname "$0")/../../lib/common.sh"
-source "$(dirname "$0")/../../lib/gnome-terminal-colors.sh"
+source "$(dirname "$0")/../../lib/ptyxis-colors.sh"
 
 section "🎨 Cambio de Tema"
 
@@ -115,25 +115,18 @@ success "Starship actualizado: $THEME"
 section "🔤 Verificando fuente Nerd Font"
 install_nerd_font
 
-# ── Aplicar tema GNOME Terminal ────────────────────────────────────────────
-if command -v gnome-terminal &>/dev/null && command -v dconf &>/dev/null; then
-  section "Aplicando tema GNOME Terminal: $THEME"
+# ── Aplicar tema Ptyxis ─────────────────────────────────────────────────────
+if command -v ptyxis &>/dev/null && command -v gsettings &>/dev/null; then
+  section "Aplicando tema Ptyxis: $THEME"
 
-  # Obtener el perfil por defecto
-  PROFILE=$(get_default_profile)
-
-  if [ -n "$PROFILE" ]; then
-    PROFILE_PATH="/org/gnome/terminal/legacy/profiles:/:$PROFILE"
-
-    info "Aplicando tema '$THEME' al perfil: $PROFILE"
-    apply_gnome_terminal_theme "$PROFILE_PATH"
-    success "GNOME Terminal actualizado: $THEME"
+  if apply_ptyxis_theme "$THEME"; then
+    success "Ptyxis actualizado: $THEME"
   else
-    warn "No se encontró perfil de GNOME Terminal."
-    info "Ejecuta primero: ./setup.sh → [1] o [2] → [1] Terminal Moderna"
+    warn "No se pudo aplicar el tema en Ptyxis."
+    info "Abre Ptyxis una vez (crea el perfil) y reintenta."
   fi
 else
-  warn "GNOME Terminal o dconf no están disponibles. Solo se actualizó Starship."
+  warn "Ptyxis o gsettings no están disponibles. Solo se actualizó Starship."
 fi
 
 # Resumen
@@ -141,8 +134,8 @@ section "Tema actualizado"
 echo ""
 echo "  Tema: $THEME"
 echo "  Starship: ~/.config/starship.toml"
-if command -v gnome-terminal &>/dev/null; then
-  echo "  GNOME Terminal: tema aplicado via dconf"
+if command -v ptyxis &>/dev/null; then
+  echo "  Ptyxis: paleta aplicada via gsettings"
 fi
 echo "  Respaldos: $BACKUP_DIR"
 echo ""

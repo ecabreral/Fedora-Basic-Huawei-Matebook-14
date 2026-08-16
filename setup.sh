@@ -117,7 +117,7 @@ show_component_menu() {
                 local r
                 r=$(whiptail --title "Terminal" --checklist \
                     "Selecciona componentes de terminal:" 10 60 2 \
-                    "terminal" "Terminal (GNOME Terminal, zsh, Starship, eza...)" ON \
+                    "terminal" "Terminal (Ptyxis, zsh, Starship, eza...)" ON \
                     3>&1 1>&2 2>&3)
                 if [ -n "$r" ]; then
                     SELECTED="$SELECTED $r"
@@ -225,7 +225,7 @@ show_confirm_dialog() {
     for comp in $components; do
         case "$comp" in
             base)        msg+="  • Sistema Base\\n" ;;
-            terminal)    msg+="  • Terminal (GNOME Terminal)\\n" ;;
+            terminal)    msg+="  • Terminal (Ptyxis)\\n" ;;
             vscode)      msg+="  • Visual Studio Code\\n" ;;
             git)         msg+="  • Git + SSH\\n" ;;
             theme)       msg+="  • Temas GNOME\\n" ;;
@@ -390,9 +390,9 @@ run_uninstall() {
         esac
     done
     
-    # Asegurar que GNOME Terminal sea el default
+    # Asegurar que Ptyxis sea el default
     if command -v gsettings &>/dev/null; then
-        gsettings set org.gnome.desktop.default-applications.terminal exec 'gnome-terminal'
+        gsettings set org.gnome.desktop.default-applications.terminal exec 'ptyxis'
     fi
     
     whiptail --title "Listo" --msgbox "Terminales desinstaladas correctamente." 8 50

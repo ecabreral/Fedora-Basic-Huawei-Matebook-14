@@ -26,7 +26,7 @@ Script de instalación automatizada para Fedora/Ubuntu con interfaz whiptail.
 | Componente | Descripción |
 |-----------|-------------|
 | `base` | Paquetes base del sistema (curl, git, htop, etc.) |
-| `terminal` | Configuración de terminal + Starship + Nerd Fonts |
+| `terminal` | Terminal Ptyxis + Starship + Nerd Fonts |
 | `vscode` | Visual Studio Code |
 | `git` | Git + SSH + GitHub CLI |
 | `theme` | Temas GNOME (Colloid, Dracula, etc.) |
@@ -51,7 +51,8 @@ Script de instalación automatizada para Fedora/Ubuntu con interfaz whiptail.
 ├── lib/
 │   ├── common.sh         # Funciones compartidas
 │   ├── logger.sh         # Logging con timestamps
-│   └── gnome-terminal-colors.sh  # Colores GNOME Terminal
+│   ├── ptyxis-colors.sh  # Temas de Ptyxis (paletas de usuario)
+│   └── gnome-terminal-colors.sh  # Colores GNOME Terminal (legado)
 ├── scripts/
 │   ├── runner.sh         # Orquestador de scripts
 │   ├── 01-system/        # Configuración del sistema

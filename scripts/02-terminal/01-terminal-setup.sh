@@ -6,7 +6,7 @@
 
 # No usar set -e para permitir continuar aunque sudo falle
 source "$(dirname "$0")/../../lib/common.sh"
-source "$(dirname "$0")/../../lib/gnome-terminal-colors.sh"
+source "$(dirname "$0")/../../lib/ptyxis-colors.sh"
 
 THEME="${1:-$TERMINAL_THEME}"
 THEME="${THEME:-tokyo-night}"
@@ -42,22 +42,19 @@ elif is_ubuntu; then
   fi
 fi
 
-# ── 3. Verificar GNOME Terminal ──────────────────────────────────────────────
-section "🖥️  GNOME Terminal"
-if command -v gnome-terminal &>/dev/null; then
-  success "GNOME Terminal ya está instalado."
+# ── 3. Verificar Ptyxis ──────────────────────────────────────────────────────
+section "🖥️  Ptyxis Terminal"
+if command -v ptyxis &>/dev/null; then
+  success "Ptyxis ya está instalada."
 else
-  info "Instalando GNOME Terminal..."
-  if is_fedora; then
-    pkg_install gnome-terminal
-  elif is_ubuntu; then
-    pkg_install gnome-terminal
-  fi
+  info "Instalando Ptyxis (terminal por defecto de Fedora moderno)..."
+  pkg_install ptyxis
 
-  if command -v gnome-terminal &>/dev/null; then
-    success "GNOME Terminal instalado correctamente."
+  if command -v ptyxis &>/dev/null; then
+    success "Ptyxis instalada correctamente."
   else
-    error "Error al instalar GNOME Terminal."
+    warn "No se pudo instalar Ptyxis en $OS_NAME."
+    warn "Continuando sin configuración de terminal (zsh/Starship funcionarán igual)."
   fi
 fi
 
@@ -139,43 +136,13 @@ rm -f ~/.config/starship.toml
 apply_starship_theme "$THEME"
 fi
 
-# ── 9. Configurar GNOME Terminal con tema seleccionado ───────────────────────
-section "🎨 Configurando GNOME Terminal: $THEME"
+# ── 9. Configurar Ptyxis con tema seleccionado ────────────────────────────────
+section "🎨 Configurando Ptyxis: $THEME"
 
-if command -v gnome-terminal &>/dev/null && command -v dconf &>/dev/null; then
-  # Obtener el perfil por defecto
-  PROFILE=$(get_default_profile)
-
-  if [ -n "$PROFILE" ]; then
-    PROFILE_PATH="/org/gnome/terminal/legacy/profiles:/:$PROFILE"
-
-    info "Aplicando tema '$THEME' al perfil: $PROFILE"
-    apply_gnome_terminal_theme "$PROFILE_PATH"
-    success "GNOME Terminal configurado con tema: $THEME"
-  else
-    # Crear un nuevo perfil si no existe ninguno
-    info "No se encontró perfil de GNOME Terminal. Creando uno nuevo..."
-
-    # Generar UUID para el nuevo perfil
-    NEW_UUID=$(uuidgen)
-    NEW_UUID_LOWER=$(echo "$NEW_UUID" | tr '[:upper:]' '[:lower:]')
-
-    # Crear el perfil
-    dconf write /org/gnome/terminal/legacy/profiles: "['$NEW_UUID_LOWER']"
-    dconf write "/org/gnome/terminal/legacy/profiles:/:$NEW_UUID_LOWER/visible-name" "'$THEME'"
-    dconf write "/org/gnome/terminal/legacy/profiles:/:$NEW_UUID_LOWER/default-size-columns" "120"
-    dconf write "/org/gnome/terminal/legacy/profiles:/:$NEW_UUID_LOWER/default-size-rows" "35"
-    dconf write "/org/gnome/terminal/legacy/profiles:/:$NEW_UUID_LOWER/use-system-font" "false"
-    dconf write "/org/gnome/terminal/legacy/profiles:/:$NEW_UUID_LOWER/font" "'JetBrainsMono Nerd Font 11'"
-
-    # Aplicar el tema
-    PROFILE_PATH="/org/gnome/terminal/legacy/profiles:/:$NEW_UUID_LOWER"
-    apply_gnome_terminal_theme "$PROFILE_PATH"
-
-    success "Nuevo perfil de GNOME Terminal creado con tema: $THEME"
-  fi
+if command -v ptyxis &>/dev/null; then
+  apply_ptyxis_theme "$THEME"
 else
-  warn "GNOME Terminal o dconf no están disponibles. Omitiendo configuración de tema."
+  warn "Ptyxis no está disponible. Omitiendo configuración de tema."
 fi
 
 # ── 10. Generar .zshrc ────────────────────────────────────────────────────────
@@ -255,34 +222,24 @@ if [ "$SHELL" != "$(which zsh)" ]; then
   success "Zsh configurado como shell por defecto."
 fi
 
-# ── 12. Establecer GNOME Terminal como terminal por defecto ──────────────────
-if command -v gnome-terminal &>/dev/null; then
-  section "Estableciendo GNOME Terminal como terminal por defecto"
-
-  if command -v gsettings &>/dev/null; then
-    gsettings set org.gnome.desktop.default-applications.terminal exec 'gnome-terminal'
-    success "GNOME Terminal configurado como terminal por defecto en GNOME."
-  fi
-
-  if [ -f "$(which gnome-terminal)" ]; then
-    sudo ln -sf "$(which gnome-terminal)" /usr/local/bin/x-terminal-emulator 2>/dev/null || true
-    success "Symlink x-terminal-emulator creado."
-  fi
+# ── 12. Establecer Ptyxis como terminal por defecto ──────────────────────────
+if command -v ptyxis &>/dev/null; then
+  section "Estableciendo Ptyxis como terminal por defecto"
+  set_ptyxis_as_default_terminal
 fi
 
 section "Terminal Setup completo"
 echo ""
-echo "  Terminal: GNOME Terminal (default Fedora)"
+echo "  Terminal: Ptyxis (default Fedora 41+)"
 echo "  Fuente: JetBrainsMono Nerd Font"
 echo "  Tema: $THEME"
 echo ""
-echo "  Atajos de teclado (GNOME Terminal):"
+echo "  Atajos de teclado (Ptyxis):"
 echo "    Ctrl+Shift+T       Nueva pestaña"
-echo "    Ctrl+Shift+W       Cerrar pestaña"
-echo "    Ctrl+Shift+E       Nueva ventana"
-echo "    Ctrl+Shift+O       Nuevo split horizontal"
-echo "    Ctrl+Shift+J       Nuevo split vertical"
-echo "    Alt+←/→            Navegar paneles"
+echo "    Ctrl+Shift+N       Nueva ventana"
+echo "    Ctrl+Shift+C/V     Copiar/Pegar"
+echo "    Ctrl+Shift+F       Buscar"
+echo "    Ctrl+PageUp/Down   Navegar pestañas"
 echo ""
 echo "  Ejecuta exec zsh o abre una nueva terminal para aplicar los cambios."
 echo ""
