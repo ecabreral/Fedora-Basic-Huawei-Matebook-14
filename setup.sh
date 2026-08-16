@@ -83,10 +83,41 @@ show_main_menu() {
     echo "$choice"
 }
 
+# ── Helper: checklist whiptail con opciones numeradas ─────────────────────────
+# Uso: run_checklist <titulo> <prompt> <alto> "tag|descripcion|ON/OFF" ...
+# Devuelve los tags seleccionados (descodificados de sus números)
+run_checklist() {
+    local title="$1" prompt="$2" height="$3"
+    shift 3
+
+    local -a tags=() args=()
+    local item n=0
+    for item in "$@"; do
+        n=$((n + 1))
+        local tag="${item%%|*}" rest="${item#*|}"
+        local desc="${rest%%|*}" def="${rest#*|}"
+        args+=("$n" "$desc" "$def")
+        tags+=("$tag")
+    done
+
+    local r
+    r=$(whiptail --title "$title" --checklist "$prompt" "$height" 60 "$n" "${args[@]}" \
+        3>&1 1>&2 2>&3)
+
+    local out="" sel
+    for sel in $r; do
+        sel="${sel//\"/}"
+        if [[ "$sel" =~ ^[0-9]+$ ]] && [ -n "${tags[sel-1]:-}" ]; then
+            out+=" ${tags[sel-1]}"
+        fi
+    done
+    echo "$out" | xargs
+}
+
 # ── Menú de componentes por categoría ────────────────────────────────────────
 show_component_menu() {
     local SELECTED=""
-    
+
     while true; do
         local cat_choice
         cat_choice=$(whiptail --title "Selecciona componentes" \
@@ -101,79 +132,65 @@ show_component_menu() {
             "8" "✅ Seleccionar TODO" \
             "9" "▶️  Continuar con la instalación" \
             3>&1 1>&2 2>&3)
-        
+
         case "$cat_choice" in
             1) # Sistema
                 local r
-                r=$(whiptail --title "Sistema" --checklist \
-                    "Selecciona componentes del sistema:" 10 60 2 \
-                    "base" "Sistema Base (Repositorios, Códecs, VA-API, Flatpak)" ON \
-                    3>&1 1>&2 2>&3)
+                r=$(run_checklist "Sistema" "Selecciona componentes del sistema:" 10 \
+                    "base|Sistema Base (Repositorios, Códecs, VA-API, Flatpak)|ON")
                 if [ -n "$r" ]; then
                     SELECTED="$SELECTED $r"
                 fi
                 ;;
             2) # Terminal
                 local r
-                r=$(whiptail --title "Terminal" --checklist \
-                    "Selecciona componentes de terminal:" 10 60 2 \
-                    "terminal" "Terminal (Ptyxis, zsh, Starship, eza...)" ON \
-                    3>&1 1>&2 2>&3)
+                r=$(run_checklist "Terminal" "Selecciona componentes de terminal:" 10 \
+                    "terminal|Terminal (Ptyxis, zsh, Starship, eza...)|ON")
                 if [ -n "$r" ]; then
                     SELECTED="$SELECTED $r"
                 fi
                 ;;
             3) # Desarrollo
                 local r
-                r=$(whiptail --title "Desarrollo" --checklist \
-                    "Selecciona herramientas de desarrollo:" 14 60 4 \
-                    "vscode" "Visual Studio Code + Extensiones" ON \
-                    "git" "Git + Clave SSH para GitHub" ON \
-                    "opencode" "OpenCode CLI (Asistente IA)" ON \
-                    3>&1 1>&2 2>&3)
+                r=$(run_checklist "Desarrollo" "Selecciona herramientas de desarrollo:" 14 \
+                    "vscode|Visual Studio Code + Extensiones|ON" \
+                    "git|Git + Clave SSH para GitHub|ON" \
+                    "opencode|OpenCode CLI (Asistente IA)|ON")
                 if [ -n "$r" ]; then
                     SELECTED="$SELECTED $r"
                 fi
                 ;;
             4) # Navegadores
                 local r
-                r=$(whiptail --title "Navegadores" --checklist \
-                    "Selecciona navegadores:" 10 60 3 \
-                    "brave" "Brave Browser + alias bravefix" ON \
-                    "chrome" "Google Chrome" OFF \
-                    3>&1 1>&2 2>&3)
+                r=$(run_checklist "Navegadores" "Selecciona navegadores:" 10 \
+                    "brave|Brave Browser + alias bravefix|ON" \
+                    "chrome|Google Chrome|OFF")
                 if [ -n "$r" ]; then
                     SELECTED="$SELECTED $r"
                 fi
                 ;;
             5) # Multimedia
                 local r
-                r=$(whiptail --title "Multimedia" --checklist \
-                    "Selecciona apps multimedia:" 10 60 2 \
-                    "spotify" "Spotify (Cliente de música)" ON \
-                    3>&1 1>&2 2>&3)
+                r=$(run_checklist "Multimedia" "Selecciona apps multimedia:" 10 \
+                    "spotify|Spotify (Cliente de música)|ON")
                 if [ -n "$r" ]; then
                     SELECTED="$SELECTED $r"
                 fi
                 ;;
             6) # Escritorio GNOME
                 local r
-                r=$(whiptail --title "Escritorio GNOME" --checklist \
-                    "Selecciona componentes de escritorio:" 14 60 4 \
-                    "theme" "Temas GNOME estilo macOS" OFF \
-                    "extensions" "Extensiones GNOME" OFF \
-                    "icons" "Iconos GNOME (WhiteSur, Papirus...)" OFF \
-                    3>&1 1>&2 2>&3)
+                r=$(run_checklist "Escritorio GNOME" "Selecciona componentes de escritorio:" 14 \
+                    "theme|Temas GNOME estilo macOS|OFF" \
+                    "extensions|Extensiones GNOME|OFF" \
+                    "icons|Iconos GNOME (WhiteSur, Papirus...)|OFF")
                 if [ -n "$r" ]; then
                     SELECTED="$SELECTED $r"
                 fi
                 ;;
             7) # Hardware
                 local r
-                r=$(whiptail --title "Hardware" --checklist \
-                    "Selecciona fixes de hardware:" 10 60 2 \
-                    "intel" "Fix Intel Screen Flicker" OFF \
-                    3>&1 1>&2 2>&3)
+                r=$(run_checklist "Hardware" "Selecciona fixes de hardware:" 10 \
+                    "intel|Fix Intel Screen Flicker|OFF")
                 if [ -n "$r" ]; then
                     SELECTED="$SELECTED $r"
                 fi
@@ -183,10 +200,10 @@ show_component_menu() {
                 whiptail --title "TODO seleccionado" --msgbox "Todos los componentes seleccionados." 8 50
                 ;;
             9) # Continuar
-                if [ -z "$SELECTED" ]; then
+                if [ -z "$(echo "$SELECTED" | xargs)" ]; then
                     whiptail --title "Sin componentes" --msgbox "No seleccionaste ningún componente." 8 50
                 else
-                    echo "$SELECTED"
+                    echo "$SELECTED" | xargs
                     return 0
                 fi
                 ;;
@@ -205,13 +222,10 @@ show_theme_menu() {
 
 # ── Menú de desinstalación ────────────────────────────────────────────────────
 show_uninstall_menu() {
-    local result
-    result=$(whiptail --title "Desinstalar terminales alternativas" \
-        --checklist "Selecciona las terminales a desinstalar:" 15 60 4 \
-        "kitty" "Kitty Terminal" OFF \
-        "alacritty" "Alacritty Terminal" OFF \
-        3>&1 1>&2 2>&3)
-    echo "$result"
+    run_checklist "Desinstalar terminales alternativas" \
+        "Selecciona las terminales a desinstalar:" 15 \
+        "kitty|Kitty Terminal|OFF" \
+        "alacritty|Alacritty Terminal|OFF"
 }
 
 # ── Confirmación de instalación ───────────────────────────────────────────────
@@ -400,26 +414,25 @@ run_uninstall() {
 
 # ── Desinstalación completa de componentes ─────────────────────────────────────
 run_full_uninstall() {
-    local COMPONENTS=$(whiptail --title "Desinstalar Componentes" --checklist \
-        "Selecciona los componentes a desinstalar:" 18 60 12 \
-        "vscode" "Visual Studio Code" OFF \
-        "brave" "Brave Browser" OFF \
-        "chrome" "Google Chrome" OFF \
-        "spotify" "Spotify" OFF \
-        "starship" "Starship Prompt" OFF \
-        "ohmyzsh" "Oh My Zsh" OFF \
-        "extensions" "Extensiones GNOME" OFF \
-        "themes" "Temas GNOME" OFF \
-        "icons" "Iconos" OFF \
-        "opencode" "OpenCode CLI" OFF \
-        3>&1 1>&2 2>&3)
-    
+    local COMPONENTS
+    COMPONENTS=$(run_checklist "Desinstalar Componentes" \
+        "Selecciona los componentes a desinstalar:" 18 \
+        "vscode|Visual Studio Code|OFF" \
+        "brave|Brave Browser|OFF" \
+        "chrome|Google Chrome|OFF" \
+        "spotify|Spotify|OFF" \
+        "starship|Starship Prompt|OFF" \
+        "ohmyzsh|Oh My Zsh|OFF" \
+        "extensions|Extensiones GNOME|OFF" \
+        "themes|Temas GNOME|OFF" \
+        "icons|Iconos|OFF" \
+        "opencode|OpenCode CLI|OFF")
+
     if [ -z "$COMPONENTS" ]; then
         return 0
     fi
-    
-    for item in $COMPONENTS; do
-        local comp=$(echo "$item" | tr -d '"')
+
+    for comp in $COMPONENTS; do
         case "$comp" in
             vscode)
                 sudo dnf remove -y code 2>/dev/null || sudo snap remove code 2>/dev/null

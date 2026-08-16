@@ -3,14 +3,23 @@
 # logger.sh — Sistema de logging limpio para el instalador
 # ==============================================================================
 
-# ── Directorio de logs ────────────────────────────────────────────────────────
-LOG_DIR="$(cd "$(dirname "$0")/.." && pwd)/logs"
+# ── Evitar recarga en el mismo proceso ────────────────────────────────────────
+[ -n "${_LOGGER_LOADED:-}" ] && return 0
+_LOGGER_LOADED=1
+
+# ── Directorio de logs (siempre relativo a lib/, no al script que lo sourcea) ─
+LOG_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/logs"
 mkdir -p "$LOG_DIR"
 
-# ── Timestamp actual ──────────────────────────────────────────────────────────
-INSTALL_START=$(date +%s)
-INSTALL_ID=$(date +%Y%m%d-%H%M%S)
-LOG_FILE="$LOG_DIR/install-${INSTALL_ID}.log"
+# ── Heredar el log del runner si existe (evita duplicados y archivos huérfanos)
+if [ -n "${_INSTALL_LOG_FILE:-}" ] && [ -f "$_INSTALL_LOG_FILE" ]; then
+    LOG_FILE="$_INSTALL_LOG_FILE"
+    _LOG_SILENCED=1  # el runner ya captura la salida vía tee
+else
+    INSTALL_START=$(date +%s)
+    INSTALL_ID=$(date +%Y%m%d-%H%M%S)
+    LOG_FILE="$LOG_DIR/install-${INSTALL_ID}.log"
+fi
 CURRENT_LOG="$LOG_DIR/install.log"
 
 # ── Colores para terminal ─────────────────────────────────────────────────────
@@ -25,6 +34,9 @@ _LOG_RESET="\e[0m"
 
 # ── Función: escribir al log (sin ANSI) ───────────────────────────────────────
 _log_write() {
+    if [ -n "${_LOG_SILENCED:-}" ]; then
+        return 0
+    fi
     local level="$1"
     local msg="$2"
     local timestamp
@@ -137,9 +149,9 @@ log_summary() {
     # Contar resultados
     for r in "${results[@]}"; do
         if [[ "$r" == *"[OK]"* ]]; then
-            ((success_count++))
+            success_count=$((success_count + 1))
         else
-            ((error_count++))
+            error_count=$((error_count + 1))
         fi
     done
     
@@ -186,16 +198,28 @@ log_summary() {
 # ── Función: rotar logs antiguos ──────────────────────────────────────────────
 _rotate_logs() {
     local keep=5
+    local max_bytes=1048576  # 1MB
     local count
     count=$(ls -1 "$LOG_DIR"/install-*.log 2>/dev/null | wc -l)
-    
+
     if [ "$count" -gt "$keep" ]; then
         local to_remove=$((count - keep))
         ls -1t "$LOG_DIR"/install-*.log | tail -n "$to_remove" | while read -r f; do
             rm -f "$f"
-            _log_write "CLEANUP" "Log antiguo eliminado: $(basename "$f")"
         done
     fi
+
+    # Eliminar logs que excedan 1MB (excepto el actual)
+    local f
+    for f in "$LOG_DIR"/install-*.log; do
+        [ -e "$f" ] || continue
+        if [ "$f" = "$LOG_FILE" ]; then
+            continue
+        fi
+        if [ "$(stat -c%s "$f" 2>/dev/null || echo 0)" -gt "$max_bytes" ]; then
+            rm -f "$f"
+        fi
+    done
 }
 
 # ── Función: obtener ruta del log actual ──────────────────────────────────────

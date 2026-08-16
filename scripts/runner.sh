@@ -7,6 +7,13 @@ SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 source "$SCRIPT_DIR/lib/common.sh"
 source "$SCRIPT_DIR/lib/logger.sh"
 
+# Los scripts hijos heredan este log (logger.sh lo detecta y evita duplicar)
+export _INSTALL_LOG_FILE="$LOG_FILE"
+export _INSTALL_RUNNER=1
+
+# Filtra códigos ANSI para que el log quede en texto plano
+strip_ansi() { sed -ru 's/\x1B\[[0-9;]*[mK]//g'; }
+
 # ── Verificar sudo ────────────────────────────────────────────────────────────
 if ! sudo -n true 2>/dev/null; then
     log_warn "Algunos scripts requieren permisos de administrador (sudo)."
@@ -43,9 +50,9 @@ run_script() {
 
     set +e
     if [ "$use_sudo" = "true" ]; then
-        sudo "$SCRIPT_DIR/$script_path" 2>&1 | tee -a "$LOG_FILE"
+        sudo "$SCRIPT_DIR/$script_path" 2>&1 | tee >(strip_ansi >> "$LOG_FILE")
     else
-        "$SCRIPT_DIR/$script_path" 2>&1 | tee -a "$LOG_FILE"
+        "$SCRIPT_DIR/$script_path" 2>&1 | tee >(strip_ansi >> "$LOG_FILE")
     fi
     local result=${PIPESTATUS[0]}
     set -e

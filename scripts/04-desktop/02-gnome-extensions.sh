@@ -169,7 +169,7 @@ fi
 open_url() {
     local url="$1"
     if command -v xdg-open &>/dev/null; then
-        xdg-open "$url" &
+        xdg-open "$url" >/dev/null 2>&1 &
     else
         echo "  🔗 $url"
     fi
