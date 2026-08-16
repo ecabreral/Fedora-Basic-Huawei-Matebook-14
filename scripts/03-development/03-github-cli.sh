@@ -35,6 +35,16 @@ else
     fi
 fi
 
-# 2. Sugerencia de autenticación
+# 2. Autenticación y configuración de git
 echo ""
-info "Para autenticarte con GitHub ejecuta: gh auth login"
+if gh auth status &>/dev/null; then
+    info "Configurando gh como credential helper de git..."
+    if gh auth setup-git &>/dev/null; then
+        success "git usará gh para autenticarse (repos privados por HTTPS funcionan sin pedir usuario)."
+    else
+        warn "No se pudo configurar el credential helper. Ejecuta: gh auth setup-git"
+    fi
+else
+    info "Para autenticarte con GitHub ejecuta: gh auth login"
+    info "Después, habilita el credential helper con: gh auth setup-git"
+fi
