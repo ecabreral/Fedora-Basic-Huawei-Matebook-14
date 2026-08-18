@@ -185,6 +185,7 @@ Además, el menú principal (opción 4) permite desinstalar terminales alternati
 | `cls` | `clear` |
 | `update` | `sudo dnf upgrade -y && flatpak update -y` (Fedora) |
 | `bravefix` | Mata Brave y limpia locks de perfil bloqueado |
+| `chromefix` | Mata Chrome y limpia locks de perfil bloqueado |
 
 ## Soporte Fedora vs Ubuntu
 
