@@ -8,7 +8,6 @@
 
 set -e
 source "$(dirname "$0")/../../lib/common.sh"
-require_root
 
 KERNEL_PARAMS="i915.enable_psr=0 i915.enable_dc=0 intel_idle.max_cstate=2"
 
@@ -28,15 +27,15 @@ if is_fedora; then
   # ── Fedora: grubby ──────────────────────────────────────────────────────────
   if ! command -v grubby &>/dev/null; then
     info "Instalando grubby..."
-    dnf install -y grubby
+    sudo dnf install -y grubby
   fi
 
   info "Aplicando parámetros del kernel con grubby..."
-  grubby --update-kernel=ALL --args="$KERNEL_PARAMS"
+  sudo grubby --update-kernel=ALL --args="$KERNEL_PARAMS"
   success "Parámetros aplicados correctamente."
 
   info "Parámetros activos en el kernel:"
-  grubby --info=DEFAULT | grep args
+  sudo grubby --info=DEFAULT | grep args
 
 elif is_ubuntu; then
   # ── Ubuntu: /etc/default/grub + update-grub ─────────────────────────────────

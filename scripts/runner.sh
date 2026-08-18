@@ -14,28 +14,56 @@ export _INSTALL_RUNNER=1
 # Filtra códigos ANSI para que el log quede en texto plano
 strip_ansi() { sed -ru 's/\x1B\[[0-9;]*[mK]//g'; }
 
-# ── Verificar sudo ────────────────────────────────────────────────────────────
-if ! sudo -n true 2>/dev/null; then
-    log_warn "Algunos scripts requieren permisos de administrador (sudo)."
-    log_warn "Se te pedirá tu contraseña cuando sea necesario."
-fi
-
 # ── Configurar logging ────────────────────────────────────────────────────────
-SELECTED_IDS=("$@")
-TOTAL=${#SELECTED_IDS[@]}
+DRY_RUN=false
+SELECTED_IDS=()
+for argument in "$@"; do
+    if [ "$argument" = "--dry-run" ]; then
+        DRY_RUN=true
+    else
+        SELECTED_IDS+=("$argument")
+    fi
+done
 CURRENT=0
 
-if [ "$TOTAL" -eq 0 ]; then
+if [ "${#SELECTED_IDS[@]}" -eq 0 ]; then
     error "No se seleccionaron componentes."
     exit 1
 fi
 
 for ID in "${SELECTED_IDS[@]}"; do
-    case "$ID" in
-        base|terminal|vscode|git|gh|theme|extensions|icons|intel|brave|chrome|spotify|opencode) ;;
-        *) error "Componente desconocido: $ID"; exit 1 ;;
-    esac
+    component_exists "$ID" || { error "Componente desconocido: $ID"; exit 1; }
 done
+
+# Añade dependencias una sola vez y conserva un orden determinista.
+declare -a RESOLVED_IDS=()
+declare -A RESOLVED_SEEN=()
+resolve_component() {
+    local id="$1" dependency
+    [ -n "${RESOLVED_SEEN[$id]:-}" ] && return 0
+    for dependency in $(component_dependencies "$id"); do
+        resolve_component "$dependency"
+    done
+    RESOLVED_SEEN[$id]=1
+    RESOLVED_IDS+=("$id")
+}
+for ID in "${SELECTED_IDS[@]}"; do resolve_component "$ID"; done
+SELECTED_IDS=("${RESOLVED_IDS[@]}")
+TOTAL=${#SELECTED_IDS[@]}
+
+if [ "${DRY_RUN:-false}" = true ]; then
+    printf '%s\n' "Plan de instalación:"
+    for ID in "${SELECTED_IDS[@]}"; do
+        printf '  - %-12s %s\n' "$ID" "$(component_label "$ID")"
+    done
+    exit 0
+fi
+
+# ── Verificar sudo ────────────────────────────────────────────────────────────
+if ! sudo -n true 2>/dev/null; then
+    log_warn "Algunos scripts requieren permisos de administrador (sudo)."
+    log_warn "Se te pedirá tu contraseña cuando sea necesario."
+fi
 
 # El tema de terminal viene de la variable de entorno TERMINAL_THEME
 if [ -n "$TERMINAL_THEME" ]; then
@@ -58,16 +86,12 @@ step() {
 run_script() {
     local name="$1"
     local script_path="$2"
-    local use_sudo="${3:-false}"
-
     local result
     while true; do
         set +e
-        if [ "$use_sudo" = "true" ]; then
-            sudo "$SCRIPT_DIR/$script_path" 2>&1 | tee >(strip_ansi >> "$LOG_FILE")
-        else
-            "$SCRIPT_DIR/$script_path" 2>&1 | tee >(strip_ansi >> "$LOG_FILE")
-        fi
+        # Los scripts se ejecutan como el usuario real; cada operación de
+        # sistema usa sudo internamente y las configuraciones quedan en HOME.
+        "$SCRIPT_DIR/$script_path" 2>&1 | tee >(strip_ansi >> "$LOG_FILE")
         result=${PIPESTATUS[0]}
         set -e
 

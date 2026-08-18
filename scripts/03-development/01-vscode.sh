@@ -6,7 +6,6 @@
 
 set -e
 source "$(dirname "$0")/../../lib/common.sh"
-require_root
 
 REAL_USER="${SUDO_USER:-$USER}"
 if [ -z "$REAL_USER" ] || [ "$REAL_USER" = "root" ]; then
@@ -34,7 +33,7 @@ else
 
     info "Instalando Visual Studio Code..."
     sudo dnf check-update || true
-    sudo dnf install -y code
+    platform_install_packages code
     success "Visual Studio Code instalado."
 
   elif is_ubuntu; then
@@ -48,8 +47,8 @@ else
     sudo sh -c 'echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/trusted.gpg.d/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
 
     info "Instalando Visual Studio Code..."
-    sudo apt update
-    sudo DEBIAN_FRONTEND=noninteractive apt install -y code
+    platform_update
+    platform_install_packages code
     success "Visual Studio Code instalado."
   fi
 fi
@@ -63,9 +62,9 @@ fi
 # ── 3. Configuración inicial de VS Code ───────────────────────────────────────
 section "Configurando VS Code"
 
-VSCODE_CONFIG_DIR="/home/$REAL_USER/.config/Code/User"
+VSCODE_CONFIG_DIR="$(user_path .config/Code/User)"
 mkdir -p "$VSCODE_CONFIG_DIR"
-chown -R "$REAL_USER":"$REAL_USER" "/home/$REAL_USER/.config" 2>/dev/null || true
+sudo chown -R "$REAL_USER":"$REAL_USER" "$(user_path .config)" 2>/dev/null || true
 
 if [ -f "$VSCODE_CONFIG_DIR/settings.json" ]; then
   info "settings.json ya existe. Omitiendo sobrescribir."
@@ -93,9 +92,9 @@ else
 SETTINGS
 fi
 
-chown -R "$REAL_USER":"$REAL_USER" "$VSCODE_CONFIG_DIR" 2>/dev/null || true
-chown -R "$REAL_USER":"$REAL_USER" "/home/$REAL_USER/.config/Code" 2>/dev/null || true
-chown -R "$REAL_USER":"$REAL_USER" "/home/$REAL_USER/.vscode" 2>/dev/null || true
+sudo chown -R "$REAL_USER":"$REAL_USER" "$VSCODE_CONFIG_DIR" 2>/dev/null || true
+sudo chown -R "$REAL_USER":"$REAL_USER" "$(user_path .config/Code)" 2>/dev/null || true
+sudo chown -R "$REAL_USER":"$REAL_USER" "$(user_path .vscode)" 2>/dev/null || true
 
 success "Configuración de VS Code aplicada."
 

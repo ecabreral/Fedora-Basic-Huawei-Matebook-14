@@ -15,7 +15,7 @@ else
     if is_fedora; then
         # ── Fedora: repositorios oficiales ──────────────────────────────────────
         info "Instalando GitHub CLI desde repositorios de Fedora..."
-        sudo dnf install -y gh
+        platform_install_packages gh
     elif is_ubuntu; then
         # ── Ubuntu: repositorio oficial de GitHub CLI ───────────────────────────
         info "Agregando repositorio oficial de GitHub CLI..."
@@ -23,8 +23,8 @@ else
             sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
         echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | \
             sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-        sudo apt update
-        sudo DEBIAN_FRONTEND=noninteractive apt install -y gh
+        platform_update
+        platform_install_packages gh
     fi
 
     if command -v gh &>/dev/null; then

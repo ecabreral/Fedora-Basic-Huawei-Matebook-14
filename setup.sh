@@ -14,8 +14,7 @@ fi
 export INSTALL_LIGHT_MODE
 source "$SCRIPT_DIR/lib/common.sh"
 source "$SCRIPT_DIR/lib/logger.sh"
-
-DETECTED_OS="$OS_NAME $OS_VERSION"
+source "$SCRIPT_DIR/lib/cli.sh"
 
 # Paleta sobria inspirada en las herramientas de instalación de Fedora.
 if [ "$INSTALL_LIGHT_MODE" = true ]; then
@@ -26,13 +25,9 @@ fi
 
 # ── Flags de línea de comandos ───────────────────────────────────────────────
 DRY_RUN=false
-SHOW_HELP=false
 UNINSTALL_MODE=false
 CLI_COMPONENTS=""
 CLI_THEME=""
-
-COMPONENTS=(base terminal vscode git gh theme extensions icons intel brave chrome spotify opencode)
-THEMES=(tokyo-night pastel-powerline gruvbox-rainbow catppuccin-powerline jetpack pure-preset cyberpunk-storm cyberpunk-neon cyberpunk-night)
 
 # Tamaños conservadores para que la interfaz funcione también por SSH.
 UI_LINES=$(tput lines 2>/dev/null || echo 24)
@@ -44,140 +39,7 @@ UI_WIDTH=$((UI_COLS > 100 ? 92 : UI_COLS - 4))
 UI_TITLE="Fedora System Setup"
 is_ubuntu && UI_TITLE="Linux System Setup"
 
-show_help() {
-    echo "Uso: ./setup.sh [OPCIONES]"
-    echo ""
-    echo "Opciones:"
-    echo "  --help              Muestra esta ayuda"
-    echo "  --dry-run           Muestra qué haría sin ejecutar nada"
-    echo "  --component <names> Instala uno o varios componentes separados por espacio (base, terminal, vscode, git, gh, theme, extensions, icons, intel, brave, chrome, spotify, opencode)"
-    echo "  --theme <name>      Selecciona tema para terminal (tokyo-night, pastel-powerline, gruvbox-rainbow, catppuccin-powerline, jetpack, pure-preset, cyberpunk-storm, cyberpunk-neon, cyberpunk-night)"
-    echo "  --uninstall         Modo desinstalación interactiva"
-    echo ""
-    echo "Ejemplos:"
-    echo "  ./setup.sh                                    # Modo interactivo (whiptail)"
-    echo "  ./setup.sh --component base --theme tokyo-night  # Instala solo base con tema"
-    echo "  ./setup.sh --dry-run                          # Solo muestra qué haría"
-    echo "  ./setup.sh --uninstall                        # Desinstalar componentes"
-}
-
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        --help|-h)
-            show_help
-            exit 0
-            ;;
-        --dry-run)
-            DRY_RUN=true
-            shift
-            ;;
-        --component)
-            if [ $# -lt 2 ] || [[ "$2" == -* ]]; then
-                error "--component requiere al menos un nombre."
-                exit 1
-            fi
-            shift
-            while [[ $# -gt 0 && "$1" != -* ]]; do
-                CLI_COMPONENTS="$CLI_COMPONENTS $1"
-                shift
-            done
-            ;;
-        --theme)
-            if [ $# -lt 2 ] || [[ -z "$2" || "$2" == -* ]]; then
-                error "--theme requiere un nombre."
-                exit 1
-            fi
-            CLI_THEME="$2"
-            shift 2
-            ;;
-        --uninstall)
-            UNINSTALL_MODE=true
-            shift
-            ;;
-        *)
-            error "Opción desconocida: $1"
-            show_help
-            exit 1
-            ;;
-    esac
-done
-
-validate_selection() {
-    local value item valid
-    for item in $1; do
-        valid=false
-        for value in "${COMPONENTS[@]}"; do
-            [ "$item" = "$value" ] && valid=true && break
-        done
-        if [ "$valid" = false ]; then
-            error "Componente desconocido: $item"
-            error "Usa --help para ver los componentes disponibles."
-            return 1
-        fi
-    done
-}
-
-validate_theme() {
-    local theme
-    [ -z "$1" ] && return 0
-    for theme in "${THEMES[@]}"; do
-        [ "$1" = "$theme" ] && return 0
-    done
-    error "Tema desconocido: $1"
-    error "Temas disponibles: ${THEMES[*]}"
-    return 1
-}
-
-component_label() {
-    case "$1" in
-        base) echo "Sistema Base" ;;
-        terminal) echo "Terminal y herramientas" ;;
-        vscode) echo "Visual Studio Code" ;;
-        git) echo "Git + SSH" ;;
-        gh) echo "GitHub CLI" ;;
-        theme) echo "Temas GNOME" ;;
-        extensions) echo "Extensiones GNOME" ;;
-        icons) echo "Iconos GNOME" ;;
-        intel) echo "Corrección de parpadeo Intel" ;;
-        brave) echo "Brave Browser" ;;
-        chrome) echo "Google Chrome" ;;
-        spotify) echo "Spotify" ;;
-        opencode) echo "OpenCode CLI" ;;
-    esac
-}
-
-component_status() {
-    case "$1" in
-        base)
-            if is_fedora; then
-                [ -f /etc/yum.repos.d/rpmfusion-free.repo ] && command -v flatpak >/dev/null 2>&1
-            else
-                pkg_check ubuntu-restricted-extras 2>/dev/null || pkg_check flatpak 2>/dev/null
-            fi
-            ;;
-        terminal) command -v zsh >/dev/null 2>&1 && command -v starship >/dev/null 2>&1 ;;
-        vscode) command -v code >/dev/null 2>&1 ;;
-        git) command -v git >/dev/null 2>&1 ;;
-        gh) command -v gh >/dev/null 2>&1 ;;
-        theme) [ -d "$HOME/.themes" ] || gsettings get org.gnome.desktop.interface gtk-theme >/dev/null 2>&1 ;;
-        extensions) command -v gnome-extensions >/dev/null 2>&1 ;;
-        icons) [ -d "$HOME/.local/share/icons" ] && [ "$(printf '%s' "$HOME/.local/share/icons"/* 2>/dev/null)" != "$HOME/.local/share/icons/*" ] ;;
-        intel) grep -Eq 'i915|intel_idle' /etc/default/grub 2>/dev/null ;;
-        brave) command -v brave-browser >/dev/null 2>&1 || command -v brave >/dev/null 2>&1 ;;
-        chrome) command -v google-chrome >/dev/null 2>&1 || command -v google-chrome-stable >/dev/null 2>&1 ;;
-        spotify) command -v flatpak >/dev/null 2>&1 && flatpak info com.spotify.Client >/dev/null 2>&1 ;;
-        opencode) command -v opencode >/dev/null 2>&1 || [ -x "$HOME/.opencode/bin/opencode" ] ;;
-        *) return 1 ;;
-    esac
-}
-
-component_badge() {
-    if component_status "$1"; then
-        echo "[INSTALADO]"
-    else
-        echo "[NO INSTALADO]"
-    fi
-}
+parse_args "$@" || exit 1
 
 preflight_text() {
     local sudo_state="NO" internet_state="NO" session_state="NO" text=""
@@ -203,12 +65,7 @@ preflight_text() {
     printf '%s' "$text"
 }
 
-show_preflight() {
-    whiptail --title "Diagnóstico inicial" --msgbox "$(preflight_text)" "$UI_HEIGHT" "$UI_WIDTH" \
-        3>&1 1>&2 2>&3
-}
-
-CLI_COMPONENTS=$(echo "$CLI_COMPONENTS" | xargs)
+CLI_COMPONENTS=$(printf '%s' "$CLI_COMPONENTS" | xargs)
 validate_selection "$CLI_COMPONENTS" || exit 1
 validate_theme "$CLI_THEME" || exit 1
 
@@ -493,6 +350,10 @@ show_confirm_dialog() {
     whiptail --title "Confirmar instalación" --yesno "$msg" "$UI_HEIGHT" "$UI_WIDTH"
 }
 
+# La interfaz vive en lib/ui.sh. Se recarga aquí para que el coordinador no
+# dependa de implementaciones locales heredadas durante la migración.
+source "$SCRIPT_DIR/lib/ui.sh"
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 main() {
     # Verificar SO
@@ -512,7 +373,8 @@ main() {
         local THEME="$CLI_THEME"
         
         if [ "$DRY_RUN" = true ]; then
-            info "[DRY RUN] Se instalarían: $SELECTED"
+            info "[DRY RUN] Plan de instalación:"
+            bash "$SCRIPT_DIR/scripts/runner.sh" --dry-run $SELECTED
             [ -n "$THEME" ] && info "[DRY RUN] Tema: $THEME"
             return 0
         fi
@@ -624,7 +486,13 @@ run_installation() {
         return 1
     fi
 
-    if [ -n "$TERMINAL_THEME" ]; then
+    if [ "$(id -u)" -eq 0 ] && [ -n "${SUDO_USER:-}" ]; then
+        if [ -n "$TERMINAL_THEME" ]; then
+            run_as_user env TERMINAL_THEME="$TERMINAL_THEME" bash "$SCRIPT_DIR/scripts/runner.sh" "${selected_args[@]}"
+        else
+            run_as_user bash "$SCRIPT_DIR/scripts/runner.sh" "${selected_args[@]}"
+        fi
+    elif [ -n "$TERMINAL_THEME" ]; then
         TERMINAL_THEME="$TERMINAL_THEME" bash "$SCRIPT_DIR/scripts/runner.sh" "${selected_args[@]}"
     else
         bash "$SCRIPT_DIR/scripts/runner.sh" "${selected_args[@]}"
@@ -639,15 +507,15 @@ run_uninstall() {
         case "$app" in
             kitty)
                 if command -v kitty &>/dev/null; then
-                    sudo dnf remove -y kitty 2>/dev/null || sudo apt remove -y kitty 2>/dev/null
-                    rm -rf ~/.config/kitty
+                    platform_remove_packages kitty
+                    rm -rf "$(user_path .config/kitty)"
                     log_success "Kitty desinstalado"
                 fi
                 ;;
             alacritty)
                 if command -v alacritty &>/dev/null; then
-                    sudo dnf remove -y alacritty 2>/dev/null || sudo apt remove -y alacritty 2>/dev/null
-                    rm -rf ~/.config/alacritty
+                    platform_remove_packages alacritty
+                    rm -rf "$(user_path .config/alacritty)"
                     log_success "Alacritty desinstalado"
                 fi
                 ;;
@@ -686,38 +554,38 @@ run_full_uninstall() {
     for comp in $COMPONENTS; do
         case "$comp" in
             vscode)
-                sudo dnf remove -y code 2>/dev/null || sudo snap remove code 2>/dev/null
-                rm -rf ~/.config/Code ~/.vscode
+                platform_remove_packages code 2>/dev/null || true
+                rm -rf "$(user_path .config/Code)" "$(user_path .vscode)"
                 log_success "VS Code desinstalado"
                 ;;
             gh)
-                sudo dnf remove -y gh 2>/dev/null || sudo apt remove -y gh 2>/dev/null
+                platform_remove_packages gh
                 log_success "GitHub CLI desinstalado"
                 ;;
             brave)
-                sudo dnf remove -y brave-browser 2>/dev/null
-                rm -rf ~/.config/BraveSoftware
+                platform_remove_packages brave-browser 2>/dev/null || true
+                rm -rf "$(user_path .config/BraveSoftware)"
                 log_success "Brave desinstalado"
                 ;;
             chrome)
-                sudo dnf remove -y google-chrome-stable 2>/dev/null
-                sudo dnf config-manager disable google-chrome 2>/dev/null
-                rm -rf ~/.config/google-chrome
+                platform_remove_packages google-chrome-stable 2>/dev/null || true
+                is_fedora && sudo dnf config-manager disable google-chrome 2>/dev/null || true
+                rm -rf "$(user_path .config/google-chrome)"
                 log_success "Google Chrome desinstalado"
                 ;;
             spotify)
-                sudo dnf remove -y spotify 2>/dev/null || sudo snap remove spotify 2>/dev/null
+                flatpak uninstall -y --user com.spotify.Client 2>/dev/null || flatpak uninstall -y com.spotify.Client 2>/dev/null || true
                 log_success "Spotify desinstalado"
                 ;;
             starship)
-                rm -f ~/.local/bin/starship
-                rm -f ~/.config/starship.toml
+                rm -f "$(user_path .local/bin/starship)"
+                rm -f "$(user_path .config/starship.toml)"
                 log_success "Starship desinstalado"
                 ;;
             ohmyzsh)
-                rm -rf ~/.oh-my-zsh
-                if [ -f ~/.zshrc.pre-oh-my-zsh ]; then
-                    mv ~/.zshrc.pre-oh-my-zsh ~/.zshrc
+                rm -rf "$(user_path .oh-my-zsh)"
+                if [ -f "$(user_path .zshrc.pre-oh-my-zsh)" ]; then
+                    mv "$(user_path .zshrc.pre-oh-my-zsh)" "$(user_path .zshrc)"
                 fi
                 log_success "Oh My Zsh desinstalado"
                 ;;
@@ -739,8 +607,8 @@ run_full_uninstall() {
                 log_success "Iconos restaurados; no se borraron archivos personales"
                 ;;
             opencode)
-                sudo dnf remove -y opencode 2>/dev/null || sudo snap remove opencode 2>/dev/null
-                rm -rf ~/.config/opencode
+                rm -f "$(user_path .opencode/bin/opencode)"
+                rm -rf "$(user_path .config/opencode)"
                 log_success "OpenCode desinstalado"
                 ;;
         esac

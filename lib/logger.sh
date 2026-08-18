@@ -211,12 +211,19 @@ _rotate_logs() {
     local keep=5
     local max_bytes=1048576  # 1MB
     local count
-    count=$(ls -1 "$LOG_DIR"/install-*.log 2>/dev/null | wc -l)
+    local -a logs=()
+    while IFS= read -r log; do logs+=("$log"); done < <(
+        for log in "$LOG_DIR"/install-*.log; do
+            [ -e "$log" ] && stat -c '%Y %n' "$log"
+        done | sort -rn | cut -d' ' -f2-
+    )
+    count=${#logs[@]}
 
     if [ "$count" -gt "$keep" ]; then
         local to_remove=$((count - keep))
-        ls -1t "$LOG_DIR"/install-*.log | tail -n "$to_remove" | while read -r f; do
-            rm -f "$f"
+        local i
+        for ((i = keep; i < count; i++)); do
+            rm -f "${logs[i]}"
         done
     fi
 

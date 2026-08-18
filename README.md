@@ -124,6 +124,11 @@ Cierra sesión si instalaste temas o extensiones GNOME. Reinicia si instalaste `
 setup.sh                 Menús, validación, CLI y desinstalación
 lib/common.sh            Funciones compartidas y detección de sistema
 lib/logger.sh            Logging, resumen y rotación
+lib/catalog.sh           Catálogo, estados y dependencias de componentes
+lib/cli.sh               Argumentos y validación del modo CLI
+lib/ui.sh                Menús whiptail y selección de componentes
+lib/platform.sh          Adaptadores de paquetes Fedora/Ubuntu
+lib/privilege.sh         Contexto de usuario y operaciones root
 scripts/runner.sh        Ejecución ordenada de componentes
 scripts/01-system        Sistema base
 scripts/02-terminal      Terminal y cambio de tema
@@ -132,4 +137,33 @@ scripts/04-desktop       Temas, extensiones e iconos GNOME
 scripts/05-hardware      Corrección Intel
 scripts/06-apps          Brave, Chrome, Spotify y OpenCode
 config/starship          Temas Starship personalizados
+tests/                   Pruebas sintácticas y de integración del runner
+```
+
+## Arquitectura
+
+El punto de entrada coordina la interfaz y el modo CLI, mientras que las
+decisiones compartidas viven en librerías:
+
+```text
+setup.sh
+  -> lib/cli.sh       Argumentos y validación
+  -> lib/ui.sh        Menús whiptail y selección
+  -> lib/catalog.sh   Componentes, categorías y dependencias
+  -> lib/platform.sh  Operaciones Fedora/Ubuntu
+  -> lib/privilege.sh Contexto usuario/root
+  -> scripts/runner.sh
+  -> scripts/<area>/<componente>.sh
+```
+
+El runner resuelve dependencias antes de ejecutar. Por ejemplo, seleccionar
+`spotify` incluye automáticamente `base`. El modo `--dry-run` muestra el plan
+resuelto sin ejecutar comandos ni pedir permisos.
+
+## Validación
+
+Las comprobaciones sintácticas y pruebas básicas se ejecutan con:
+
+```bash
+./tests/run.sh
 ```

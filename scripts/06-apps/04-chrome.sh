@@ -15,7 +15,7 @@ if command -v google-chrome-stable &>/dev/null; then
 fi
 
 # 2. Agregar repo RPM de Google Chrome
-if ! dnf repolist 2>/dev/null | grep -q google-chrome; then
+if is_fedora && ! dnf repolist 2>/dev/null | grep -q google-chrome; then
   info "Agregando repositorio de Google Chrome..."
   sudo dnf config-manager addrepo --from-repofile=https://dl.google.com/linux/chrome/rpm/stable/x86_64/google-chrome.repo
   success "Repositorio agregado."
@@ -25,7 +25,7 @@ fi
 
 # 3. Instalar Google Chrome
 info "Instalando Google Chrome..."
-if sudo dnf install -y google-chrome-stable; then
+if platform_install_packages google-chrome-stable; then
   success "Google Chrome instalado satisfactoriamente."
 else
   error "Error al instalar Google Chrome."

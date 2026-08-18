@@ -22,6 +22,9 @@ _LOGGER_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/logger.sh"
 if [ -f "$_LOGGER_FILE" ]; then
   source "$_LOGGER_FILE"
 fi
+source "$(dirname "${BASH_SOURCE[0]}")/privilege.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/platform.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/catalog.sh"
 
 # ── Funciones de log (compatibilidad hacia atrás) ────────────────────────────
 info()    { log_info "$@" 2>/dev/null || echo -e "${CYAN}${BOLD}  ·${RESET}  $1"; }

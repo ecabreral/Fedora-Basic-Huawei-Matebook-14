@@ -135,9 +135,9 @@ install_papirus() {
     else
         info "Instalando Papirus Icon Theme (flat moderno SVG)..."
         if is_fedora; then
-            sudo dnf install -y papirus-icon-theme
+            platform_install_packages papirus-icon-theme
         elif is_ubuntu; then
-            sudo apt install -y papirus-icon-theme
+            platform_install_packages papirus-icon-theme
         fi
         success "Papirus Icon Theme instalado."
     fi
