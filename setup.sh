@@ -16,13 +16,16 @@ UNINSTALL_MODE=false
 CLI_COMPONENTS=""
 CLI_THEME=""
 
+COMPONENTS=(base terminal vscode git gh theme extensions icons intel brave chrome spotify opencode)
+THEMES=(tokyo-night pastel-powerline gruvbox-rainbow catppuccin-powerline jetpack pure-preset cyberpunk-storm cyberpunk-neon cyberpunk-night)
+
 show_help() {
     echo "Uso: ./setup.sh [OPCIONES]"
     echo ""
     echo "Opciones:"
     echo "  --help              Muestra esta ayuda"
     echo "  --dry-run           Muestra qué haría sin ejecutar nada"
-    echo "  --component <name>  Instala un componente específico (base, terminal, vscode, git, gh, theme, extensions, icons, intel, brave, spotify, opencode)"
+    echo "  --component <names> Instala uno o varios componentes separados por espacio (base, terminal, vscode, git, gh, theme, extensions, icons, intel, brave, chrome, spotify, opencode)"
     echo "  --theme <name>      Selecciona tema para terminal (tokyo-night, pastel-powerline, gruvbox-rainbow, catppuccin-powerline, jetpack, pure-preset, cyberpunk-storm, cyberpunk-neon, cyberpunk-night)"
     echo "  --uninstall         Modo desinstalación interactiva"
     echo ""
@@ -44,10 +47,21 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --component)
-            CLI_COMPONENTS="$CLI_COMPONENTS $2"
-            shift 2
+            if [ $# -lt 2 ] || [[ "$2" == -* ]]; then
+                error "--component requiere al menos un nombre."
+                exit 1
+            fi
+            shift
+            while [[ $# -gt 0 && "$1" != -* ]]; do
+                CLI_COMPONENTS="$CLI_COMPONENTS $1"
+                shift
+            done
             ;;
         --theme)
+            if [ $# -lt 2 ] || [[ -z "$2" || "$2" == -* ]]; then
+                error "--theme requiere un nombre."
+                exit 1
+            fi
             CLI_THEME="$2"
             shift 2
             ;;
@@ -63,10 +77,53 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+validate_selection() {
+    local value item valid
+    for item in $1; do
+        valid=false
+        for value in "${COMPONENTS[@]}"; do
+            [ "$item" = "$value" ] && valid=true && break
+        done
+        if [ "$valid" = false ]; then
+            error "Componente desconocido: $item"
+            error "Usa --help para ver los componentes disponibles."
+            return 1
+        fi
+    done
+}
+
+validate_theme() {
+    local theme
+    [ -z "$1" ] && return 0
+    for theme in "${THEMES[@]}"; do
+        [ "$1" = "$theme" ] && return 0
+    done
+    error "Tema desconocido: $1"
+    error "Temas disponibles: ${THEMES[*]}"
+    return 1
+}
+
+CLI_COMPONENTS=$(echo "$CLI_COMPONENTS" | xargs)
+validate_selection "$CLI_COMPONENTS" || exit 1
+validate_theme "$CLI_THEME" || exit 1
+
 # ── Verificar whiptail ────────────────────────────────────────────────────────
-if ! command -v whiptail &>/dev/null; then
+if [ -z "$CLI_COMPONENTS" ] && [ "$DRY_RUN" = false ] && ! command -v whiptail &>/dev/null; then
+    if ! command -v sudo &>/dev/null; then
+        error "No se encontró sudo para instalar whiptail."
+        exit 1
+    fi
     echo "whiptail no está instalado. Instalando..."
-    sudo dnf install -y newt || sudo apt install -y whiptail
+    if is_fedora; then
+        sudo dnf install -y newt
+    elif is_ubuntu; then
+        sudo apt install -y whiptail
+    fi
+fi
+
+if [ -z "$CLI_COMPONENTS" ] && [ "$DRY_RUN" = false ] && ! command -v whiptail &>/dev/null; then
+    error "No se pudo instalar whiptail. Ejecuta el modo CLI o instala whiptail manualmente."
+    exit 1
 fi
 
 # ── Menú principal con whiptail ────────────────────────────────────────────────
@@ -114,14 +171,131 @@ run_checklist() {
     echo "$out" | xargs
 }
 
+# ── Helpers de selección de componentes ───────────────────────────────────────
+_component_tags() {
+    case "$1" in
+        sistema)     echo "base" ;;
+        terminal)    echo "terminal" ;;
+        dev)         echo "vscode git gh opencode" ;;
+        browsers)    echo "brave chrome" ;;
+        multimedia)  echo "spotify" ;;
+        desktop)     echo "theme extensions icons" ;;
+        hardware)    echo "intel" ;;
+    esac
+}
+
+_component_items() {
+    case "$1" in
+        sistema)     echo "base|Sistema Base (Repositorios, Códecs, VA-API, Flatpak)" ;;
+        terminal)    echo "terminal|Terminal (Ptyxis, zsh, Starship, eza...)" ;;
+        dev)         echo "vscode|Visual Studio Code + Extensiones"
+                     echo "git|Git + Clave SSH para GitHub"
+                     echo "gh|GitHub CLI (gh)"
+                     echo "opencode|OpenCode CLI (Asistente IA)" ;;
+        browsers)    echo "brave|Brave Browser + alias bravefix"
+                     echo "chrome|Google Chrome" ;;
+        multimedia)  echo "spotify|Spotify (Cliente de música)" ;;
+        desktop)     echo "theme|Temas GNOME estilo macOS"
+                     echo "extensions|Extensiones GNOME"
+                     echo "icons|Iconos GNOME (WhiteSur, Papirus...)" ;;
+        hardware)    echo "intel|Fix Intel Screen Flicker" ;;
+    esac
+}
+
+_component_title() {
+    case "$1" in
+        sistema)     echo "Sistema" ;;
+        terminal)    echo "Terminal" ;;
+        dev)         echo "Desarrollo" ;;
+        browsers)    echo "Navegadores" ;;
+        multimedia)  echo "Multimedia" ;;
+        desktop)     echo "Escritorio GNOME" ;;
+        hardware)    echo "Hardware" ;;
+    esac
+}
+
+_selected_has() {
+    echo " $SELECTED " | grep -q " $1 "
+}
+
+_strip_category() {
+    local cat="$1" t ct keep out=""
+    for t in $SELECTED; do
+        keep=1
+        for ct in $(_component_tags "$cat"); do
+            [ "$t" = "$ct" ] && keep=0 && break
+        done
+        [ "$keep" -eq 1 ] && out+=" $t"
+    done
+    SELECTED="$out"
+}
+
+_show_selected_msg() {
+    local msg="Componentes seleccionados actualmente:\\n\\n" any=0
+    for comp in $SELECTED; do
+        any=1
+        case "$comp" in
+            base)        msg+="  • Sistema Base\\n" ;;
+            terminal)    msg+="  • Terminal (Ptyxis)\\n" ;;
+            vscode)      msg+="  • Visual Studio Code\\n" ;;
+            git)         msg+="  • Git + SSH\\n" ;;
+            gh)          msg+="  • GitHub CLI\\n" ;;
+            theme)       msg+="  • Temas GNOME\\n" ;;
+            extensions)  msg+="  • Extensiones GNOME\\n" ;;
+            icons)       msg+="  • Iconos GNOME\\n" ;;
+            intel)       msg+="  • Intel Flicker Fix\\n" ;;
+            brave)       msg+="  • Brave Browser\\n" ;;
+            chrome)      msg+="  • Google Chrome\\n" ;;
+            spotify)     msg+="  • Spotify\\n" ;;
+            opencode)    msg+="  • OpenCode CLI\\n" ;;
+        esac
+    done
+    [ "$any" -eq 0 ] && msg+="  (ninguno)"
+    # Este menú se ejecuta dentro de $(show_component_menu). Mantener la UI en
+    # stderr evita que whiptail contamine el valor capturado por stdout.
+    whiptail --title "Selección actual" --msgbox "$msg" 22 60 \
+        3>&1 1>&2 2>&3
+}
+
+# Checklist con defaults dinámicos según SELECTED (permite toggle real)
+run_checklist_dyn() {
+    local title="$1" prompt="$2" height="$3" cat="$4"
+    local -a tags=() args=()
+    local item n=0
+    while IFS= read -r item; do
+        [ -z "$item" ] && continue
+        n=$((n + 1))
+        local tag="${item%%|*}" desc="${item#*|}"
+        local def="OFF"
+        _selected_has "$tag" && def="ON"
+        args+=("$n" "$desc" "$def")
+        tags+=("$tag")
+    done < <(_component_items "$cat")
+
+    local r
+    r=$(whiptail --title "$title" --checklist "$prompt" "$height" 60 "$n" "${args[@]}" \
+        3>&1 1>&2 2>&3)
+
+    local out="" sel
+    for sel in $r; do
+        sel="${sel//\"/}"
+        if [[ "$sel" =~ ^[0-9]+$ ]] && [ -n "${tags[sel-1]:-}" ]; then
+            out+=" ${tags[sel-1]}"
+        fi
+    done
+    echo "$out" | xargs
+}
+
 # ── Menú de componentes por categoría ────────────────────────────────────────
 show_component_menu() {
     local SELECTED=""
 
     while true; do
+        local count
+        count=$(echo "$SELECTED" | wc -w | tr -d ' ')
         local cat_choice
-        cat_choice=$(whiptail --title "Selecciona componentes" \
-            --menu "Elige una categoría para agregar componentes:" 18 60 8 \
+        cat_choice=$(whiptail --title "Selecciona componentes (${count} seleccionados)" \
+            --menu "Elige una categoría para agregar o quitar componentes:" 24 70 10 \
             "1" "🖥️  Sistema" \
             "2" "🐚 Terminal" \
             "3" "💻 Desarrollo" \
@@ -131,74 +305,40 @@ show_component_menu() {
             "7" "🔧 Hardware" \
             "8" "✅ Seleccionar TODO" \
             "9" "▶️  Continuar con la instalación" \
+            "0" "👁️  Ver selección actual" \
+            "c" "🧹 Limpiar selección" \
             3>&1 1>&2 2>&3)
 
         case "$cat_choice" in
-            1) # Sistema
-                local r
-                r=$(run_checklist "Sistema" "Selecciona componentes del sistema:" 10 \
-                    "base|Sistema Base (Repositorios, Códecs, VA-API, Flatpak)|ON")
+            1|2|3|4|5|6|7)
+                local cat r
+                case "$cat_choice" in
+                    1) cat=sistema ;;
+                    2) cat=terminal ;;
+                    3) cat=dev ;;
+                    4) cat=browsers ;;
+                    5) cat=multimedia ;;
+                    6) cat=desktop ;;
+                    7) cat=hardware ;;
+                esac
+                r=$(run_checklist_dyn "$(_component_title "$cat")" \
+                    "Marca los componentes de $(_component_title "$cat") a instalar:" 14 "$cat")
+                _strip_category "$cat"
                 if [ -n "$r" ]; then
                     SELECTED="$SELECTED $r"
                 fi
-                ;;
-            2) # Terminal
-                local r
-                r=$(run_checklist "Terminal" "Selecciona componentes de terminal:" 10 \
-                    "terminal|Terminal (Ptyxis, zsh, Starship, eza...)|ON")
-                if [ -n "$r" ]; then
-                    SELECTED="$SELECTED $r"
-                fi
-                ;;
-            3) # Desarrollo
-                local r
-                r=$(run_checklist "Desarrollo" "Selecciona herramientas de desarrollo:" 14 \
-                    "vscode|Visual Studio Code + Extensiones|ON" \
-                    "git|Git + Clave SSH para GitHub|ON" \
-                    "gh|GitHub CLI (gh)|ON" \
-                    "opencode|OpenCode CLI (Asistente IA)|ON")
-                if [ -n "$r" ]; then
-                    SELECTED="$SELECTED $r"
-                fi
-                ;;
-            4) # Navegadores
-                local r
-                r=$(run_checklist "Navegadores" "Selecciona navegadores:" 10 \
-                    "brave|Brave Browser + alias bravefix|ON" \
-                    "chrome|Google Chrome|OFF")
-                if [ -n "$r" ]; then
-                    SELECTED="$SELECTED $r"
-                fi
-                ;;
-            5) # Multimedia
-                local r
-                r=$(run_checklist "Multimedia" "Selecciona apps multimedia:" 10 \
-                    "spotify|Spotify (Cliente de música)|ON")
-                if [ -n "$r" ]; then
-                    SELECTED="$SELECTED $r"
-                fi
-                ;;
-            6) # Escritorio GNOME
-                local r
-                r=$(run_checklist "Escritorio GNOME" "Selecciona componentes de escritorio:" 14 \
-                    "theme|Temas GNOME estilo macOS|OFF" \
-                    "extensions|Extensiones GNOME|OFF" \
-                    "icons|Iconos GNOME (WhiteSur, Papirus...)|OFF")
-                if [ -n "$r" ]; then
-                    SELECTED="$SELECTED $r"
-                fi
-                ;;
-            7) # Hardware
-                local r
-                r=$(run_checklist "Hardware" "Selecciona fixes de hardware:" 10 \
-                    "intel|Fix Intel Screen Flicker|OFF")
-                if [ -n "$r" ]; then
-                    SELECTED="$SELECTED $r"
-                fi
+                SELECTED=$(echo "$SELECTED" | xargs)
                 ;;
             8) # Seleccionar TODO
                 SELECTED="base terminal vscode git gh theme extensions icons intel brave spotify opencode chrome"
                 whiptail --title "TODO seleccionado" --msgbox "Todos los componentes seleccionados." 8 50
+                ;;
+            c) # Limpiar selección
+                SELECTED=""
+                whiptail --title "Selección limpiada" --msgbox "Se quitaron todos los componentes seleccionados." 8 50
+                ;;
+            0) # Ver selección actual
+                _show_selected_msg
                 ;;
             9) # Continuar
                 if [ -z "$(echo "$SELECTED" | xargs)" ]; then
@@ -268,7 +408,11 @@ show_confirm_dialog() {
 main() {
     # Verificar SO
     if ! is_fedora && ! is_ubuntu; then
-        whiptail --title "Error" --msgbox "Sistema operativo no soportado: $OS_ID\\nEste instalador funciona en Fedora o Ubuntu." 10 50
+        if command -v whiptail &>/dev/null; then
+            whiptail --title "Error" --msgbox "Sistema operativo no soportado: $OS_ID\\nEste instalador funciona en Fedora o Ubuntu." 10 50
+        else
+            error "Sistema operativo no soportado: $OS_ID. Este instalador funciona en Fedora o Ubuntu."
+        fi
         exit 1
     fi
     
@@ -310,7 +454,7 @@ main() {
         case "$main_choice" in
             1)
                 # Instalar todos
-                local SELECTED="base terminal vscode git gh theme extensions icons intel brave spotify opencode"
+                local SELECTED="base terminal vscode git gh theme extensions icons intel brave spotify opencode chrome"
                 local THEME=""
                 
                 if echo "$SELECTED" | grep -qw "terminal"; then
@@ -373,13 +517,22 @@ main() {
 
 # ── Ejecutar instalación ──────────────────────────────────────────────────────
 run_installation() {
-    chmod +x "$SCRIPT_DIR"/scripts/**/*.sh 2>/dev/null
-    chmod +x "$SCRIPT_DIR"/scripts/*.sh 2>/dev/null
-    
+    local script
+    shopt -s nullglob globstar
+    for script in "$SCRIPT_DIR"/scripts/**/*.sh; do
+        chmod +x "$script" 2>/dev/null || true
+    done
+    local -a selected_args=()
+    read -r -a selected_args <<< "$SELECTED"
+    if [ "${#selected_args[@]}" -eq 0 ]; then
+        error "No hay componentes seleccionados."
+        return 1
+    fi
+
     if [ -n "$TERMINAL_THEME" ]; then
-        TERMINAL_THEME="$TERMINAL_THEME" bash "$SCRIPT_DIR/scripts/runner.sh" $SELECTED
+        TERMINAL_THEME="$TERMINAL_THEME" bash "$SCRIPT_DIR/scripts/runner.sh" "${selected_args[@]}"
     else
-        bash "$SCRIPT_DIR/scripts/runner.sh" $SELECTED
+        bash "$SCRIPT_DIR/scripts/runner.sh" "${selected_args[@]}"
     fi
 }
 
@@ -484,13 +637,11 @@ run_full_uninstall() {
             themes)
                 gsettings reset org.gnome.desktop.interface gtk-theme 2>/dev/null
                 gsettings reset org.gnome.shell.extensions.user-theme name 2>/dev/null
-                rm -rf ~/.themes/* ~/.local/share/themes/*
-                log_success "Temas GNOME restaurados"
+                log_success "Temas GNOME restaurados; no se borraron archivos personales"
                 ;;
             icons)
                 gsettings reset org.gnome.desktop.interface icon-theme 2>/dev/null
-                rm -rf ~/.icons/* ~/.local/share/icons/*
-                log_success "Iconos restaurados"
+                log_success "Iconos restaurados; no se borraron archivos personales"
                 ;;
             opencode)
                 sudo dnf remove -y opencode 2>/dev/null || sudo snap remove opencode 2>/dev/null

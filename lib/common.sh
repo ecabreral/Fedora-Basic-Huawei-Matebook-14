@@ -221,7 +221,7 @@ show_theme_selector() {
       "6" "Pure Prompt (clasico)" OFF \
       "7" "Cyberpunk Storm (neon intenso)" OFF \
       "8" "Cyberpunk Neon (maxima saturacion)" OFF \
-      "9" "Cyberpunk Night (sutel elegante)" OFF \
+      "9" "Cyberpunk Night (sutil elegante)" OFF \
       3>&1 1>&2 2>&3)
 
   if [ $? -ne 0 ] || [ -z "$theme" ]; then

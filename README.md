@@ -50,7 +50,7 @@ chmod +x setup.sh
 
 ```
 1) Instalar TODOS los componentes
-2) Seleccionar componentes específicos   (sub-menús por categoría, checklist numerado)
+2) Seleccionar componentes específicos   (sub-menús por categoría, checklist con toggle para agregar/quitar, contador de seleccionados, "Ver selección actual" y "Limpiar selección")
 3) Cambiar tema de terminal              (Starship + Ptyxis sin reinstalar)
 4) Desinstalar terminal alternativa      (Kitty / Alacritty)
 5) Salir
@@ -116,7 +116,7 @@ Los cambios respaldan automáticamente `starship.toml` y la paleta anteriores.
 ./setup.sh --uninstall
 ```
 
-Permite desinstalar (checklist): VS Code, Brave, Chrome, Spotify, Starship, Oh My Zsh (restaura `.zshrc.pre-oh-my-zsh`), Extensiones GNOME (deshabilita), Temas (resetea gsettings y borra `~/.themes`), Iconos y OpenCode.
+Permite desinstalar (checklist): VS Code, Brave, Chrome, Spotify, Starship, Oh My Zsh (restaura `.zshrc.pre-oh-my-zsh`), Extensiones GNOME (deshabilita), Temas e Iconos (resetea gsettings sin borrar archivos personales) y OpenCode.
 
 Además, el menú principal (opción 4) permite desinstalar terminales alternativas (Kitty/Alacritty) y restaurar Ptyxis como terminal por defecto.
 

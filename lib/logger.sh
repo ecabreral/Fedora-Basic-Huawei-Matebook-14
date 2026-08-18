@@ -88,7 +88,7 @@ log_header() {
     # Escribir encabezado en el log
     {
         echo "═══════════════════════════════════════════════════════════════"
-        echo "  INSTALACIÓN FEDORA 44 — HUAWEI MATEBOOK 14"
+        echo "  INSTALACIÓN $os_name — HUAWEI MATEBOOK 14"
         echo "  Fecha: $(date +"%Y-%m-%d %H:%M:%S")"
         echo "  OS: $os_name"
         echo "  Componentes: $components"
@@ -150,6 +150,8 @@ log_summary() {
     for r in "${results[@]}"; do
         if [[ "$r" == *"[OK]"* ]]; then
             success_count=$((success_count + 1))
+        elif [[ "$r" == *"[SKIP]"* ]]; then
+            :
         else
             error_count=$((error_count + 1))
         fi
@@ -181,8 +183,10 @@ log_summary() {
     for r in "${results[@]}"; do
         if [[ "$r" == *"[OK]"* ]]; then
             echo -e "  ${_LOG_GREEN}✔${_LOG_RESET} ${r%% [OK]*}"
+        elif [[ "$r" == *"[SKIP]"* ]]; then
+            echo -e "  ${_LOG_YELLOW}-${_LOG_RESET} ${r%% [SKIP]*} (omitido)"
         else
-            echo -e "  ${_LOG_RED}✘${_LOG_RESET} ${r%% [FAIL]*}"
+            echo -e "  ${_LOG_RED}✘${_LOG_RESET} ${r%% [FAIL]*} (falló)"
         fi
     done
     

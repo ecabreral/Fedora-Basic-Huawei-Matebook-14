@@ -25,6 +25,18 @@ SELECTED_IDS=("$@")
 TOTAL=${#SELECTED_IDS[@]}
 CURRENT=0
 
+if [ "$TOTAL" -eq 0 ]; then
+    error "No se seleccionaron componentes."
+    exit 1
+fi
+
+for ID in "${SELECTED_IDS[@]}"; do
+    case "$ID" in
+        base|terminal|vscode|git|gh|theme|extensions|icons|intel|brave|chrome|spotify|opencode) ;;
+        *) error "Componente desconocido: $ID"; exit 1 ;;
+    esac
+done
+
 # El tema de terminal viene de la variable de entorno TERMINAL_THEME
 if [ -n "$TERMINAL_THEME" ]; then
     THEME_NAME="$TERMINAL_THEME"
@@ -146,10 +158,14 @@ log_summary "${RESULTS[@]}"
 # ── Guardar referencia al log ─────────────────────────────────────────────────
 LOG_PATH="$(get_log_file 2>/dev/null || echo 'N/A')"
 
-SUMMARY_MSG="Instalacion completada.\\n\\nComponentes:\\n"
+SUMMARY_MSG="Instalación finalizada.\\n\\nComponentes:\\n"
 for result in "${RESULTS[@]}"; do
     SUMMARY_MSG+="  $result\\n"
 done
-SUMMARY_MSG+="\\nLog guardado en: $LOG_PATH\\n\\nReinicia la sesion para aplicar todos los cambios."
+SUMMARY_MSG+="\\nLog guardado en: $LOG_PATH\\n\\nReinicia la sesión si instalaste cambios de kernel o GNOME."
 
-whiptail --title "Instalacion Completada" --msgbox "$SUMMARY_MSG" 20 70
+if command -v whiptail &>/dev/null && [ -t 0 ]; then
+    whiptail --title "Instalación finalizada" --msgbox "$SUMMARY_MSG" 20 70
+else
+    printf '\n%s\n' "Instalación finalizada. Consulta el resumen anterior y el log: $LOG_PATH"
+fi
