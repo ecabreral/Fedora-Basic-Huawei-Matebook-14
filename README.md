@@ -160,6 +160,10 @@ El runner resuelve dependencias antes de ejecutar. Por ejemplo, seleccionar
 `spotify` incluye automáticamente `base`. El modo `--dry-run` muestra el plan
 resuelto sin ejecutar comandos ni pedir permisos.
 
+Los instaladores de temas e iconos clonan sus repositorios en directorios
+temporales bajo `/tmp` y los eliminan automáticamente al finalizar. Las
+instalaciones finales permanecen en las rutas de configuración de GNOME.
+
 ## Validación
 
 Las comprobaciones sintácticas y pruebas básicas se ejecutan con:

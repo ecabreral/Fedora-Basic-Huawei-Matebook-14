@@ -16,6 +16,15 @@ source "$(dirname "$0")/../../lib/common.sh"
 
 section "Instalador de iconos GNOME"
 
+ICON_TMP_DIR=""
+
+prepare_icon_tmp_dir() {
+    if [ -z "$ICON_TMP_DIR" ]; then
+        ICON_TMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/fedora-setup-icons.XXXXXX")
+        trap 'rm -rf "$ICON_TMP_DIR"' EXIT
+    fi
+}
+
 # ── Menú interactivo de selección ─────────────────────────────────────────────
 show_icon_menu() {
     local -A selected
@@ -42,7 +51,7 @@ show_icon_menu() {
         echo "  [N] Ninguno (salir)" >&2
         echo "  [A] Continuar con la instalación" >&2
         echo "" >&2
-        read -p "  Opción (1-5 para togglear, T/N/A): " input
+        read -r -p "  Opción (1-5 para togglear, T/N/A): " input
 
         case "$input" in
             1) selected[whitesur]=$([ "${selected[whitesur]}" = true ] && echo false || echo true) ;;
@@ -89,10 +98,9 @@ install_whitesur() {
         success "WhiteSur Icon Theme ya está instalado."
     else
         info "Instalando WhiteSur Icon Theme (macOS Big Sur/Monterey)..."
-        cd ~
-        rm -rf WhiteSur-icon-theme
-        git clone https://github.com/vinceliuice/WhiteSur-icon-theme.git --depth=1
-        cd ~/WhiteSur-icon-theme
+        prepare_icon_tmp_dir
+        git clone https://github.com/vinceliuice/WhiteSur-icon-theme.git --depth=1 "$ICON_TMP_DIR/WhiteSur-icon-theme"
+        cd "$ICON_TMP_DIR/WhiteSur-icon-theme"
         ./install.sh
         success "WhiteSur Icon Theme instalado."
     fi
@@ -104,10 +112,9 @@ install_mcmojave() {
         success "McMojave Circle Icon Theme ya está instalado."
     else
         info "Instalando McMojave Circle Icon Theme (macOS Mojave)..."
-        cd ~
-        rm -rf McMojave-circle
-        git clone https://github.com/vinceliuice/McMojave-circle.git --depth=1
-        cd ~/McMojave-circle
+        prepare_icon_tmp_dir
+        git clone https://github.com/vinceliuice/McMojave-circle.git --depth=1 "$ICON_TMP_DIR/McMojave-circle"
+        cd "$ICON_TMP_DIR/McMojave-circle"
         ./install.sh
         success "McMojave Circle Icon Theme instalado."
     fi
@@ -119,10 +126,9 @@ install_telacircle() {
         success "Tela Circle Icon Theme ya está instalado."
     else
         info "Instalando Tela Circle Icon Theme (minimalista redondeado)..."
-        cd ~
-        rm -rf Tela-circle-icon-theme
-        git clone https://github.com/vinceliuice/Tela-circle-icon-theme.git --depth=1
-        cd ~/Tela-circle-icon-theme
+        prepare_icon_tmp_dir
+        git clone https://github.com/vinceliuice/Tela-circle-icon-theme.git --depth=1 "$ICON_TMP_DIR/Tela-circle-icon-theme"
+        cd "$ICON_TMP_DIR/Tela-circle-icon-theme"
         ./install.sh -a
         success "Tela Circle Icon Theme instalado."
     fi
@@ -149,11 +155,10 @@ install_beautyline() {
         success "BeautyLine Icon Theme ya está instalado."
     else
         info "Instalando BeautyLine Icon Theme (coloridos premium)..."
-        cd ~
-        rm -rf BeautyLine
-        git clone https://github.com/gvolpe/BeautyLine.git --depth=1
+        prepare_icon_tmp_dir
+        git clone https://github.com/gvolpe/BeautyLine.git --depth=1 "$ICON_TMP_DIR/BeautyLine"
         mkdir -p ~/.local/share/icons
-        cp -r ~/BeautyLine/BeautyLine ~/.local/share/icons/
+        cp -r "$ICON_TMP_DIR/BeautyLine/BeautyLine" ~/.local/share/icons/
         success "BeautyLine Icon Theme instalado."
     fi
 }
@@ -194,11 +199,12 @@ choose_active_theme() {
     done
     echo "" >&2
 
-    local current=$(gsettings get org.gnome.desktop.interface icon-theme | tr -d "'")
+    local current
+    current=$(gsettings get org.gnome.desktop.interface icon-theme | tr -d "'")
     echo "  Tema actual: $current" >&2
     echo "" >&2
 
-    read -p "  Selecciona tema activo [1-${#installed_themes[@]}] (Enter para mantener actual): " choice
+    read -r -p "  Selecciona tema activo [1-${#installed_themes[@]}] (Enter para mantener actual): " choice
 
     if [ -n "$choice" ] && [ "$choice" -ge 1 ] 2>/dev/null && [ "$choice" -le "${#installed_themes[@]}" ] 2>/dev/null; then
         local selected_theme="${installed_themes[$((choice - 1))]}"

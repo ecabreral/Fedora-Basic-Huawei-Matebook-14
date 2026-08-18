@@ -22,6 +22,9 @@ if [ -d "$HOME/.themes/WhiteSur-Light" ] && [ -d "$HOME/.themes/WhiteSur-Dark" ]
     success "WhiteSur GTK Theme ya está instalado."
     # Si ya está instalado, quizás saltar la parte de instalación pero dejar la configuración
 else
+    THEME_TMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/fedora-setup-themes.XXXXXX")
+    trap 'rm -rf "$THEME_TMP_DIR"' EXIT
+
     # ── 1. Dependencias ───────────────────────────────────────────────────────────
     info "Instalando dependencias del sistema..."
     if is_fedora; then
@@ -42,64 +45,53 @@ else
     fi
     success "Dependencias instaladas."
 
-    # ── 2. Limpiar repos anteriores ───────────────────────────────────────────────
-    info "Limpiando repositorios anteriores..."
-    cd ~
-    rm -rf \
-      WhiteSur-gtk-theme \
-      WhiteSur-icon-theme \
-      WhiteSur-firefox-theme \
-      MacTahoe-gtk-theme \
-      MacTahoe-icon-theme
-    success "Repos anteriores eliminados."
-
     # ── 3. Clonar repositorios ────────────────────────────────────────────────────
     info "Clonando repositorios de temas..."
-    git clone https://github.com/vinceliuice/WhiteSur-gtk-theme.git  --depth=1
-    git clone https://github.com/vinceliuice/WhiteSur-icon-theme.git --depth=1
-    git clone https://github.com/vinceliuice/WhiteSur-firefox-theme.git --depth=1
-    git clone https://github.com/vinceliuice/MacTahoe-gtk-theme.git   --depth=1
-    git clone https://github.com/vinceliuice/MacTahoe-icon-theme.git  --depth=1
+    git clone https://github.com/vinceliuice/WhiteSur-gtk-theme.git  --depth=1 "$THEME_TMP_DIR/WhiteSur-gtk-theme"
+    git clone https://github.com/vinceliuice/WhiteSur-icon-theme.git --depth=1 "$THEME_TMP_DIR/WhiteSur-icon-theme"
+    git clone https://github.com/vinceliuice/WhiteSur-firefox-theme.git --depth=1 "$THEME_TMP_DIR/WhiteSur-firefox-theme"
+    git clone https://github.com/vinceliuice/MacTahoe-gtk-theme.git   --depth=1 "$THEME_TMP_DIR/MacTahoe-gtk-theme"
+    git clone https://github.com/vinceliuice/MacTahoe-icon-theme.git  --depth=1 "$THEME_TMP_DIR/MacTahoe-icon-theme"
     success "Repositorios clonados."
 
     # ── 4. Instalar GTK Theme: WhiteSur (Light y Dark) ───────────────────────────
     info "Instalando WhiteSur GTK Theme (Light + Dark)..."
-    cd ~/WhiteSur-gtk-theme
+    cd "$THEME_TMP_DIR/WhiteSur-gtk-theme"
     ./install.sh -l -N glassy -c Light
     ./install.sh -l -N glassy -c Dark
     success "WhiteSur GTK Theme instalado."
 
     # ── 5. Instalar Icon Theme: WhiteSur ─────────────────────────────────────────
     info "Instalando WhiteSur Icon Theme..."
-    cd ~/WhiteSur-icon-theme
+    cd "$THEME_TMP_DIR/WhiteSur-icon-theme"
     ./install.sh
     success "WhiteSur Icon Theme instalado."
 
     # ── 6. Instalar MacTahoe Icon Theme (instalado pero no activado) ──────────────
     info "Instalando MacTahoe Icon Theme (disponible pero no activo)..."
-    cd ~/MacTahoe-icon-theme
+    cd "$THEME_TMP_DIR/MacTahoe-icon-theme"
     ./install.sh
     success "MacTahoe Icon Theme instalado."
 
     # ── 7. Instalar MacTahoe GTK (necesario para el tweak de GDM) ────────────────
     info "Instalando MacTahoe GTK Theme (requerido para GDM)..."
-    cd ~/MacTahoe-gtk-theme
+    cd "$THEME_TMP_DIR/MacTahoe-gtk-theme"
     ./install.sh -l -c Light
     success "MacTahoe GTK Theme instalado."
 
     # ── 8. Aplicar GDM MacTahoe ───────────────────────────────────────────────────
     info "Aplicando tema GDM MacTahoe (requiere sudo)..."
-    if [ -d ~/WhiteSur-gtk-theme ]; then
-      cd ~/WhiteSur-gtk-theme
+    if [ -d "$THEME_TMP_DIR/WhiteSur-gtk-theme" ]; then
+      cd "$THEME_TMP_DIR/WhiteSur-gtk-theme"
       sudo ./tweaks.sh -r 2>/dev/null || true
     fi
-    cd ~/MacTahoe-gtk-theme
+    cd "$THEME_TMP_DIR/MacTahoe-gtk-theme"
     sudo ./tweaks.sh -g -b default
     success "Tema GDM MacTahoe aplicado."
 
     # ── 9. Instalar WhiteSur Firefox Theme ───────────────────────────────────────
     info "Instalando WhiteSur Firefox Theme..."
-    cd ~/WhiteSur-firefox-theme
+    cd "$THEME_TMP_DIR/WhiteSur-firefox-theme"
     ./install.sh
     success "WhiteSur Firefox Theme instalado."
 fi
