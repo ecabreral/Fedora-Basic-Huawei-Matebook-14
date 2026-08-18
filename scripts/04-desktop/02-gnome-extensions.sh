@@ -171,7 +171,7 @@ open_url() {
     if command -v xdg-open &>/dev/null; then
         xdg-open "$url" >/dev/null 2>&1 &
     else
-        echo "  🔗 $url"
+        echo "  URL: $url"
     fi
 }
 
@@ -210,7 +210,7 @@ open_url "https://extensions.gnome.org/extension/4470/media-controls/"
 
 if ! command -v xdg-open &>/dev/null; then
     echo ""
-    echo "  ⚠️ No se detectó navegador. Copia las URLs arriba y ábrelas manualmente."
+    echo "  Aviso: no se detectó navegador. Copia las URLs y ábrelas manualmente."
 fi
 
 echo ""

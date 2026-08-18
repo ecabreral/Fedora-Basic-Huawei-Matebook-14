@@ -14,7 +14,7 @@
 set -e
 source "$(dirname "$0")/../../lib/common.sh"
 
-section "🎨 Instalador de Iconos GNOME"
+section "Instalador de iconos GNOME"
 
 # ── Menú interactivo de selección ─────────────────────────────────────────────
 show_icon_menu() {
@@ -27,9 +27,9 @@ show_icon_menu() {
 
     while true; do
         echo "" >&2
-        echo "═══════════════════════════════════════════════════════════════" >&2
+        echo "================================================================" >&2
         echo "  SELECCIONA LOS ICONOS A INSTALAR" >&2
-        echo "═══════════════════════════════════════════════════════════════" >&2
+        echo "================================================================" >&2
         echo "" >&2
 
         echo "  [1] WhiteSur Icons  → macOS Big Sur/Monterey    $([ "${selected[whitesur]}" = true ] && echo "[✓]" || echo "[ ]")" >&2
@@ -59,7 +59,7 @@ show_icon_menu() {
                 ;;
             n|N) exit 0 ;;
             a|A) break ;;
-            *) echo "  ⚠ Opción inválida. Usa 1-5, T, N o A" >&2 ;;
+            *) echo "  Opción inválida. Usa 1-5, T, N o A" >&2 ;;
         esac
     done
 
@@ -182,9 +182,9 @@ choose_active_theme() {
     fi
 
     echo "" >&2
-    echo "═══════════════════════════════════════════════════════════════" >&2
+    echo "================================================================" >&2
     echo "  TEMA DE ICONOS ACTIVO" >&2
-    echo "═══════════════════════════════════════════════════════════════" >&2
+    echo "================================================================" >&2
     echo "" >&2
 
     local i=1

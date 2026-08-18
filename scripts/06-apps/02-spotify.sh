@@ -7,7 +7,7 @@
 set -e
 source "$(dirname "$0")/../../lib/common.sh"
 
-section "🎵 Spotify"
+section "Spotify"
 
 if ! command -v flatpak &>/dev/null; then
     info "Flatpak no está instalado. Instalando..."

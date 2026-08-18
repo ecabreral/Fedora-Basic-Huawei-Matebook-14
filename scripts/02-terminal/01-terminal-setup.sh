@@ -11,7 +11,7 @@ source "$(dirname "$0")/../../lib/ptyxis-colors.sh"
 THEME="${1:-$TERMINAL_THEME}"
 THEME="${THEME:-tokyo-night}"
 
-section "🚀 Terminal Pro Setup ($OS_NAME $OS_VERSION)"
+section "Configuración de terminal ($OS_NAME $OS_VERSION)"
 
 # ── 1. Actualizar sistema ─────────────────────────────────────────────────────
 info "Actualizando lista de paquetes..."
@@ -20,7 +20,7 @@ info "Actualizando sistema..."
 system_upgrade 2>/dev/null || success "Sistema ya actualizado."
 
 # ── 2. Instalar paquetes en un solo bloque ────────────────────────────────────
-section "📦 Instalando paquetes"
+section "Instalando paquetes"
 
 if is_fedora; then
   pkg_install \
@@ -43,7 +43,7 @@ elif is_ubuntu; then
 fi
 
 # ── 3. Verificar Ptyxis ──────────────────────────────────────────────────────
-section "🖥️  Ptyxis Terminal"
+section "Terminal Ptyxis"
 if command -v ptyxis &>/dev/null; then
   success "Ptyxis ya está instalada."
 else
@@ -59,7 +59,7 @@ else
 fi
 
 # ── 4. eza (reemplazo moderno de ls) ─────────────────────────────────────────
-section "📦 Instalando eza"
+section "Instalando eza"
 if command -v eza &>/dev/null; then
   success "eza ya está instalado."
 else
@@ -73,11 +73,11 @@ else
 fi
 
 # ── 4. Fuente JetBrainsMono Nerd ──────────────────────────────────────────────
-section "🔤 Fuente Nerd"
+section "Fuente Nerd"
 install_nerd_font
 
 # ── 5. Oh My Zsh ──────────────────────────────────────────────────────────────
-section "🐚 Oh My Zsh"
+section "Oh My Zsh"
 if [ -d "$HOME/.oh-my-zsh" ]; then
   success "Oh My Zsh ya está instalado."
 else
@@ -101,7 +101,7 @@ fi
 success "Plugins de Zsh listos."
 
 # ── 7. Starship ───────────────────────────────────────────────────────────────
-section "🚀 Starship"
+section "Starship"
 if command -v starship &>/dev/null; then
   success "Starship ya está instalado."
 else
@@ -113,7 +113,7 @@ else
 fi
 
 # ── 8. Configurar Starship (tema seleccionado) ──────────────────────────────
-section "🎨 Configurando Starship"
+section "Configurando Starship"
 mkdir -p ~/.config
 
 info "Aplicando tema Starship: $THEME"
@@ -137,7 +137,7 @@ apply_starship_theme "$THEME"
 fi
 
 # ── 9. Configurar Ptyxis con tema seleccionado ────────────────────────────────
-section "🎨 Configurando Ptyxis: $THEME"
+section "Configurando Ptyxis: $THEME"
 
 if command -v ptyxis &>/dev/null; then
   apply_ptyxis_theme "$THEME"
@@ -146,7 +146,7 @@ else
 fi
 
 # ── 10. Generar .zshrc ────────────────────────────────────────────────────────
-section "⚙️  Configurando .zshrc"
+section "Configurando .zshrc"
 
 # Si .zshrc existe, preguntar antes de sobrescribir
 if [ -L ~/.zshrc ] || [ -f ~/.zshrc ]; then
@@ -228,7 +228,7 @@ if command -v ptyxis &>/dev/null; then
   set_ptyxis_as_default_terminal
 fi
 
-section "Terminal Setup completo"
+section "Configuración de terminal completada"
 echo ""
 echo "  Terminal: Ptyxis (default Fedora 41+)"
 echo "  Fuente: JetBrainsMono Nerd Font"

@@ -8,12 +8,12 @@
 source "$(dirname "$0")/../../lib/common.sh"
 
 OS="$(detect_os)"
-section "💻 Sistema operativo detectado: $OS_NAME $OS_VERSION"
+section "Sistema operativo detectado: $OS_NAME $OS_VERSION"
 
 # ── 1. Repositorios adicionales ──────────────────────────────────────────────
 if is_fedora; then
 
-  section "🗃️ Habilitando RPM Fusion"
+  section "Habilitando RPM Fusion"
 
   if pkg_check rpmfusion-free-release; then
     success "RPM Fusion Free ya está instalado."
@@ -40,7 +40,7 @@ if is_fedora; then
 
 elif is_ubuntu; then
 
-  section "🗃️ Habilitando repositorios Ubuntu"
+  section "Habilitando repositorios Ubuntu"
 
   info "Asegurando que universe, multiverse y restricted estén habilitados..."
   sudo add-apt-repository -y universe 2>/dev/null || true
@@ -73,7 +73,7 @@ fi
 success "Sistema actualizado."
 
 # ── 3. Códecs multimedia ─────────────────────────────────────────────────────
-section "📦 Instalando códecs multimedia"
+section "Instalando códecs multimedia"
 
 if is_fedora; then
   pkg_install \
@@ -165,7 +165,7 @@ elif is_ubuntu; then
 fi
 
 # ── 6. Flatpak y Flathub ──────────────────────────────────────────────────────
-section "📦 Configurando Flatpak y Flathub"
+section "Configurando Flatpak y Flathub"
 
 if command -v flatpak &>/dev/null; then
   if flatpak remote-list 2>/dev/null | grep -q "flathub"; then
@@ -209,7 +209,7 @@ else
 fi
 
 # ── 8. Verificar driver Intel ─────────────────────────────────────────────────
-section "🔧 Verificando driver Intel"
+  section "Verificando driver Intel"
 
 info "Verificando driver gráfico..."
 if lsmod | grep -qE "xe|i915"; then
@@ -227,7 +227,7 @@ else
 fi
 
 # ── 9. Resumen ────────────────────────────────────────────────────────────────
-section "✅ Base System Setup completo"
+section "Configuración base completada"
 echo ""
 echo "  Resumen del sistema ($OS_NAME $OS_VERSION):"
 echo "    • Repositorios del sistema"

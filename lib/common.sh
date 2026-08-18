@@ -31,7 +31,7 @@ error()   { log_error "$@" 2>/dev/null || echo -e "${RED}${BOLD}  ✗${RESET}  $
 section() {
   log_section "$@" 2>/dev/null || {
     echo ""
-    echo -e "${BLUE}${BOLD}══ $1${RESET}"
+     echo -e "${BLUE}${BOLD}== $1${RESET}"
     echo ""
   }
 }
@@ -210,24 +210,31 @@ apply_starship_theme() {
 
 # ── show_theme_selector: Muestra menú whiptail de selección de temas ──────────
 show_theme_selector() {
-  local theme
-  theme=$(whiptail --title "Selecciona el tema de Starship" \
-      --radiolist "Elige un tema para tu terminal:" 22 60 12 \
+  local theme lines cols height width
+  lines=$(tput lines 2>/dev/null || echo 24)
+  cols=$(tput cols 2>/dev/null || echo 80)
+  height=$((lines > 28 ? 24 : lines - 3))
+  width=$((cols > 100 ? 92 : cols - 4))
+  [ "$height" -lt 16 ] && height=16
+  [ "$width" -lt 60 ] && width=60
+  if theme=$(whiptail --title "Selecciona el tema de Starship" \
+      --radiolist "Elige un tema para tu terminal (Espacio marca, Enter confirma):" "$height" "$width" 12 \
       "1" "Tokyo Night (oscuro, recomendado)" ON \
       "2" "Pastel Powerline (claro)" OFF \
-      "3" "Gruvbox Rainbow (oscuro calido)" OFF \
+      "3" "Gruvbox Rainbow (oscuro cálido)" OFF \
       "4" "Catppuccin Powerline (oscuro pastel)" OFF \
       "5" "Jetpack (minimalista)" OFF \
-      "6" "Pure Prompt (clasico)" OFF \
-      "7" "Cyberpunk Storm (neon intenso)" OFF \
-      "8" "Cyberpunk Neon (maxima saturacion)" OFF \
-      "9" "Cyberpunk Night (sutil elegante)" OFF \
-      3>&1 1>&2 2>&3)
-
-  if [ $? -ne 0 ] || [ -z "$theme" ]; then
+      "6" "Pure Prompt (clásico)" OFF \
+      "7" "Cyberpunk Storm (neón intenso)" OFF \
+      "8" "Cyberpunk Neon (máxima saturación)" OFF \
+      "9" "Cyberpunk Night (sutil y elegante)" OFF \
+      3>&1 1>&2 2>&3); then
+    :
+  else
     echo ""
     return 1
   fi
+  [ -z "$theme" ] && { echo ""; return 1; }
 
   case "$theme" in
     1) echo "tokyo-night" ;;

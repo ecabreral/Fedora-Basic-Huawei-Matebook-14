@@ -32,6 +32,15 @@ _LOG_RED="\e[31m"
 _LOG_BLUE="\e[34m"
 _LOG_RESET="\e[0m"
 
+# El azul/cian estándar pierde contraste sobre fondos claros.
+if [ "${INSTALL_LIGHT_MODE:-false}" = true ]; then
+    _LOG_CYAN="\e[34m"
+    _LOG_BLUE="\e[34m"
+    _LOG_GREEN="\e[32m"
+    _LOG_YELLOW="\e[33m"
+    _LOG_RED="\e[31m"
+fi
+
 # ── Función: escribir al log (sin ANSI) ───────────────────────────────────────
 _log_write() {
     if [ -n "${_LOG_SILENCED:-}" ]; then
@@ -47,34 +56,34 @@ _log_write() {
 # ── Función: imprimir en terminal + escribir al log ───────────────────────────
 log_info() {
     local msg="$1"
-    echo -e "${_LOG_CYAN}${_LOG_BOLD}  ·${_LOG_RESET}  $msg"
+    echo -e "${_LOG_CYAN}${_LOG_BOLD}  ->${_LOG_RESET} $msg"
     _log_write "INFO" "$msg"
 }
 
 log_success() {
     local msg="$1"
-    echo -e "${_LOG_GREEN}${_LOG_BOLD}  ✔${_LOG_RESET}  $msg"
+    echo -e "${_LOG_GREEN}${_LOG_BOLD} [OK]${_LOG_RESET} $msg"
     _log_write "SUCCESS" "$msg"
 }
 
 log_warn() {
     local msg="$1"
-    echo -e "${_LOG_YELLOW}${_LOG_BOLD}  !${_LOG_RESET}  $msg"
+    echo -e "${_LOG_YELLOW}${_LOG_BOLD} [WARN]${_LOG_RESET} $msg"
     _log_write "WARN" "$msg"
 }
 
 log_error() {
     local msg="$1"
-    echo -e "${_LOG_RED}${_LOG_BOLD}  ✗${_LOG_RESET}  $msg" >&2
+    echo -e "${_LOG_RED}${_LOG_BOLD} [ERROR]${_LOG_RESET} $msg" >&2
     _log_write "ERROR" "$msg"
 }
 
 log_section() {
     local title="$1"
     echo ""
-    echo -e "${_LOG_BLUE}${_LOG_BOLD}══ $title${_LOG_RESET}"
+    echo -e "${_LOG_BLUE}${_LOG_BOLD}== $title${_LOG_RESET}"
     echo ""
-    _log_write "SECTION" "══ $title"
+    _log_write "SECTION" "== $title"
 }
 
 # ── Función: encabezado de instalación ────────────────────────────────────────
@@ -87,21 +96,21 @@ log_header() {
     
     # Escribir encabezado en el log
     {
-        echo "═══════════════════════════════════════════════════════════════"
-        echo "  INSTALACIÓN $os_name — HUAWEI MATEBOOK 14"
+        echo "================================================================"
+        echo "  System Setup"
+        echo "  Equipo: Huawei MateBook 14"
         echo "  Fecha: $(date +"%Y-%m-%d %H:%M:%S")"
         echo "  OS: $os_name"
         echo "  Componentes: $components"
-        echo "═══════════════════════════════════════════════════════════════"
+        echo "================================================================"
         echo ""
     } >> "$LOG_FILE"
     
     # Mostrar en terminal
     echo ""
-    echo -e "${_LOG_BLUE}${_LOG_BOLD}╔═══════════════════════════════════════════════════════════════╗${_LOG_RESET}"
-    echo -e "${_LOG_BLUE}${_LOG_BOLD}║         Fedora 44 Setup — Huawei Matebook 14                  ║${_LOG_RESET}"
-    echo -e "${_LOG_BLUE}${_LOG_BOLD}║         $(date +"%Y-%m-%d %H:%M:%S")                                   ║${_LOG_RESET}"
-    echo -e "${_LOG_BLUE}${_LOG_BOLD}╚═══════════════════════════════════════════════════════════════╝${_LOG_RESET}"
+    echo -e "${_LOG_BLUE}${_LOG_BOLD}System Setup${_LOG_RESET}"
+    echo -e "${_LOG_DIM}Equipo: Huawei MateBook 14 | $os_name${_LOG_RESET}"
+    echo -e "${_LOG_DIM}$(date +"%Y-%m-%d %H:%M:%S")${_LOG_RESET}"
     echo ""
 }
 
@@ -112,7 +121,7 @@ log_step() {
     local desc="$3"
     
     echo ""
-    echo -e "${_LOG_BLUE}${_LOG_BOLD}[${current}/${total}] $desc${_LOG_RESET}"
+    echo -e "${_LOG_BLUE}${_LOG_BOLD}Paso ${current}/${total}: $desc${_LOG_RESET}"
     echo ""
     _log_write "STEP" "[$current/$total] $desc"
 }
@@ -160,9 +169,9 @@ log_summary() {
     # Escribir resumen al log
     {
         echo ""
-        echo "═══════════════════════════════════════════════════════════════"
+        echo "================================================================"
         echo "  RESUMEN FINAL"
-        echo "═══════════════════════════════════════════════════════════════"
+        echo "================================================================"
         for r in "${results[@]}"; do
             echo "  $r"
         done
@@ -170,23 +179,21 @@ log_summary() {
         echo "  Éxitos: $success_count | Errores: $error_count"
         echo "  Duración total: ${mins}m ${secs}s"
         echo "  Log completo: $LOG_FILE"
-        echo "═══════════════════════════════════════════════════════════════"
+        echo "================================================================"
     } >> "$LOG_FILE"
     
     # Mostrar en terminal
     echo ""
-    echo -e "${_LOG_GREEN}${_LOG_BOLD}╔═══════════════════════════════════════════════════════════════╗${_LOG_RESET}"
-    echo -e "${_LOG_GREEN}${_LOG_BOLD}║                  RESUMEN FINAL                               ║${_LOG_RESET}"
-    echo -e "${_LOG_GREEN}${_LOG_BOLD}╚═══════════════════════════════════════════════════════════════╝${_LOG_RESET}"
+    echo -e "${_LOG_GREEN}${_LOG_BOLD}Resumen de instalación${_LOG_RESET}"
     echo ""
     
     for r in "${results[@]}"; do
         if [[ "$r" == *"[OK]"* ]]; then
-            echo -e "  ${_LOG_GREEN}✔${_LOG_RESET} ${r%% [OK]*}"
+            echo -e "  ${_LOG_GREEN}[OK]${_LOG_RESET} ${r%% [OK]*}"
         elif [[ "$r" == *"[SKIP]"* ]]; then
-            echo -e "  ${_LOG_YELLOW}-${_LOG_RESET} ${r%% [SKIP]*} (omitido)"
+            echo -e "  ${_LOG_YELLOW}[SKIP]${_LOG_RESET} ${r%% [SKIP]*} (omitido)"
         else
-            echo -e "  ${_LOG_RED}✘${_LOG_RESET} ${r%% [FAIL]*} (falló)"
+            echo -e "  ${_LOG_RED}[FAIL]${_LOG_RESET} ${r%% [FAIL]*} (falló)"
         fi
     done
     

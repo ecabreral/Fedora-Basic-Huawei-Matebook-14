@@ -8,7 +8,7 @@
 source "$(dirname "$0")/../../lib/common.sh"
 source "$(dirname "$0")/../../lib/ptyxis-colors.sh"
 
-section "🎨 Cambio de Tema"
+section "Cambio de tema"
 
 # ── Verificar si Starship está instalado ───────────────────────────────────
 if ! command -v starship &>/dev/null; then
@@ -56,13 +56,13 @@ show_theme_menu() {
       --radiolist "Selecciona el nuevo tema para tu terminal:" 22 60 12 \
       "1" "Tokyo Night (oscuro azulado)" ON \
       "2" "Pastel Powerline (claro)" OFF \
-      "3" "Gruvbox Rainbow (oscuro calido)" OFF \
+      "3" "Gruvbox Rainbow (oscuro cálido)" OFF \
       "4" "Catppuccin Powerline (oscuro pastel)" OFF \
       "5" "Jetpack (minimalista)" OFF \
-      "6" "Pure Prompt (clasico)" OFF \
-      "7" "Cyberpunk Storm (neon intenso)" OFF \
-      "8" "Cyberpunk Neon (maxima saturacion)" OFF \
-      "9" "Cyberpunk Night (sutel elegante)" OFF \
+      "6" "Pure Prompt (clásico)" OFF \
+      "7" "Cyberpunk Storm (neón intenso)" OFF \
+      "8" "Cyberpunk Neon (máxima saturación)" OFF \
+      "9" "Cyberpunk Night (sutil y elegante)" OFF \
       3>&1 1>&2 2>&3)
 
   if [ $? -ne 0 ] || [ -z "$theme" ]; then
@@ -94,7 +94,7 @@ fi
 info "Tema seleccionado: $THEME"
 
 # ── Respaldo de configuraciones anteriores ──────────────────────────────────
-section "📦 Respaldando configuraciones anteriores"
+section "Respaldando configuraciones anteriores"
 
 BACKUP_DIR="$HOME/.config/theme-backups/$(date +%Y%m%d-%H%M%S)"
 mkdir -p "$BACKUP_DIR"
@@ -106,13 +106,13 @@ if [ -f ~/.config/starship.toml ]; then
 fi
 
 # ── Aplicar tema Starship ──────────────────────────────────────────────────
-section "🎨 Aplicando tema Starship: $THEME"
+section "Aplicando tema Starship: $THEME"
 apply_starship_theme "$THEME"
 
 success "Starship actualizado: $THEME"
 
 # ── Verificar e instalar fuente Nerd Font ───────────────────────────────────
-section "🔤 Verificando fuente Nerd Font"
+section "Verificando fuente Nerd Font"
 install_nerd_font
 
 # ── Aplicar tema Ptyxis ─────────────────────────────────────────────────────

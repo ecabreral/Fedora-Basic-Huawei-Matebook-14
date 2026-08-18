@@ -8,7 +8,7 @@
 set -e
 source "$(dirname "$0")/../../lib/common.sh"
 
-section "⚙️  Configuración de Git + GitHub"
+section "Configuración de Git y GitHub"
 
 # ── 1. Verificar si ya está configurado completamente ─────────────────────────
 if git config --global user.name &>/dev/null && \
@@ -78,7 +78,7 @@ else
 fi
 
 # ── 6. Guiar para añadir en GitHub ────────────────────────────────────────────
-section "🌐 Añadir clave a GitHub"
+section "Añadir clave a GitHub"
 info "Abriendo GitHub → Settings → SSH Keys..."
 
 # Función helper para abrir URLs
@@ -87,14 +87,14 @@ open_url() {
     if command -v xdg-open &>/dev/null; then
         xdg-open "$url" &
     else
-        echo "  🔗 $url"
+        echo "  URL: $url"
     fi
 }
 
 open_url "https://github.com/settings/keys"
 
 if ! command -v xdg-open &>/dev/null; then
-    echo "  ⚠️ No se detectó navegador. Copia la URL arriba y ábrela manualmente."
+    echo "  Aviso: no se detectó navegador. Copia la URL y ábrela manualmente."
 fi
 
 echo ""
@@ -106,7 +106,7 @@ echo ""
 read -p "  Presiona ENTER cuando hayas añadido la clave a GitHub... "
 
 # ── 7. Probar conexión ────────────────────────────────────────────────────────
-section "🔗 Probando conexión con GitHub"
+section "Probando conexión con GitHub"
 if ssh -T git@github.com 2>&1 | grep -q "successfully authenticated"; then
   success "¡Conexión con GitHub exitosa! 🎉"
 else
@@ -116,5 +116,5 @@ else
 fi
 
 echo ""
-success "Configuración de Git completa 🚀"
+success "Configuración de Git completada"
 echo ""

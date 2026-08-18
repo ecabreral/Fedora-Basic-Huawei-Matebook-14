@@ -4,10 +4,25 @@
 # ==============================================================================
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+INSTALL_LIGHT_MODE=false
+if command -v gsettings >/dev/null 2>&1 && \
+   gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null | grep -q "prefer-light"; then
+    INSTALL_LIGHT_MODE=true
+elif [[ "${COLORFGBG:-}" == *";15" || "${COLORFGBG:-}" == *";7" ]]; then
+    INSTALL_LIGHT_MODE=true
+fi
+export INSTALL_LIGHT_MODE
 source "$SCRIPT_DIR/lib/common.sh"
 source "$SCRIPT_DIR/lib/logger.sh"
 
 DETECTED_OS="$OS_NAME $OS_VERSION"
+
+# Paleta sobria inspirada en las herramientas de instalación de Fedora.
+if [ "$INSTALL_LIGHT_MODE" = true ]; then
+    export NEWT_COLORS='root=black,white border=black,white window=black,white shadow=black,black title=black,white button=white,blue actbutton=white,blue checkbox=black,white actcheckbox=white,blue entry=black,white label=black,white listbox=black,white actlistbox=white,blue textbox=black,white'
+else
+    export NEWT_COLORS='root=white,blue border=white,blue window=white,blue shadow=black,black title=white,blue button=black,cyan actbutton=white,cyan checkbox=white,blue actcheckbox=black,cyan entry=white,blue label=white,blue listbox=white,blue actlistbox=black,cyan textbox=white,blue'
+fi
 
 # ── Flags de línea de comandos ───────────────────────────────────────────────
 DRY_RUN=false
@@ -18,6 +33,16 @@ CLI_THEME=""
 
 COMPONENTS=(base terminal vscode git gh theme extensions icons intel brave chrome spotify opencode)
 THEMES=(tokyo-night pastel-powerline gruvbox-rainbow catppuccin-powerline jetpack pure-preset cyberpunk-storm cyberpunk-neon cyberpunk-night)
+
+# Tamaños conservadores para que la interfaz funcione también por SSH.
+UI_LINES=$(tput lines 2>/dev/null || echo 24)
+UI_COLS=$(tput cols 2>/dev/null || echo 80)
+UI_HEIGHT=$((UI_LINES > 28 ? 24 : UI_LINES - 3))
+UI_WIDTH=$((UI_COLS > 100 ? 92 : UI_COLS - 4))
+[ "$UI_HEIGHT" -lt 16 ] && UI_HEIGHT=16
+[ "$UI_WIDTH" -lt 60 ] && UI_WIDTH=60
+UI_TITLE="Fedora System Setup"
+is_ubuntu && UI_TITLE="Linux System Setup"
 
 show_help() {
     echo "Uso: ./setup.sh [OPCIONES]"
@@ -103,6 +128,86 @@ validate_theme() {
     return 1
 }
 
+component_label() {
+    case "$1" in
+        base) echo "Sistema Base" ;;
+        terminal) echo "Terminal y herramientas" ;;
+        vscode) echo "Visual Studio Code" ;;
+        git) echo "Git + SSH" ;;
+        gh) echo "GitHub CLI" ;;
+        theme) echo "Temas GNOME" ;;
+        extensions) echo "Extensiones GNOME" ;;
+        icons) echo "Iconos GNOME" ;;
+        intel) echo "Corrección de parpadeo Intel" ;;
+        brave) echo "Brave Browser" ;;
+        chrome) echo "Google Chrome" ;;
+        spotify) echo "Spotify" ;;
+        opencode) echo "OpenCode CLI" ;;
+    esac
+}
+
+component_status() {
+    case "$1" in
+        base)
+            if is_fedora; then
+                [ -f /etc/yum.repos.d/rpmfusion-free.repo ] && command -v flatpak >/dev/null 2>&1
+            else
+                pkg_check ubuntu-restricted-extras 2>/dev/null || pkg_check flatpak 2>/dev/null
+            fi
+            ;;
+        terminal) command -v zsh >/dev/null 2>&1 && command -v starship >/dev/null 2>&1 ;;
+        vscode) command -v code >/dev/null 2>&1 ;;
+        git) command -v git >/dev/null 2>&1 ;;
+        gh) command -v gh >/dev/null 2>&1 ;;
+        theme) [ -d "$HOME/.themes" ] || gsettings get org.gnome.desktop.interface gtk-theme >/dev/null 2>&1 ;;
+        extensions) command -v gnome-extensions >/dev/null 2>&1 ;;
+        icons) [ -d "$HOME/.local/share/icons" ] && [ "$(printf '%s' "$HOME/.local/share/icons"/* 2>/dev/null)" != "$HOME/.local/share/icons/*" ] ;;
+        intel) grep -Eq 'i915|intel_idle' /etc/default/grub 2>/dev/null ;;
+        brave) command -v brave-browser >/dev/null 2>&1 || command -v brave >/dev/null 2>&1 ;;
+        chrome) command -v google-chrome >/dev/null 2>&1 || command -v google-chrome-stable >/dev/null 2>&1 ;;
+        spotify) command -v flatpak >/dev/null 2>&1 && flatpak info com.spotify.Client >/dev/null 2>&1 ;;
+        opencode) command -v opencode >/dev/null 2>&1 || [ -x "$HOME/.opencode/bin/opencode" ] ;;
+        *) return 1 ;;
+    esac
+}
+
+component_badge() {
+    if component_status "$1"; then
+        echo "[INSTALADO]"
+    else
+        echo "[NO INSTALADO]"
+    fi
+}
+
+preflight_text() {
+    local sudo_state="NO" internet_state="NO" session_state="NO" text=""
+    command -v sudo >/dev/null 2>&1 && sudo_state="SI"
+    command -v curl >/dev/null 2>&1 && curl -fsS --max-time 3 https://mirrors.fedoraproject.org >/dev/null 2>&1 && internet_state="SI"
+    [ -n "${XDG_CURRENT_DESKTOP:-}" ] && session_state="SI"
+    text="Diagnóstico del entorno\\n\\n"
+    text+="Sistema: $OS_NAME $OS_VERSION ($OS_ID)\\n"
+    text+="Arquitectura: $(uname -m)\\n"
+    text+="Terminal: ${TERM:-desconocida}\\n"
+    text+="Sesión gráfica: $session_state\\n"
+    text+="Internet: $internet_state\\n"
+    text+="Permisos sudo: $sudo_state\\n"
+    text+="Interfaz: ${UI_WIDTH}x${UI_HEIGHT}\\n"
+    text+="Contraste: $([ "$INSTALL_LIGHT_MODE" = true ] && echo "claro" || echo "oscuro")\\n\\n"
+    if [ "$sudo_state" = "NO" ] || [ "$internet_state" = "NO" ]; then
+        text+="Advertencias\\n"
+        [ "$sudo_state" = "NO" ] && text+="- No se encontró sudo; la instalación fallará en componentes del sistema.\\n"
+        [ "$internet_state" = "NO" ] && text+="- No se pudo verificar Internet; los repositorios podrían no responder.\\n"
+    else
+        text+="Entorno listo para continuar.\\n"
+    fi
+    printf '%s' "$text"
+}
+
+show_preflight() {
+    whiptail --title "Diagnóstico inicial" --msgbox "$(preflight_text)" "$UI_HEIGHT" "$UI_WIDTH" \
+        3>&1 1>&2 2>&3
+}
+
 CLI_COMPONENTS=$(echo "$CLI_COMPONENTS" | xargs)
 validate_selection "$CLI_COMPONENTS" || exit 1
 validate_theme "$CLI_THEME" || exit 1
@@ -129,12 +234,13 @@ fi
 # ── Menú principal con whiptail ────────────────────────────────────────────────
 show_main_menu() {
     local choice
-    choice=$(whiptail --title "Fedora 44 Setup — Huawei Matebook 14" \
-        --menu "Selecciona una opción:" 15 60 4 \
-        "1" "Instalar TODOS los componentes" \
+    choice=$(whiptail --title "$UI_TITLE | Huawei MateBook 14" \
+        --menu "Selecciona una opción (Esc cancela):" "$UI_HEIGHT" "$UI_WIDTH" 6 \
+        "1" "Instalar todos los componentes" \
         "2" "Seleccionar componentes específicos" \
         "3" "Cambiar tema de terminal" \
         "4" "Desinstalar terminal alternativa (Kitty/Alacritty)" \
+        "d" "Ver diagnóstico del entorno" \
         "5" "Salir" \
         3>&1 1>&2 2>&3)
     echo "$choice"
@@ -158,7 +264,7 @@ run_checklist() {
     done
 
     local r
-    r=$(whiptail --title "$title" --checklist "$prompt" "$height" 60 "$n" "${args[@]}" \
+    r=$(whiptail --title "$title" --checklist "$prompt" "$height" "$UI_WIDTH" "$n" "${args[@]}" \
         3>&1 1>&2 2>&3)
 
     local out="" sel
@@ -198,7 +304,7 @@ _component_items() {
         desktop)     echo "theme|Temas GNOME estilo macOS"
                      echo "extensions|Extensiones GNOME"
                      echo "icons|Iconos GNOME (WhiteSur, Papirus...)" ;;
-        hardware)    echo "intel|Fix Intel Screen Flicker" ;;
+        hardware)    echo "intel|Corrección de parpadeo Intel" ;;
     esac
 }
 
@@ -234,26 +340,12 @@ _show_selected_msg() {
     local msg="Componentes seleccionados actualmente:\\n\\n" any=0
     for comp in $SELECTED; do
         any=1
-        case "$comp" in
-            base)        msg+="  • Sistema Base\\n" ;;
-            terminal)    msg+="  • Terminal (Ptyxis)\\n" ;;
-            vscode)      msg+="  • Visual Studio Code\\n" ;;
-            git)         msg+="  • Git + SSH\\n" ;;
-            gh)          msg+="  • GitHub CLI\\n" ;;
-            theme)       msg+="  • Temas GNOME\\n" ;;
-            extensions)  msg+="  • Extensiones GNOME\\n" ;;
-            icons)       msg+="  • Iconos GNOME\\n" ;;
-            intel)       msg+="  • Intel Flicker Fix\\n" ;;
-            brave)       msg+="  • Brave Browser\\n" ;;
-            chrome)      msg+="  • Google Chrome\\n" ;;
-            spotify)     msg+="  • Spotify\\n" ;;
-            opencode)    msg+="  • OpenCode CLI\\n" ;;
-        esac
+        msg+="  • $(component_label "$comp") $(component_badge "$comp")\\n"
     done
     [ "$any" -eq 0 ] && msg+="  (ninguno)"
     # Este menú se ejecuta dentro de $(show_component_menu). Mantener la UI en
     # stderr evita que whiptail contamine el valor capturado por stdout.
-    whiptail --title "Selección actual" --msgbox "$msg" 22 60 \
+    whiptail --title "Selección actual" --msgbox "$msg" "$UI_HEIGHT" "$UI_WIDTH" \
         3>&1 1>&2 2>&3
 }
 
@@ -268,6 +360,7 @@ run_checklist_dyn() {
         local tag="${item%%|*}" desc="${item#*|}"
         local def="OFF"
         _selected_has "$tag" && def="ON"
+        desc="$desc $(component_badge "$tag")"
         args+=("$n" "$desc" "$def")
         tags+=("$tag")
     done < <(_component_items "$cat")
@@ -295,18 +388,18 @@ show_component_menu() {
         count=$(echo "$SELECTED" | wc -w | tr -d ' ')
         local cat_choice
         cat_choice=$(whiptail --title "Selecciona componentes (${count} seleccionados)" \
-            --menu "Elige una categoría para agregar o quitar componentes:" 24 70 10 \
-            "1" "🖥️  Sistema" \
-            "2" "🐚 Terminal" \
-            "3" "💻 Desarrollo" \
-            "4" "🌐 Navegadores" \
-            "5" "🎵 Multimedia" \
-            "6" "🎨 Escritorio GNOME" \
-            "7" "🔧 Hardware" \
-            "8" "✅ Seleccionar TODO" \
-            "9" "▶️  Continuar con la instalación" \
-            "0" "👁️  Ver selección actual" \
-            "c" "🧹 Limpiar selección" \
+            --menu "Elige una categoría para agregar o quitar componentes:" "$UI_HEIGHT" "$UI_WIDTH" 10 \
+            "1" "Sistema" \
+            "2" "Terminal" \
+            "3" "Desarrollo" \
+            "4" "Navegadores" \
+            "5" "Multimedia" \
+            "6" "Escritorio GNOME" \
+            "7" "Hardware" \
+            "8" "Seleccionar todos" \
+            "9" "Continuar con la instalación" \
+            "0" "Ver selección actual" \
+            "c" "Limpiar selección" \
             3>&1 1>&2 2>&3)
 
         case "$cat_choice" in
@@ -329,20 +422,23 @@ show_component_menu() {
                 fi
                 SELECTED=$(echo "$SELECTED" | xargs)
                 ;;
-            8) # Seleccionar TODO
+            8) # Seleccionar todos
                 SELECTED="base terminal vscode git gh theme extensions icons intel brave spotify opencode chrome"
-                whiptail --title "TODO seleccionado" --msgbox "Todos los componentes seleccionados." 8 50
+                whiptail --title "Selección completa" --msgbox "Todos los componentes han sido seleccionados." 8 50 \
+                    3>&1 1>&2 2>&3
                 ;;
             c) # Limpiar selección
                 SELECTED=""
-                whiptail --title "Selección limpiada" --msgbox "Se quitaron todos los componentes seleccionados." 8 50
+                whiptail --title "Selección limpiada" --msgbox "Se quitaron todos los componentes seleccionados." 8 50 \
+                    3>&1 1>&2 2>&3
                 ;;
             0) # Ver selección actual
                 _show_selected_msg
                 ;;
             9) # Continuar
                 if [ -z "$(echo "$SELECTED" | xargs)" ]; then
-                    whiptail --title "Sin componentes" --msgbox "No seleccionaste ningún componente." 8 50
+                    whiptail --title "Sin componentes" --msgbox "No seleccionaste ningún componente." 8 50 \
+                        3>&1 1>&2 2>&3
                 else
                     echo "$SELECTED" | xargs
                     return 0
@@ -378,30 +474,23 @@ show_confirm_dialog() {
     msg+="\\n"
     
     for comp in $components; do
-        case "$comp" in
-            base)        msg+="  • Sistema Base\\n" ;;
-            terminal)    msg+="  • Terminal (Ptyxis)\\n" ;;
-            vscode)      msg+="  • Visual Studio Code\\n" ;;
-            git)         msg+="  • Git + SSH\\n" ;;
-            gh)          msg+="  • GitHub CLI\\n" ;;
-            theme)       msg+="  • Temas GNOME\\n" ;;
-            extensions)  msg+="  • Extensiones GNOME\\n" ;;
-            icons)       msg+="  • Iconos GNOME\\n" ;;
-            intel)       msg+="  • Intel Flicker Fix\\n" ;;
-            brave)       msg+="  • Brave Browser\\n" ;;
-            chrome)      msg+="  • Google Chrome\\n" ;;
-            spotify)     msg+="  • Spotify\\n" ;;
-            opencode)    msg+="  • OpenCode CLI\\n" ;;
-        esac
+        msg+="  • $(component_label "$comp") $(component_badge "$comp")\\n"
     done
     
     if [ -n "$theme" ]; then
         msg+="\\nTema: $theme"
     fi
+
+    if echo "$components" | grep -Eq '(^| )(base|intel|theme|extensions|icons)( |$)'; then
+        msg+="\\n\\nCambios especiales:\\n"
+        echo "$components" | grep -qw base && msg+="  • Repositorios y paquetes del sistema\\n"
+        echo "$components" | grep -qw intel && msg+="  • Parámetros de kernel; requiere reinicio\\n"
+        echo "$components" | grep -Eq '(^| )(theme|extensions|icons)( |$)' && msg+="  • Configuración de GNOME; puede requerir cerrar sesión\\n"
+    fi
     
     msg+="\\n\\n¿Continuar con la instalación?"
     
-    whiptail --title "Confirmar instalación" --yesno "$msg" 22 60
+    whiptail --title "Confirmar instalación" --yesno "$msg" "$UI_HEIGHT" "$UI_WIDTH"
 }
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -418,7 +507,8 @@ main() {
     
     # Modo CLI (sin whiptail)
     if [ -n "$CLI_COMPONENTS" ]; then
-        local SELECTED=$(echo "$CLI_COMPONENTS" | xargs)
+        local SELECTED
+        SELECTED=$(echo "$CLI_COMPONENTS" | xargs)
         local THEME="$CLI_THEME"
         
         if [ "$DRY_RUN" = true ]; then
@@ -446,6 +536,8 @@ main() {
         info "[DRY RUN] Modo interactivo — ejecuta sin --dry-run para instalar"
         return 0
     fi
+
+    show_preflight
     
     while true; do
         local main_choice
@@ -471,7 +563,8 @@ main() {
                 ;;
             2)
                 # Selección personalizada
-                local SELECTED=$(show_component_menu)
+                local SELECTED
+                SELECTED=$(show_component_menu)
                 local THEME=""
                 
                 if [ -z "$SELECTED" ]; then
@@ -492,10 +585,12 @@ main() {
                 ;;
             3)
                 # Cambiar tema
-                bash "$SCRIPT_DIR/scripts/02-terminal/02-change-theme.sh"
-                if [ $? -eq 0 ]; then
+                if bash "$SCRIPT_DIR/scripts/02-terminal/02-change-theme.sh"; then
                     whiptail --title "Listo" --msgbox "Tema actualizado correctamente." 8 50
                 fi
+                ;;
+            d)
+                show_preflight
                 ;;
             4)
                 # Desinstalar terminales

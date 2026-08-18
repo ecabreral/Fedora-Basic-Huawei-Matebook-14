@@ -18,7 +18,7 @@ vscode_version() {
   sudo -u "$REAL_USER" code --version 2>/dev/null | head -1
 }
 
-section "💻 Instalando Visual Studio Code en $OS_NAME"
+section "Instalando Visual Studio Code en $OS_NAME"
 
 # 1. Verificar si ya está instalado
 if command -v code &>/dev/null; then
@@ -61,7 +61,7 @@ if ! command -v code &>/dev/null; then
 fi
 
 # ── 3. Configuración inicial de VS Code ───────────────────────────────────────
-section "⚙️  Configurando VS Code"
+section "Configurando VS Code"
 
 VSCODE_CONFIG_DIR="/home/$REAL_USER/.config/Code/User"
 mkdir -p "$VSCODE_CONFIG_DIR"
@@ -99,7 +99,7 @@ chown -R "$REAL_USER":"$REAL_USER" "/home/$REAL_USER/.vscode" 2>/dev/null || tru
 
 success "Configuración de VS Code aplicada."
 
-section "✅ VS Code listo"
+section "Visual Studio Code listo"
 echo -e "  Versión instalada: ${BOLD}$(vscode_version)${RESET}"
 echo -e "  Ejecuta ${BOLD}code${RESET} para abrir VS Code."
 echo ""

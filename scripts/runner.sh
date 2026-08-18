@@ -60,18 +60,30 @@ run_script() {
     local script_path="$2"
     local use_sudo="${3:-false}"
 
-    set +e
-    if [ "$use_sudo" = "true" ]; then
-        sudo "$SCRIPT_DIR/$script_path" 2>&1 | tee >(strip_ansi >> "$LOG_FILE")
-    else
-        "$SCRIPT_DIR/$script_path" 2>&1 | tee >(strip_ansi >> "$LOG_FILE")
-    fi
-    local result=${PIPESTATUS[0]}
-    set -e
+    local result
+    while true; do
+        set +e
+        if [ "$use_sudo" = "true" ]; then
+            sudo "$SCRIPT_DIR/$script_path" 2>&1 | tee >(strip_ansi >> "$LOG_FILE")
+        else
+            "$SCRIPT_DIR/$script_path" 2>&1 | tee >(strip_ansi >> "$LOG_FILE")
+        fi
+        result=${PIPESTATUS[0]}
+        set -e
 
-    if [ $result -ne 0 ]; then
+        [ "$result" -eq 0 ] && break
+        if ! [ -t 0 ] || ! command -v whiptail &>/dev/null || \
+           ! whiptail --title "Error en $name" --yesno \
+           "El componente terminó con código $result.\\n\\n¿Quieres reintentarlo?" 10 62; then
+            break
+        fi
+        log_info "Reintentando $name..."
+    done
+
+    if [ "$result" -ne 0 ]; then
         warn "Error en $name. Continuando..."
         RESULTS+=("$name [FAIL]")
+        FAILED_COUNT=$((FAILED_COUNT + 1))
     else
         RESULTS+=("$name [OK]")
     fi
@@ -79,6 +91,7 @@ run_script() {
 
 # ── Array de resultados ───────────────────────────────────────────────────────
 declare -a RESULTS=()
+FAILED_COUNT=0
 
 # ── Ejecutar scripts ─────────────────────────────────────────────────────────
 for ID in "${SELECTED_IDS[@]}"; do
@@ -108,12 +121,12 @@ for ID in "${SELECTED_IDS[@]}"; do
             run_script "Temas GNOME" "scripts/04-desktop/01-gnome-theme.sh" "false"
             ;;
         "intel")
-            step "Fix Intel Screen Flicker"
+            step "Corrección de parpadeo Intel"
             if lspci | grep -qi "intel.*graphics\|intel.*vga\|intel.*display"; then
-                run_script "Intel Flicker Fix" "scripts/05-hardware/01-intel-fix.sh" "true"
+                run_script "Corrección de parpadeo Intel" "scripts/05-hardware/01-intel-fix.sh" "true"
             else
                 warn "GPU Intel no detectada. Omitiendo intel-fix"
-                RESULTS+=("Intel Flicker Fix [SKIP]")
+                RESULTS+=("Corrección de parpadeo Intel [SKIP]")
             fi
             ;;
         "extensions")
@@ -165,7 +178,18 @@ done
 SUMMARY_MSG+="\\nLog guardado en: $LOG_PATH\\n\\nReinicia la sesión si instalaste cambios de kernel o GNOME."
 
 if command -v whiptail &>/dev/null && [ -t 0 ]; then
-    whiptail --title "Instalación finalizada" --msgbox "$SUMMARY_MSG" 20 70
+    if [ "$FAILED_COUNT" -gt 0 ]; then
+        SUMMARY_TITLE="Instalación con errores"
+    else
+        SUMMARY_TITLE="Instalación finalizada"
+    fi
+    whiptail --title "$SUMMARY_TITLE" --msgbox "$SUMMARY_MSG" 20 70
+    if whiptail --title "Log de instalación" --yesno \
+        "El log completo está en:\\n$LOG_PATH\\n\\n¿Quieres abrirlo ahora?" 10 70; then
+        whiptail --title "Log de instalación" --textbox "$LOG_PATH" 25 100
+    fi
 else
     printf '\n%s\n' "Instalación finalizada. Consulta el resumen anterior y el log: $LOG_PATH"
 fi
+
+exit "$([ "$FAILED_COUNT" -gt 0 ] && echo 1 || echo 0)"

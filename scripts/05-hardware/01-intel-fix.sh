@@ -12,7 +12,7 @@ require_root
 
 KERNEL_PARAMS="i915.enable_psr=0 i915.enable_dc=0 intel_idle.max_cstate=2"
 
-section "🔧 Fix Intel Screen Flicker ($OS_NAME)"
+section "Corrección de parpadeo Intel ($OS_NAME)"
 
 # ── 1. Detectar GPU Intel ─────────────────────────────────────────────────────
 if ! lspci | grep -qi "intel.*graphics\|intel.*vga\|intel.*display"; then
@@ -60,7 +60,7 @@ elif is_ubuntu; then
   success "GRUB actualizado."
 fi
 
-section "✅ Configuración completa"
+section "Corrección de Intel completada"
 warn "Debes reiniciar el sistema para aplicar los cambios:"
 echo ""
 echo -e "    ${BOLD}sudo reboot${RESET}"
