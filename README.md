@@ -83,14 +83,16 @@ Estructura modular que permite agregar, quitar o modificar snippets sin afectar 
 
 Los temas disponibles son presets oficiales de Starship, con paleta de colores sincronizada para Ptyxis:
 
-| Tema | Estilo | Símbolos |
+| Tema | Estilo | Glifos |
 |---|---|---|
-| `tokyo-night` | Oscuro azulado (recomendado por defecto). | Texto plano |
+| `tokyo-night` | Oscuro azulado (recomendado por defecto). | Powerline |
 | `gruvbox-rainbow` | Oscuro cálido. | Powerline |
 | `pastel-powerline` | Claro pastel. | Powerline |
 | `catppuccin-powerline` | Oscuro pastel. | Powerline |
 
-Los tres temas Powerline requieren **JetBrainsMono Nerd Font** para sus separadores. `tokyo-night` no los usa, pero la fuente se aplica igualmente a la terminal por los iconos de `eza --icons`.
+Los cuatro usan separadores Powerline (U+E0A0–U+E0D4), por lo que **todos requieren JetBrainsMono Nerd Font**. La fuente también es necesaria para los iconos de archivo de `eza --icons`, que los aliases `ls`/`ll`/`lt` usan.
+
+Al aplicar un tema, el proyecto añade la línea `# fedora-setup: theme=<nombre>` al inicio de `~/.config/starship.toml` para poder identificar el tema activo: los presets de Starship no incluyen su propio nombre y sus paletas se solapan entre sí.
 
 Cambiar el tema sin reinstalar:
 

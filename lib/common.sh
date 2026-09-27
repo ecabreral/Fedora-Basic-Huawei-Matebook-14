@@ -341,6 +341,12 @@ _record_installed_extension() {
   grep -qxF "$uuid" "$EXTENSIONS_STATE_FILE" 2>/dev/null || echo "$uuid" >> "$EXTENSIONS_STATE_FILE"
 }
 
+# ── STARSHIP_THEME_MARKER: Línea que identifica el preset aplicado ────────────
+# Los presets de Starship no incluyen su nombre en el TOML, así que no se puede
+# deducir el tema activo a partir del contenido. Al aplicar un preset se antepone
+# este comentario, que es la única fuente de verdad para "qué tema está activo".
+STARSHIP_THEME_MARKER="# fedora-setup: theme="
+
 # ── apply_starship_theme: Aplica un tema de Starship ──────────────────────────
 apply_starship_theme() {
   local theme="$1"
@@ -360,7 +366,37 @@ apply_starship_theme() {
       return 1
       ;;
   esac
+
+  # Anteponer el marcador para poder identificar el tema más adelante.
+  {
+    echo "$STARSHIP_THEME_MARKER$theme"
+    cat "$config_dir/starship.toml"
+  } > "$config_dir/starship.toml.tmp" \
+    && mv "$config_dir/starship.toml.tmp" "$config_dir/starship.toml"
+
   success "Tema Starship '$theme' aplicado."
+}
+
+# ── get_starship_theme: Devuelve el tema activo según el marcador ──────────────
+# Salida: nombre del preset, o "personalizado" si el archivo existe pero no lo
+# tiene, o "ninguno" si no existe ~/.config/starship.toml.
+get_starship_theme() {
+  local config_file="${1:-$HOME/.config/starship.toml}"
+
+  if [ ! -f "$config_file" ]; then
+    echo "ninguno"
+    return
+  fi
+
+  local theme
+  theme=$(grep -m1 "^${STARSHIP_THEME_MARKER}" "$config_file" 2>/dev/null \
+    | sed "s/^${STARSHIP_THEME_MARKER}//")
+
+  if [ -n "$theme" ]; then
+    echo "$theme"
+  else
+    echo "personalizado"
+  fi
 }
 
 # ── show_theme_selector: Muestra menú whiptail de selección de temas ──────────

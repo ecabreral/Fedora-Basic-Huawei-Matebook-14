@@ -18,25 +18,10 @@ if ! command -v starship &>/dev/null; then
 fi
 
 # ── Detectar tema actual ───────────────────────────────────────────────────
-CURRENT_THEME="ninguno"
-if [ -f ~/.config/starship.toml ]; then
-  # Detectar cuál de los tres presets está aplicado. Los presets de Starship no
-  # incluyen su nombre en el TOML, así que se distinguen por su paleta de colores.
-  if grep -qE "'#1a1b26'|#1a1b26" ~/.config/starship.toml 2>/dev/null; then
-    CURRENT_THEME="tokyo-night"
-  elif grep -qE "'#faf4ed'|#faf4ed" ~/.config/starship.toml 2>/dev/null; then
-    CURRENT_THEME="pastel-powerline"
-  elif grep -qE "'#1e1e2e'|#1e1e2e" ~/.config/starship.toml 2>/dev/null; then
-    CURRENT_THEME="catppuccin-powerline"
-  elif grep -qE "'#282828'|#282828" ~/.config/starship.toml 2>/dev/null; then
-    CURRENT_THEME="gruvbox-rainbow"
-  else
-    CURRENT_THEME="personalizado"
-  fi
-  info "Tema actual: $CURRENT_THEME"
-else
-  warn "No se encontró configuración de Starship."
-fi
+# Se lee el marcador que escribe apply_starship_theme, no los colores del TOML:
+# los presets de Starship no incluyen su nombre y sus paletas se solapan.
+CURRENT_THEME=$(get_starship_theme)
+info "Tema actual: $CURRENT_THEME"
 
 # ── Selector de tema ───────────────────────────────────────────────────────
 show_theme_menu() {
