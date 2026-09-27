@@ -11,7 +11,8 @@
 #   5. BeautyLine      → Coloridos premium (estilo Apple)
 # ==============================================================================
 
-set -e
+# No usar set -e: si un pack de iconos falla al clonar o instalar, el script
+# debe avisar y continuar con los demás en lugar de abortar todo.
 source "$(dirname "$0")/../../lib/common.sh"
 
 section "Instalador de iconos GNOME"
@@ -261,11 +262,11 @@ install_dependencies
 
 for icon in $SELECTED; do
     case "$icon" in
-        whitesur)    install_whitesur ;;
-        mcmojave)    install_mcmojave ;;
-        telacircle)  install_telacircle ;;
-        papirus)     install_papirus ;;
-        beautyline)  install_beautyline ;;
+        whitesur)    install_whitesur || warn "Falló la instalación de WhiteSur Icons." ;;
+        mcmojave)    install_mcmojave || warn "Falló la instalación de McMojave Circle." ;;
+        telacircle)  install_telacircle || warn "Falló la instalación de Tela Circle." ;;
+        papirus)     install_papirus || warn "Falló la instalación de Papirus." ;;
+        beautyline)  install_beautyline || warn "Falló la instalación de BeautyLine." ;;
     esac
 done
 

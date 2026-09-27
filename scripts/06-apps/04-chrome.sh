@@ -3,7 +3,7 @@
 # 04-chrome.sh — Instala Google Chrome en Fedora
 # ==============================================================================
 
-set -e
+# No usar set -e: cada paso reporta su propio error.
 source "$(dirname "$0")/../../lib/common.sh"
 
 section "Google Chrome"
@@ -17,7 +17,10 @@ fi
 # 2. Agregar repo RPM de Google Chrome
 if ! dnf repolist 2>/dev/null | grep -q google-chrome; then
   info "Agregando repositorio de Google Chrome..."
-  sudo dnf config-manager addrepo --from-repofile=https://dl.google.com/linux/chrome/rpm/stable/x86_64/google-chrome.repo
+  if ! sudo dnf config-manager addrepo --from-repofile=https://dl.google.com/linux/chrome/rpm/stable/x86_64/google-chrome.repo; then
+    error "No se pudo agregar el repositorio de Google Chrome."
+    exit 1
+  fi
   success "Repositorio agregado."
 else
   success "Repositorio de Google Chrome ya configurado."

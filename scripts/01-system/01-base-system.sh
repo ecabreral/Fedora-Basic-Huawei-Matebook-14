@@ -15,20 +15,44 @@ if is_fedora; then
 
   section "Habilitando RPM Fusion"
 
-  if pkg_check rpmfusion-free-release; then
-    success "RPM Fusion Free ya está instalado."
+  # Detectar la versión de Fedora de forma robusta. %fedora devuelve "rawhide"
+  # en Fedora Rawhide, donde RPM Fusion no publica release estable; en ese caso
+  # se usa el repositorio rawhide explícito en lugar de una URL que no existe.
+  FEDORA_VER=$(rpm -E %fedora 2>/dev/null)
+  if [ -z "$FEDORA_VER" ]; then
+    error "No se pudo detectar la versión de Fedora. Abortando configuración de repos."
+  elif [ "$FEDORA_VER" = "rawhide" ]; then
+    warn "Fedora Rawhide detectado. Se configurará el repositorio rawhide de RPM Fusion."
+    if ! pkg_check rpmfusion-free-release-rawhide; then
+      info "Instalando RPM Fusion Free (rawhide)..."
+      sudo dnf install -y \
+        "https://mirrors.rpmfusion.org/free/fedora-rawhide/fusion-free-release-$(rpm -E %fedora).noarch.rpm" \
+        || warn "No se pudo instalar el release rawhide. Se configurará el repo directamente."
+    fi
+    if ! pkg_check rpmfusion-nonfree-release-rawhide; then
+      info "Instalando RPM Fusion Non-Free (rawhide)..."
+      sudo dnf install -y \
+        "https://mirrors.rpmfusion.org/nonfree/fedora-rawhide/fusion-nonfree-release-$(rpm -E %fedora).noarch.rpm" \
+        || warn "No se pudo instalar el release rawhide. Se configurará el repo directamente."
+    fi
   else
-    info "Instalando RPM Fusion Free..."
-    sudo dnf install -y https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm
-    success "RPM Fusion Free instalado."
-  fi
+    if pkg_check rpmfusion-free-release; then
+      success "RPM Fusion Free ya está instalado."
+    else
+      info "Instalando RPM Fusion Free ($FEDORA_VER)..."
+      sudo dnf install -y \
+        "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-${FEDORA_VER}.noarch.rpm" \
+        || warn "No se pudo instalar RPM Fusion Free. Revisa la versión de Fedora."
+    fi
 
-  if pkg_check rpmfusion-nonfree-release; then
-    success "RPM Fusion Non-Free ya está instalado."
-  else
-    info "Instalando RPM Fusion Non-Free..."
-    sudo dnf install -y https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
-    success "RPM Fusion Non-Free instalado."
+    if pkg_check rpmfusion-nonfree-release; then
+      success "RPM Fusion Non-Free ya está instalado."
+    else
+      info "Instalando RPM Fusion Non-Free ($FEDORA_VER)..."
+      sudo dnf install -y \
+        "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-${FEDORA_VER}.noarch.rpm" \
+        || warn "No se pudo instalar RPM Fusion Non-Free. Revisa la versión de Fedora."
+    fi
   fi
 
   info "Configurando repositorios RPM Fusion..."
@@ -193,23 +217,59 @@ fi
 # ── 7. Optimizaciones de arranque ─────────────────────────────────────────────
 section "⚡ Optimizaciones de arranque"
 
-info "Deshabilitando NetworkManager-wait-online.service..."
+# NetworkManager-wait-online alarga el arranque ~30s en redes lentas, pero
+# deshabilitarlo puede romper servicios que dependen de red al boot
+# (systemd units Requires=network-online.target, containers, máquinas
+# virtuales). Se informa del tradeoff en lugar de aplicarlo en silencio.
 if systemctl is-enabled NetworkManager-wait-online.service &>/dev/null; then
-  sudo systemctl disable NetworkManager-wait-online.service
-  success "NetworkManager-wait-online deshabilitado."
+  if [ -t 0 ]; then
+    echo ""
+    warn "NetworkManager-wait-online está habilitado (añade ~30s al arranque)."
+    warn "Deshabilitarlo acelera el boot, pero puede romper servicios que"
+    warn "esperan red al inicio (contenedores, VMs, algunas unidades systemd)."
+    read -p "  ¿Deshabilitar de todas formas? [s/N]: " WAIT_ONLINE
+    if [[ "$WAIT_ONLINE" =~ ^[sS]$ ]]; then
+      sudo systemctl disable NetworkManager-wait-online.service
+      success "NetworkManager-wait-online deshabilitado."
+    else
+      info "NetworkManager-wait-online se mantiene habilitado."
+    fi
+  else
+    warn "NetworkManager-wait-online habilitado (no interactivo: se deja como está)."
+    warn "Para acelerarlo: sudo systemctl disable NetworkManager-wait-online.service"
+  fi
 else
   success "NetworkManager-wait-online ya deshabilitado."
 fi
 
-info "Removiendo Gnome Software del autostart..."
-if [ -f /etc/xdg/autostart/org.gnome.Software.desktop ]; then
-  sudo rm -f /etc/xdg/autostart/org.gnome.Software.desktop
-  success "Gnome Software removido del autostart."
-elif [ -f /etc/xdg/autostart/gnome-software-service.desktop ]; then
-  sudo rm -f /etc/xdg/autostart/gnome-software-service.desktop
-  success "Gnome Software removido del autostart."
+# Este script se ejecuta con sudo desde runner.sh, por lo que $HOME apunta a
+# /root. Los ajustes de sesión deben aplicarse al usuario real.
+REAL_USER="${SUDO_USER:-$USER}"
+if [ -z "$REAL_USER" ] || [ "$REAL_USER" = "root" ]; then
+  REAL_USER=$(logname 2>/dev/null || echo "$USER")
+fi
+REAL_HOME=$(getent passwd "$REAL_USER" 2>/dev/null | cut -d: -f6)
+[ -z "$REAL_HOME" ] && REAL_HOME="/home/$REAL_USER"
+
+# Desactivar el autostart de GNOME Software de forma NO destructiva.
+# Borrar /etc/xdg/autostart/*.desktop modifica archivos propiedad de un paquete:
+# dnf/rpm los restauran en cada actualización y "rpm -V" reporta el desvío.
+# La alternativa correcta es una entrada de usuario en ~/.config/autostart con
+# Hidden=true, que tiene prioridad sobre /etc/xdg/autostart y sobrevive updates.
+info "Desactivando autostart de GNOME Software (sin tocar archivos del sistema)..."
+mkdir -p "$REAL_HOME/.config/autostart"
+cat > "$REAL_HOME/.config/autostart/org.gnome.Software.desktop" << 'EOF'
+[Desktop Entry]
+Type=Application
+Name=GNOME Software
+Hidden=true
+EOF
+
+if [ -f "$REAL_HOME/.config/autostart/org.gnome.Software.desktop" ]; then
+  chown "$REAL_USER":"$REAL_USER" "$REAL_HOME/.config/autostart/org.gnome.Software.desktop" 2>/dev/null || true
+  success "Autostart de GNOME Software desactivado para $REAL_USER."
 else
-  success "Gnome Software ya no está en autostart."
+  warn "No se pudo desactivar el autostart de GNOME Software."
 fi
 
 # ── 8. Verificar driver Intel ─────────────────────────────────────────────────

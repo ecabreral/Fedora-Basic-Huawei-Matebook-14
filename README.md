@@ -121,11 +121,20 @@ La opción 4 del menú principal desinstala Kitty o Alacritty y restaura Ptyxis 
 - Estados `[INSTALADO]` y `[NO INSTALADO]` por componente.
 - Descripción de componentes accesible desde el checklist.
 - Paleta azul sobria y alto contraste para modo claro.
-- Ventanas adaptadas al tamaño de la terminal.
+- Ventanas adaptadas al tamaño de la terminal, con validación mínima (60x20).
 - Reintento de componentes fallidos.
 - Resumen final con componentes instalados, omitidos y fallidos.
 - Apertura del log desde el resumen.
 - Compatible con terminales Fedora, SSH y modo CLI.
+
+## Comportamiento en modo no interactivo
+
+Los scripts distinguen entre ejecución interactiva y automatizada (`[ -t 0 ]`):
+
+- Los `read -p` se saltan o se sustituyen por un valor por defecto, evitando que el instalador quede esperando input indefinidamente.
+- `chsh` no se ejecuta en modo automatizado; se imprime el comando a ejecutar manualmente.
+- Las selecciones interactivas (tema de iconos, reconfigurar Git) usan un valor por defecto en lugar de bloquearse.
+- Los componentes que requieren interacción (Git) fallan con un mensaje explicativo en lugar de colgarse.
 
 ## Logs
 
@@ -165,7 +174,20 @@ config/starship          Temas Starship personalizados
 
 ## Seguridad
 
-- Instaladores de terceros verificados con `--proto '=https' --tlsv1.2`.
+Todas las descargas pasan por `secure_fetch()` (`lib/common.sh`), que aplica:
+
+- **HTTPS exclusivamente** (`--proto '=https'` bloquea redirecciones a `http://`).
+- **TLS >= 1.2** en todas las peticiones.
+- **Tiempos de espera** (`--connect-timeout 15 --max-time 300 --retry 3`) para evitar que el instalador se cuelgue.
+- **Validación de contenido**: se rechaza el archivo si llega vacío o si parece HTML en vez del script esperado (`looks_like_shell_script`), lo que evita ejecutar páginas de error de mirrors caídos o captive portals.
+- **Instalación de llaves GPG** con verificación de éxito antes de continuar; nunca se escribe un keyring con `curl | sudo dd`, que lo deja corrupto si la descarga se corta.
+
+Además:
+
 - Zsh registrado en `/etc/shells` antes de cambiar la shell por defecto.
 - Repositorios temporales de temas clonados en `~/.cache/fedora-setup/` y eliminados tras la instalación.
 - Configuración de zsh modular en `~/.config/zsh/conf.d/` para evitar sobrescritura de snippets personalizados.
+- Autostart de GNOME Software desactivado con una entrada `Hidden=true` en `~/.config/autostart/` en lugar de borrar archivos propiedad de paquetes en `/etc/xdg/autostart/`.
+- Scripts de bootloader idempotentes: se detectan parámetros ya aplicados antes de modificarlos, y se guarda backup de `/etc/default/grub` en Ubuntu.
+- Comprobación de `lspci` unificada en `has_intel_gpu()` antes de aplicar parámetros del kernel.
+- Deshabilitar `NetworkManager-wait-online` requiere confirmación interactiva e informa del tradeoff.

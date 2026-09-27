@@ -159,11 +159,19 @@ install_nerd_font() {
   fi
   info "Instalando JetBrainsMono Nerd Font..."
   mkdir -p ~/.local/share/fonts
-  curl -fsSL https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip -o /tmp/JetBrainsMono.zip
-  unzip -o /tmp/JetBrainsMono.zip -d ~/.local/share/fonts > /dev/null
-  rm -f /tmp/JetBrainsMono.zip
-  fc-cache -fv > /dev/null
-  success "JetBrainsMono Nerd Font instalada."
+  if secure_fetch "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip" \
+      /tmp/JetBrainsMono.zip "JetBrainsMono Nerd Font"; then
+    if unzip -t -q /tmp/JetBrainsMono.zip >/dev/null 2>&1; then
+      unzip -o /tmp/JetBrainsMono.zip -d ~/.local/share/fonts > /dev/null
+      fc-cache -fv > /dev/null
+      success "JetBrainsMono Nerd Font instalada."
+    else
+      rm -f /tmp/JetBrainsMono.zip
+      warn "El archivo de la fuente está corrupto. No se instaló."
+    fi
+  else
+    warn "No se pudo descargar JetBrainsMono Nerd Font."
+  fi
 }
 
 # ── open_url: Abre una URL en el navegador predeterminado ─────────────────────
@@ -179,6 +187,79 @@ open_url() {
     info "Abre esta URL manualmente: $url"
     return 1
   fi
+}
+
+# ── secure_fetch: Descarga un archivo exigiendo HTTPS/TLS 1.2 y con timeout ───
+# Uso: secure_fetch <url> <destino> [descripción]
+# Devuelve 1 (sin abortar) si falla, y valida que el destino no esté vacío.
+# Nota: no se puede fijar un sha256 hardcodeado porque los instaladores upstream
+# cambian en cada release; en su lugar se aplican estas defensas:
+#   1) HTTPS exclusivamente (--proto '=https' bloquea redirecciones a http://)
+#   2) TLS >= 1.2
+#   3) Tiempos de espera (evita colgarse indefinidamente)
+#   4) Validación de contenido no vacío y saneado
+#   5) Verificación de que el contenido parece un script de shell válido
+secure_fetch() {
+  local url="$1" dest="$2" label="${3:-archivo}"
+
+  # Rechazar cualquier URL que no sea HTTPS antes de tocar la red.
+  case "$url" in
+    https://*) : ;;
+    *) error "URL no segura (solo se permite https): $url"; return 1 ;;
+  esac
+
+  info "Descargando $label..."
+  if ! curl -fsSL \
+        --proto '=https' \
+        --tlsv1.2 \
+        --connect-timeout 15 \
+        --max-time 300 \
+        --retry 3 \
+        --retry-delay 2 \
+        "$url" -o "$dest"; then
+    error "Falló la descarga de $label."
+    rm -f "$dest"
+    return 1
+  fi
+
+  # Validación: el archivo no debe estar vacío.
+  if [ ! -s "$dest" ]; then
+    error "$label se descargó vacío. Posible bloqueo de red omirror caído."
+    rm -f "$dest"
+    return 1
+  fi
+
+  success "$label descargado ($(du -h "$dest" 2>/dev/null | cut -f1))."
+  return 0
+}
+
+# ── looks_like_shell_script: Valida que un archivo descargado sea un script ────
+# Evita ejecutar HTML de páginas de error (404, proxies, portals cautivos).
+looks_like_shell_script() {
+  local file="$1"
+  [ -s "$file" ] || return 1
+  # Si empieza por < o contiene HTML/XML protagonista, no es un script.
+  local first
+  first=$(head -c 200 "$file" 2>/dev/null)
+  case "$first" in
+    \<*|*DOCTYPE*|*\<html*) return 1 ;;
+  esac
+  # Debe contener algo de sintaxis de shell o ser un binario ejecutable.
+  if grep -qE '^#!.*(sh|bash)' "$file" 2>/dev/null; then
+    return 0
+  fi
+  # Algunos scripts no tienen shebang pero sí usan funciones/sintaxis de shell.
+  if grep -qE '(^|[;[:space:]])(echo|set|apt|dnf|install|usage|exit)[\s(]|\$\(|<<' "$file" 2>/dev/null; then
+    return 0
+  fi
+  return 1
+}
+
+# ── has_intel_gpu: Detección unificada de GPU Intel ───────────────────────────
+# Reemplaza el grep duplicado en intel-fix.sh y runner.sh.
+has_intel_gpu() {
+  command -v lspci &>/dev/null || return 1
+  lspci 2>/dev/null | grep -qiE 'intel.*(graphics|vga|display|uhd|iris|hd graphics)'
 }
 
 # ── EXTENSIONS_STATE_FILE: registro de extensiones GNOME instaladas por este proyecto ─
@@ -213,7 +294,9 @@ install_gnome_extension() {
   fi
 
   local info_json
-  info_json=$(curl -fsSL "https://extensions.gnome.org/extension-info/?pk=${pk}&shell_version=${shell_ver}" 2>/dev/null)
+  info_json=$(curl -fsSL --proto '=https' --tlsv1.2 \
+    --connect-timeout 15 --max-time 60 --retry 2 \
+    "https://extensions.gnome.org/extension-info/?pk=${pk}&shell_version=${shell_ver}" 2>/dev/null)
 
   local uuid download_path
   uuid=$(printf '%s' "$info_json" | grep -oE '"uuid"[[:space:]]*:[[:space:]]*"[^"]+"' | head -1 | sed -E 's/.*: *"([^"]+)"/\1/')
@@ -233,7 +316,10 @@ install_gnome_extension() {
 
   local tmp_zip
   tmp_zip=$(mktemp --suffix=.shell-extension.zip)
-  if curl -fsSL "https://extensions.gnome.org${download_path}" -o "$tmp_zip" 2>/dev/null && \
+  if curl -fsSL --proto '=https' --tlsv1.2 \
+       --connect-timeout 15 --max-time 120 --retry 2 \
+       "https://extensions.gnome.org${download_path}" -o "$tmp_zip" 2>/dev/null && \
+     [ -s "$tmp_zip" ] && \
      gnome-extensions install --force "$tmp_zip" 2>/dev/null; then
     rm -f "$tmp_zip"
     gnome-extensions enable "$uuid" 2>/dev/null || true

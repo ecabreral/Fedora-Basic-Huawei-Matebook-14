@@ -6,7 +6,8 @@
 # activación manual (p. ej. la primera vez que se usa GSConnect).
 # ==============================================================================
 
-set -e
+# No usar set -e: una extensión que falle no debe abortar la instalación de
+# las demás; el catálogo ya se instala con "|| true" de forma explícita.
 source "$(dirname "$0")/../../lib/common.sh"
 
 section "🧩 Extensiones GNOME ($OS_NAME)"
@@ -14,7 +15,9 @@ section "🧩 Extensiones GNOME ($OS_NAME)"
 # Asegurar que gnome-extensions esté disponible (CLI para instalación automatizada)
 if ! command -v gnome-extensions &>/dev/null; then
   info "Instalando gnome-extensions (CLI)..."
-  pkg_install gnome-extensions
+  if ! pkg_install gnome-extensions; then
+    error "No se pudo instalar gnome-extensions. Las extensiones se gestionarán desde Extension Manager."
+  fi
 fi
 
 # Instalar Extension Manager desde Flathub (interfaz gráfica para gestionar extensiones)
@@ -103,40 +106,35 @@ if gnome-extensions list 2>/dev/null | grep -q "dash-to-dock"; then
     gsettings set org.gnome.shell.extensions.dash-to-dock click-action 'focus-minimize-or-appspread' 2>/dev/null || true
 fi
 
-# ── Abrir páginas de extensiones (por si alguna requiere confirmación manual) ─
-info "Abriendo páginas de extensiones GNOME en tu navegador por si alguna requiere confirmación..."
+# ── Resumen de extensiones instaladas ─────────────────────────────────────────
+INSTALLED_COUNT=$(gnome-extensions list 2>/dev/null | wc -l)
+echo ""
+info "Extensiones activas en GNOME: $INSTALLED_COUNT"
 echo ""
 echo "  Extensiones gestionadas por este instalador:"
-echo "  • Dash to Dock          • Custom Hot Corners Extended"
-echo "  • Magic Lamp Effect     • TopHat"
-echo "  • Copyous               • Media Controls"
-echo "  • Night Theme Switcher  • GSConnect (requiere la app KDE Connect en tu"
-echo "  • Dynamic Music Pill      teléfono para emparejar)"
-echo "  • Coverflow Alt-Tab"
-echo "  • Burn My Windows"
-echo "  • Tiling Shell"
-echo "  • Desktop Cube"
-echo "  • Alphabetical App Grid"
+echo "  • Dash to Dock              • Burn My Windows"
+echo "  • Custom Hot Corners Ext.   • Tiling Shell"
+echo "  • Magic Lamp Effect         • Desktop Cube"
+echo "  • Copyous                   • Alphabetical App Grid"
+echo "  • Night Theme Switcher      • TopHat"
+echo "  • Dynamic Music Pill        • Media Controls"
+echo "  • Coverflow Alt-Tab         • GSConnect (requiere KDE Connect en el teléfono)"
 echo ""
 
-open_url "https://extensions.gnome.org/extension/307/dash-to-dock/"
-open_url "https://extensions.gnome.org/extension/3740/compiz-alike-magic-lamp-effect/"
-open_url "https://extensions.gnome.org/extension/8834/copyous/"
-open_url "https://extensions.gnome.org/extension/2236/night-theme-switcher/"
-open_url "https://extensions.gnome.org/extension/9334/dynamic-music-pill/"
-open_url "https://extensions.gnome.org/extension/97/coverflow-alt-tab/"
-open_url "https://extensions.gnome.org/extension/4679/burn-my-windows/"
-open_url "https://extensions.gnome.org/extension/7065/tiling-shell/"
-open_url "https://extensions.gnome.org/extension/4648/desktop-cube/"
-open_url "https://extensions.gnome.org/extension/4269/alphabetical-app-grid/"
-open_url "https://extensions.gnome.org/extension/4167/custom-hot-corners-extended/"
-open_url "https://extensions.gnome.org/extension/5219/tophat/"
-open_url "https://extensions.gnome.org/extension/4470/media-controls/"
-open_url "https://extensions.gnome.org/extension/1319/gsconnect/"
-
-if ! command -v xdg-open &>/dev/null; then
-    echo ""
-    echo "  Aviso: no se detectó navegador. Copia las URLs y ábrelas manualmente."
+# Abrir Extension Manager (una sola ventana) en vez de 13 pestañas del navegador.
+# Si no está disponible, se abre solo la página de Dash to Dock como referencia.
+if [ -t 0 ]; then
+  if flatpak info com.mattjakeman.ExtensionManager &>/dev/null; then
+    info "Abriendo Extension Manager para gestionar/configurar las extensiones."
+    flatpak run com.mattjakeman.ExtensionManager &>/dev/null &
+    disown 2>/dev/null || true
+  else
+    info "Abriendo la página de extensiones GNOME en tu navegador."
+    open_url "https://extensions.gnome.org/"
+  fi
+else
+  info "Modo no interactivo: se omite la apertura del navegador."
+  info "Para gestionar las extensiones usa: Extension Manager (Flathub)"
 fi
 
 echo ""

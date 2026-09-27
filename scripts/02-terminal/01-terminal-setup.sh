@@ -82,21 +82,38 @@ if [ -d "$HOME/.oh-my-zsh" ]; then
   success "Oh My Zsh ya está instalado."
 else
   info "Instalando Oh My Zsh..."
-  sh -c "$(curl -fsSL --proto '=https' --tlsv1.2 https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-  success "Oh My Zsh instalado."
+  OMZ_INSTALLER=/tmp/ohmyzsh-install.sh
+  if secure_fetch "https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh" \
+      "$OMZ_INSTALLER" "instalador de Oh My Zsh"; then
+    # No ejecutar a ciegas: verificar que el contenido es un script de shell.
+    if looks_like_shell_script "$OMZ_INSTALLER"; then
+      # Se pasa "" como shell (posicional 1) y --unattended como flag, tal como
+      # espera el instalador oficial.
+      if sh "$OMZ_INSTALLER" "" --unattended; then
+        success "Oh My Zsh instalado."
+      else
+        error "Error al instalar Oh My Zsh."
+      fi
+    else
+      error "El instalador de Oh My Zsh no parece un script válido. Se aborta."
+    fi
+    rm -f "$OMZ_INSTALLER"
+  else
+    error "No se pudo descargar el instalador de Oh My Zsh."
+  fi
 fi
 
 # ── 6. Plugins de Zsh ─────────────────────────────────────────────────────────
 if [ ! -d "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions" ]; then
   info "Clonando zsh-autosuggestions..."
   git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions \
-    ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
+    ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions || warn "Falló zsh-autosuggestions."
 fi
 
 if [ ! -d "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting" ]; then
   info "Clonando zsh-syntax-highlighting..."
   git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting \
-    ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
+    ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting || warn "Falló zsh-syntax-highlighting."
 fi
 success "Plugins de Zsh listos."
 
@@ -105,14 +122,25 @@ section "Starship"
 if command -v starship &>/dev/null; then
   success "Starship ya está instalado."
 else
-  info "Instalando Starship..."
-  curl -sS --proto '=https' --tlsv1.2 https://starship.rs/install.sh -o /tmp/starship-install.sh
-  # "-s --" solo aplica cuando el instalador se ejecuta vía "curl | sh -s --";
-  # al ejecutar el archivo ya descargado esos tokens se pasarían como
-  # argumentos literales al script y romperían el modo --yes (no interactivo).
-  sh /tmp/starship-install.sh --yes
-  rm -f /tmp/starship-install.sh
-  success "Starship instalado."
+  STARSHIP_INSTALLER=/tmp/starship-install.sh
+  if secure_fetch "https://starship.rs/install.sh" \
+      "$STARSHIP_INSTALLER" "instalador de Starship"; then
+    if looks_like_shell_script "$STARSHIP_INSTALLER"; then
+      # "-s --" solo aplica cuando el instalador se ejecuta vía "curl | sh -s --";
+      # al ejecutar el archivo ya descargado esos tokens se pasarían como
+      # argumentos literales al script y romperían el modo --yes (no interactivo).
+      if sh "$STARSHIP_INSTALLER" --yes; then
+        success "Starship instalado."
+      else
+        error "Error al instalar Starship."
+      fi
+    else
+      error "El instalador de Starship no parece un script válido. Se aborta."
+    fi
+    rm -f "$STARSHIP_INSTALLER"
+  else
+    error "No se pudo descargar el instalador de Starship."
+  fi
 fi
 
 # ── 8. Configurar Starship (tema seleccionado) ──────────────────────────────

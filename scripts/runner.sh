@@ -122,7 +122,7 @@ for ID in "${SELECTED_IDS[@]}"; do
             ;;
         "intel")
             step "Corrección de parpadeo Intel"
-            if lspci | grep -qi "intel.*graphics\|intel.*vga\|intel.*display"; then
+            if has_intel_gpu; then
                 run_script "Corrección de parpadeo Intel" "scripts/05-hardware/01-intel-fix.sh" "true"
             else
                 warn "GPU Intel no detectada. Omitiendo intel-fix"
@@ -156,13 +156,24 @@ for ID in "${SELECTED_IDS[@]}"; do
     esac
 done
 
-# ── Agregar OpenCode al PATH ─────────────────────────────────────────────────
-if command -v opencode &>/dev/null; then
-    if ! grep -q '\.opencode/bin' ~/.zshrc 2>/dev/null; then
-        log_info "Agregando OpenCode al PATH..."
-        echo 'export PATH="$HOME/.opencode/bin:$PATH"' >> ~/.zshrc
+# ── Asegurar OpenCode en el PATH (sin hacer "source ~/.zshrc") ───────────────
+# Hacer "source ~/.zshrc" desde el runner es peligroso: el archivo ejecuta
+# "clear", "fastfetch", carga Starship/Oh My Zsh y evalúa zoxide, ensuciando la
+# salida del log y el prompt del runner. Basta con exportar el PATH.
+if command -v opencode &>/dev/null || [ -x "$HOME/.opencode/bin/opencode" ]; then
+    export PATH="$HOME/.opencode/bin:$PATH"
+
+    # El script de OpenCode ya escribe su snippet en conf.d; este es un
+    # respaldo idempotente por si el componente se instaló por otra vía.
+    if ! grep -rqs '\.opencode/bin' "$HOME/.config/zsh/conf.d" 2>/dev/null && \
+       ! grep -q '\.opencode/bin' ~/.zshrc 2>/dev/null; then
+        log_info "Registrando OpenCode en ~/.config/zsh/conf.d/..."
+        mkdir -p "$HOME/.config/zsh/conf.d"
+        {
+            echo "# OpenCode CLI (agregado por runner.sh)"
+            echo 'export PATH="$HOME/.opencode/bin:$PATH"'
+        } > "$HOME/.config/zsh/conf.d/52-opencode.sh"
     fi
-    source ~/.zshrc 2>/dev/null || true
 fi
 
 # ── Resumen Final ─────────────────────────────────────────────────────────────

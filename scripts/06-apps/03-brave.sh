@@ -3,7 +3,7 @@
 # 03-brave.sh — Instala Brave Browser y configura alias bravefix
 # ==============================================================================
 
-set -e
+# No usar set -e: cada paso reporta su propio error.
 source "$(dirname "$0")/../../lib/common.sh"
 
 section "Brave Browser"
@@ -13,17 +13,29 @@ if command -v brave-browser &>/dev/null; then
   success "Brave Browser ya está instalado: $(which brave-browser)"
 else
   # 2. Instalación usando el instalador oficial
-  info "Descargando e instalando Brave Browser..."
+  BRAVE_INSTALLER=/tmp/brave-install.sh
 
-  curl -fsS --proto '=https' --tlsv1.2 https://dl.brave.com/install.sh -o /tmp/brave-install.sh
-  if sh /tmp/brave-install.sh; then
+  if ! secure_fetch "https://dl.brave.com/install.sh" \
+      "$BRAVE_INSTALLER" "instalador de Brave"; then
+    error "No se pudo descargar el instalador de Brave."
+    exit 1
+  fi
+
+  # Validar que el contenido sea un script de shell y no HTML de error.
+  if ! looks_like_shell_script "$BRAVE_INSTALLER"; then
+    error "El instalador descargado no parece un script válido. Se aborta."
+    rm -f "$BRAVE_INSTALLER"
+    exit 1
+  fi
+
+  if sh "$BRAVE_INSTALLER"; then
     success "Brave Browser instalado satisfactoriamente"
   else
     error "Error al ejecutar el instalador de Brave Browser"
-    rm -f /tmp/brave-install.sh
+    rm -f "$BRAVE_INSTALLER"
     exit 1
   fi
-  rm -f /tmp/brave-install.sh
+  rm -f "$BRAVE_INSTALLER"
 fi
 
 # 3. Configurar alias bravefix en ~/.config/zsh/conf.d/ (idempotente)

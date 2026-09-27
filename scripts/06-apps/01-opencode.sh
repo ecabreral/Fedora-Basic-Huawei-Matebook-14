@@ -21,17 +21,30 @@ else
     info "OpenCode ya existe en $OPENCODE_DIR pero no está en el PATH de esta sesión."
   else
     # 3. Instalación usando el instalador oficial
-    info "Descargando e instalando OpenCode CLI..."
-    
-    curl -fsSL --proto '=https' --tlsv1.2 https://opencode.ai/v2/install -o /tmp/opencode-install.sh
-    if bash /tmp/opencode-install.sh --no-modify-path; then
+    OPENCODE_INSTALLER=/tmp/opencode-install.sh
+
+    if ! secure_fetch "https://opencode.ai/v2/install" \
+        "$OPENCODE_INSTALLER" "instalador de OpenCode"; then
+      error "No se pudo descargar el instalador de OpenCode."
+      exit 1
+    fi
+
+    # Validar que el contenido sea realmente un script de shell y no una página
+    # de error HTML ( captive portal, mirror caído, WAF ).
+    if ! looks_like_shell_script "$OPENCODE_INSTALLER"; then
+      error "El instalador descargado no parece un script válido. Se aborta."
+      rm -f "$OPENCODE_INSTALLER"
+      exit 1
+    fi
+
+    if bash "$OPENCODE_INSTALLER" --no-modify-path; then
       success "OpenCode instalado satisfactoriamente"
     else
       error "Error al ejecutar el instalador de OpenCode"
-      rm -f /tmp/opencode-install.sh
+      rm -f "$OPENCODE_INSTALLER"
       exit 1
     fi
-    rm -f /tmp/opencode-install.sh
+    rm -f "$OPENCODE_INSTALLER"
   fi
 fi
 

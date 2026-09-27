@@ -182,7 +182,7 @@ component_badge() {
 preflight_text() {
     local sudo_state="NO" internet_state="NO" session_state="NO" text=""
     command -v sudo >/dev/null 2>&1 && sudo_state="SI"
-    command -v curl >/dev/null 2>&1 && curl -fsS --max-time 3 https://mirrors.fedoraproject.org >/dev/null 2>&1 && internet_state="SI"
+    command -v curl >/dev/null 2>&1 && curl -fsS --proto '=https' --tlsv1.2 --max-time 5 https://mirrors.fedoraproject.org >/dev/null 2>&1 && internet_state="SI"
     [ -n "${XDG_CURRENT_DESKTOP:-}" ] && session_state="SI"
     text="Diagnóstico del entorno\\n\\n"
     text+="Sistema: $OS_NAME $OS_VERSION ($OS_ID)\\n"
