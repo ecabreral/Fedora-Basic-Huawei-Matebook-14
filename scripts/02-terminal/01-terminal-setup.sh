@@ -9,7 +9,7 @@ source "$(dirname "$0")/../../lib/common.sh"
 source "$(dirname "$0")/../../lib/ptyxis-colors.sh"
 
 THEME="${1:-$TERMINAL_THEME}"
-THEME="${THEME:-tokyo-night}"
+THEME="${THEME:-gruvbox-rainbow}"
 
 section "Configuración de terminal ($OS_NAME $OS_VERSION)"
 

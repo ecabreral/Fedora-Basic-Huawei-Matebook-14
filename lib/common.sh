@@ -349,16 +349,9 @@ apply_starship_theme() {
   mkdir -p "$config_dir"
 
   case "$theme" in
-    tokyo-night|pastel-powerline|gruvbox-rainbow|catppuccin-powerline|jetpack|pure-preset| \
-    nerd-font-symbols|no-nerd-font|bracketed-segments|plain-text|no-runtimes|no-empty-icons)
-      starship preset "$theme" > "$config_dir/starship.toml"
-      ;;
-    cyberpunk-storm|cyberpunk-neon|cyberpunk-night)
-      local toml_file="$PROJECT_ROOT/config/starship/starship-${theme}.toml"
-      if [ -f "$toml_file" ]; then
-        cp "$toml_file" "$config_dir/starship.toml"
-      else
-        error "No se encontró starship-${theme}.toml"
+    pastel-powerline|gruvbox-rainbow|catppuccin-powerline)
+      if ! starship preset "$theme" > "$config_dir/starship.toml"; then
+        error "Starship no pudo aplicar el preset '$theme'."
         return 1
       fi
       ;;
@@ -381,15 +374,9 @@ show_theme_selector() {
   [ "$width" -lt 60 ] && width=60
   if theme=$(whiptail --title "Selecciona el tema de Starship" \
       --radiolist "Elige un tema para tu terminal (Espacio marca, Enter confirma):" "$height" "$width" 12 \
-      "1" "Tokyo Night (oscuro, recomendado)" ON \
+      "1" "Gruvbox Rainbow (oscuro cálido, recomendado)" ON \
       "2" "Pastel Powerline (claro)" OFF \
-      "3" "Gruvbox Rainbow (oscuro cálido)" OFF \
-      "4" "Catppuccin Powerline (oscuro pastel)" OFF \
-      "5" "Jetpack (minimalista)" OFF \
-      "6" "Pure Prompt (clásico)" OFF \
-      "7" "Cyberpunk Storm (neón intenso)" OFF \
-      "8" "Cyberpunk Neon (máxima saturación)" OFF \
-      "9" "Cyberpunk Night (sutil y elegante)" OFF \
+      "3" "Catppuccin Powerline (oscuro pastel)" OFF \
       3>&1 1>&2 2>&3); then
     :
   else
@@ -399,15 +386,9 @@ show_theme_selector() {
   [ -z "$theme" ] && { echo ""; return 1; }
 
   case "$theme" in
-    1) echo "tokyo-night" ;;
+    1) echo "gruvbox-rainbow" ;;
     2) echo "pastel-powerline" ;;
-    3) echo "gruvbox-rainbow" ;;
-    4) echo "catppuccin-powerline" ;;
-    5) echo "jetpack" ;;
-    6) echo "pure-preset" ;;
-    7) echo "cyberpunk-storm" ;;
-    8) echo "cyberpunk-neon" ;;
-    9) echo "cyberpunk-night" ;;
+    3) echo "catppuccin-powerline" ;;
     *) echo "" ;;
   esac
 }

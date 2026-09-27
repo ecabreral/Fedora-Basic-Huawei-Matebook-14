@@ -20,29 +20,16 @@ fi
 # ── Detectar tema actual ───────────────────────────────────────────────────
 CURRENT_THEME="ninguno"
 if [ -f ~/.config/starship.toml ]; then
-  if grep -q 'palette = "cyberpunk_storm"' ~/.config/starship.toml; then
-    CURRENT_THEME="cyberpunk-storm"
-  elif grep -q 'palette = "cyberpunk_neon"' ~/.config/starship.toml; then
-    CURRENT_THEME="cyberpunk-neon"
-  elif grep -q 'palette = "cyberpunk_night"' ~/.config/starship.toml; then
-    CURRENT_THEME="cyberpunk-night"
+  # Detectar cuál de los tres presets está aplicado. Los presets de Starship no
+  # incluyen su nombre en el TOML, así que se distinguen por su paleta de colores.
+  if grep -qE "'#faf4ed'|#faf4ed" ~/.config/starship.toml 2>/dev/null; then
+    CURRENT_THEME="pastel-powerline"
+  elif grep -qE "'#1e1e2e'|#1e1e2e" ~/.config/starship.toml 2>/dev/null; then
+    CURRENT_THEME="catppuccin-powerline"
+  elif grep -qE "'#282828'|#282828" ~/.config/starship.toml 2>/dev/null; then
+    CURRENT_THEME="gruvbox-rainbow"
   else
-    # Detectar temas de Starship presets
-    if grep -q 'tokyo-night' ~/.config/starship.toml 2>/dev/null; then
-      CURRENT_THEME="tokyo-night"
-    elif grep -q 'pastel-powerline' ~/.config/starship.toml 2>/dev/null; then
-      CURRENT_THEME="pastel-powerline"
-    elif grep -q 'gruvbox-rainbow' ~/.config/starship.toml 2>/dev/null; then
-      CURRENT_THEME="gruvbox-rainbow"
-    elif grep -q 'catppuccin-powerline' ~/.config/starship.toml 2>/dev/null; then
-      CURRENT_THEME="catppuccin-powerline"
-    elif grep -q 'jetpack' ~/.config/starship.toml 2>/dev/null; then
-      CURRENT_THEME="jetpack"
-    elif grep -q 'pure-preset' ~/.config/starship.toml 2>/dev/null; then
-      CURRENT_THEME="pure-preset"
-    else
-      CURRENT_THEME="personalizado"
-    fi
+    CURRENT_THEME="personalizado"
   fi
   info "Tema actual: $CURRENT_THEME"
 else
@@ -54,15 +41,9 @@ show_theme_menu() {
   local theme
   theme=$(whiptail --title "Cambio de Tema" \
       --radiolist "Selecciona el nuevo tema para tu terminal:" 22 60 12 \
-      "1" "Tokyo Night (oscuro azulado)" ON \
+      "1" "Gruvbox Rainbow (oscuro cálido)" ON \
       "2" "Pastel Powerline (claro)" OFF \
-      "3" "Gruvbox Rainbow (oscuro cálido)" OFF \
-      "4" "Catppuccin Powerline (oscuro pastel)" OFF \
-      "5" "Jetpack (minimalista)" OFF \
-      "6" "Pure Prompt (clásico)" OFF \
-      "7" "Cyberpunk Storm (neón intenso)" OFF \
-      "8" "Cyberpunk Neon (máxima saturación)" OFF \
-      "9" "Cyberpunk Night (sutil y elegante)" OFF \
+      "3" "Catppuccin Powerline (oscuro pastel)" OFF \
       3>&1 1>&2 2>&3)
 
   if [ $? -ne 0 ] || [ -z "$theme" ]; then
@@ -71,15 +52,9 @@ show_theme_menu() {
   fi
 
   case "$theme" in
-    1)  echo "tokyo-night" ;;
+    1)  echo "gruvbox-rainbow" ;;
     2)  echo "pastel-powerline" ;;
-    3)  echo "gruvbox-rainbow" ;;
-    4)  echo "catppuccin-powerline" ;;
-    5)  echo "jetpack" ;;
-    6)  echo "pure-preset" ;;
-    7)  echo "cyberpunk-storm" ;;
-    8)  echo "cyberpunk-neon" ;;
-    9)  echo "cyberpunk-night" ;;
+    3)  echo "catppuccin-powerline" ;;
     *)  echo "" ;;
   esac
 }

@@ -41,7 +41,7 @@ done
 if [ -n "$TERMINAL_THEME" ]; then
     THEME_NAME="$TERMINAL_THEME"
 else
-    THEME_NAME="tokyo-night"
+    THEME_NAME="gruvbox-rainbow"
 fi
 
 # ── Encabezado ────────────────────────────────────────────────────────────────

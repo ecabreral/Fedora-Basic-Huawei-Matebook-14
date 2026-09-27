@@ -21,7 +21,7 @@ chmod +x setup.sh
 ./setup.sh
 
 # Instalar componentes concretos
-./setup.sh --component base terminal vscode git --theme tokyo-night
+./setup.sh --component base terminal vscode git --theme gruvbox-rainbow
 
 # Simular una instalación
 ./setup.sh --dry-run --component base terminal
@@ -81,19 +81,15 @@ Estructura modular que permite agregar, quitar o modificar snippets sin afectar 
 
 ## Temas de terminal
 
-Disponibles para Starship y Ptyxis:
+Los tres temas disponibles son presets oficiales de Starship, con paleta de colores sincronizada para Ptyxis:
 
 | Tema | Estilo |
 |---|---|
-| `tokyo-night` | Oscuro azulado. |
+| `gruvbox-rainbow` | Oscuro cálido (recomendado por defecto). |
 | `pastel-powerline` | Claro pastel. |
-| `gruvbox-rainbow` | Oscuro cálido. |
 | `catppuccin-powerline` | Oscuro pastel. |
-| `jetpack` | Minimalista. |
-| `pure-preset` | Clásico. |
-| `cyberpunk-storm` | Neón intenso. |
-| `cyberpunk-neon` | Alta saturación. |
-| `cyberpunk-night` | Oscuro y discreto. |
+
+Los tres usan estilo Powerline, por lo que requieren **JetBrainsMono Nerd Font** para los separadores y la fuente de la terminal.
 
 Cambiar el tema sin reinstalar:
 
@@ -169,7 +165,6 @@ scripts/03-development   VS Code, Git y GitHub CLI
 scripts/04-desktop       Temas, extensiones e iconos GNOME
 scripts/05-hardware      Corrección Intel
 scripts/06-apps          Brave, Chrome, Spotify y OpenCode
-config/starship          Temas Starship personalizados
 ```
 
 ## Seguridad
