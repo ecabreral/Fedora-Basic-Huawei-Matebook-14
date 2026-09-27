@@ -268,7 +268,7 @@ EOF
   cat << 'EOF' > ~/.zshrc
 # ~/.zshrc — generado por Fedora System Setup
 # Carga snippets desde ~/.config/zsh/conf.d/ (orden alfabético)
-for snippet in ~/.config/zsh/conf.d/*.zsh(N); do
+for snippet in ~/.config/zsh/conf.d/*.sh(N); do
   source "$snippet"
 done
 EOF
