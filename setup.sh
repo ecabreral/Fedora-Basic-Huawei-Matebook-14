@@ -32,7 +32,7 @@ CLI_COMPONENTS=""
 CLI_THEME=""
 
 COMPONENTS=(base terminal vscode git gh theme extensions icons intel brave chrome spotify opencode)
-THEMES=(tokyo-night pastel-powerline gruvbox-rainbow catppuccin-powerline jetpack pure-preset cyberpunk-storm cyberpunk-neon cyberpunk-night)
+THEMES=(tokyo-night gruvbox-rainbow pastel-powerline catppuccin-powerline)
 
 # Tamaños conservadores para que la interfaz funcione también por SSH.
 UI_LINES=$(tput lines 2>/dev/null || echo 24)
@@ -51,7 +51,7 @@ show_help() {
     echo "  --help              Muestra esta ayuda"
     echo "  --dry-run           Muestra qué haría sin ejecutar nada"
     echo "  --component <names> Instala uno o varios componentes separados por espacio (base, terminal, vscode, git, gh, theme, extensions, icons, intel, brave, chrome, spotify, opencode)"
-    echo "  --theme <name>      Selecciona tema para terminal (tokyo-night, pastel-powerline, gruvbox-rainbow, catppuccin-powerline, jetpack, pure-preset, cyberpunk-storm, cyberpunk-neon, cyberpunk-night)"
+    echo "  --theme <name>      Selecciona tema para terminal (tokyo-night, gruvbox-rainbow, pastel-powerline, catppuccin-powerline)"
     echo "  --uninstall         Modo desinstalación interactiva"
     echo ""
     echo "Ejemplos:"
@@ -182,7 +182,7 @@ component_badge() {
 preflight_text() {
     local sudo_state="NO" internet_state="NO" session_state="NO" text=""
     command -v sudo >/dev/null 2>&1 && sudo_state="SI"
-    command -v curl >/dev/null 2>&1 && curl -fsS --max-time 3 https://mirrors.fedoraproject.org >/dev/null 2>&1 && internet_state="SI"
+    command -v curl >/dev/null 2>&1 && curl -fsS --proto '=https' --tlsv1.2 --max-time 5 https://mirrors.fedoraproject.org >/dev/null 2>&1 && internet_state="SI"
     [ -n "${XDG_CURRENT_DESKTOP:-}" ] && session_state="SI"
     text="Diagnóstico del entorno\\n\\n"
     text+="Sistema: $OS_NAME $OS_VERSION ($OS_ID)\\n"
@@ -229,6 +229,18 @@ fi
 if [ -z "$CLI_COMPONENTS" ] && [ "$DRY_RUN" = false ] && ! command -v whiptail &>/dev/null; then
     error "No se pudo instalar whiptail. Ejecuta el modo CLI o instala whiptail manualmente."
     exit 1
+fi
+
+# ── Validar tamaño mínimo de terminal ─────────────────────────────────────────
+if [ -z "$CLI_COMPONENTS" ] && [ "$DRY_RUN" = false ]; then
+    MIN_LINES=20
+    MIN_COLS=60
+    if [ "$UI_LINES" -lt "$MIN_LINES" ] || [ "$UI_COLS" -lt "$MIN_COLS" ]; then
+        error "La terminal es demasiado pequeña (${UI_COLS}x${UI_LINES})."
+        error "Se requieren al menos ${MIN_COLS}x${MIN_LINES} para la interfaz interactiva."
+        error "Usa --component para modo CLI o agranda la terminal."
+        exit 1
+    fi
 fi
 
 # ── Menú principal con whiptail ────────────────────────────────────────────────
@@ -320,6 +332,24 @@ _component_title() {
     esac
 }
 
+_component_info() {
+    case "$1" in
+        base)        echo "Sistema Base: repositorios RPM Fusion, códecs multimedia, FFmpeg, GStreamer, OpenH264, Flatpak/Flathub, VA-API y controlador Intel. Desactiva servicios innecesarios. Pros: multimedia lista para usar. Cons: modifica repositorios del sistema." ;;
+        terminal)    echo "Terminal: Ptyxis, Zsh, Oh My Zsh, plugins, Starship, eza, fastfetch, fzf, bat, zoxide, micro, JetBrainsMono Nerd Font. Pros: experiencia moderna completa. Cons: reemplaza la shell por defecto." ;;
+        vscode)      echo "Visual Studio Code: editor de Microsoft con soporte de extensiones, debugging y Git integrado. Pros: ligero y extensible. Cons: repositorio externo de Microsoft." ;;
+        git)         echo "Git + SSH: configuración global, rama main por defecto, clave SSH Ed25519 y prueba con GitHub. Pros: listo para usar. Cons: genera una nueva clave SSH." ;;
+        gh)          echo "GitHub CLI: cliente oficial de GitHub para PRs, issues y acciones desde la terminal. Pros: flujo de trabajo integrado. Cons: requiere autenticación con GitHub." ;;
+        opencode)    echo "OpenCode CLI: asistente de IA para terminal con soporte de modelos. Pros: productividad con IA. Cons: requiere configuración de modelo." ;;
+        theme)       echo "Temas GNOME: WhiteSur GTK, MacTahoe, iconos, tema Firefox y GDM. Pros: apariencia macOS. Cons: requiere cerrar sesión para aplicar." ;;
+        extensions)  echo "Extensiones GNOME: Dash to Dock, Tiling Shell, GSConnect, Burn My Windows, Coverflow Alt-Tab, Desktop Cube, TopHat, Media Controls y más. Pros: funcionalidad extendida. Cons: pueden consumir recursos." ;;
+        icons)       echo "Iconos GNOME: WhiteSur, McMojave Circle, Tela Circle, Papirus o BeautyLine. Pros: personalización visual. Cons: solo estética." ;;
+        intel)       echo "Corrección Intel: parámetros de kernel i915.enable_psr=0, i915.enable_dc=0 e intel_idle.max_cstate=2 para eliminar parpadeo. Pros: soluciona flicker. Cons: requiere reinicio." ;;
+        brave)       echo "Brave Browser: navegador con bloqueador de anuncios integrado y alias bravefix. Pros: privacidad por defecto. Cons: repositorio externo." ;;
+        chrome)      echo "Google Chrome: navegador oficial de Google con sincronización de cuenta. Pros: compatible con todo. Cons: repositorio externo de Google." ;;
+        spotify)     echo "Spotify: cliente oficial mediante Flathub. Pros: música en streaming. Cons: requiere cuenta para todo el contenido." ;;
+    esac
+}
+
 _selected_has() {
     echo " $SELECTED " | grep -q " $1 "
 }
@@ -365,14 +395,38 @@ run_checklist_dyn() {
         tags+=("$tag")
     done < <(_component_items "$cat")
 
+    # Item especial de información
+    n=$((n + 1))
+    args+=("$n" "  📖 Ver descripción de componentes" "OFF")
+    tags+=("__INFO__")
+
     local r
-    r=$(whiptail --title "$title" --checklist "$prompt" "$height" 60 "$n" "${args[@]}" \
-        3>&1 1>&2 2>&3)
+    r=$(whiptail --title "$title" --checklist "$prompt
+
+  (Selecciona 'Ver descripción de componentes' para ver qué hace cada uno)" \
+        "$height" 60 "$n" "${args[@]}" 3>&1 1>&2 2>&3)
+
+    # Si se seleccionó el item de info, mostrar descripciones y reintentar
+    if echo "$r" | grep -q "\"$n\""; then
+        local info_text="Descripción de componentes:\n\n"
+        for item in $(_component_items "$cat" | tr ';' '\n' | tr '|' ' '); do
+            local tag="${item%% *}"
+            [ "$tag" = "__INFO__" ] && continue
+            local label
+            label=$(component_label "$tag")
+            [ -z "$label" ] && continue
+            info_text+="• $label\n  $(_component_info "$tag")\n\n"
+        done
+        whiptail --title "Información de componentes" --msgbox "$info_text" 20 70 3>&1 1>&2 2>&3
+        # Reintentar el checklist
+        run_checklist_dyn "$title" "$prompt" "$height" "$cat"
+        return $?
+    fi
 
     local out="" sel
     for sel in $r; do
         sel="${sel//\"/}"
-        if [[ "$sel" =~ ^[0-9]+$ ]] && [ -n "${tags[sel-1]:-}" ]; then
+        if [[ "$sel" =~ ^[0-9]+$ ]] && [ -n "${tags[sel-1]:-}" ] && [ "${tags[sel-1]}" != "__INFO__" ]; then
             out+=" ${tags[sel-1]}"
         fi
     done
@@ -701,7 +755,8 @@ run_full_uninstall() {
                 ;;
             chrome)
                 sudo dnf remove -y google-chrome-stable 2>/dev/null
-                sudo dnf config-manager disable google-chrome 2>/dev/null
+                # dnf5 (Fedora 41+) no tiene el verbo "disable"; se usa setopt.
+                sudo dnf config-manager setopt google-chrome.enabled=0 2>/dev/null
                 rm -rf ~/.config/google-chrome
                 log_success "Google Chrome desinstalado"
                 ;;
@@ -723,11 +778,38 @@ run_full_uninstall() {
                 ;;
             extensions)
                 if command -v gnome-extensions &>/dev/null; then
-                    gnome-extensions disable tiling-assistant@ubuntu.com 2>/dev/null
-                    gnome-extensions disable gsconnect@andyholmes.github.io 2>/dev/null
-                    gnome-extensions disable dash-to-dock@micxios.gmail.com 2>/dev/null
+                    EXT_STATE_FILE="$HOME/.config/fedora-setup/installed-extensions.list"
+                    if [ -f "$EXT_STATE_FILE" ]; then
+                        # Registro exacto de lo que este proyecto instaló.
+                        while IFS= read -r ext_uuid; do
+                            [ -n "$ext_uuid" ] || continue
+                            gnome-extensions disable "$ext_uuid" 2>/dev/null
+                            gnome-extensions uninstall "$ext_uuid" 2>/dev/null
+                        done < "$EXT_STATE_FILE"
+                        rm -f "$EXT_STATE_FILE"
+                    else
+                        # Instalación previa a este registro: mejor esfuerzo con
+                        # los UUID conocidos (dash-to-dock corregido: era un typo).
+                        for ext_uuid in \
+                            dash-to-dock@micxgx.gmail.com \
+                            gsconnect@andyholmes.github.io \
+                            tiling-shell@ferraro.matias \
+                            compiz-alike-magic-lamp-effect@hermes83.github.com \
+                            copyous@ambrice.dev \
+                            nightthemeswitcher@romainvigier.fr \
+                            dynamic-music-pill@palasso.gitlab.com \
+                            burn-my-windows@schmidi \
+                            desktop-cube@berend.de.schutter \
+                            alphabetical-app-grid@alphabetical-order \
+                            custom-hot-corners-extended@G-dice \
+                            tophat@fflewddur.github.io \
+                            media-controls@cliffniff.github.com; do
+                            gnome-extensions disable "$ext_uuid" 2>/dev/null
+                            gnome-extensions uninstall "$ext_uuid" 2>/dev/null
+                        done
+                    fi
                 fi
-                log_success "Extensiones deshabilitadas"
+                log_success "Extensiones deshabilitadas y desinstaladas"
                 ;;
             themes)
                 gsettings reset org.gnome.desktop.interface gtk-theme 2>/dev/null

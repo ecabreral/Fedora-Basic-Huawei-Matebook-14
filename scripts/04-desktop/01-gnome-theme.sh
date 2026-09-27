@@ -1,7 +1,7 @@
 #!/bin/bash
 # ==============================================================================
-# 04-gnome-theme.sh
-# Instala temas estilo macOS en Fedora 43 + GNOME con soporte claro/oscuro.
+# 01-gnome-theme.sh
+# Instala temas estilo macOS en Fedora + GNOME con soporte claro/oscuro.
 #
 # Temas instalados:
 #   GTK   → WhiteSur-Light / WhiteSur-Dark  (soporte claro y oscuro)
@@ -11,7 +11,7 @@
 #   Firefox → WhiteSur Firefox Theme
 # ==============================================================================
 
-set -e
+# No usar set -e: manejar errores manualmente para evitar abortes por fallos menores
 source "$(dirname "$0")/../../lib/common.sh"
 
 
@@ -29,8 +29,7 @@ else
         git sassc glib2-devel libxml2 \
         ImageMagick optipng inkscape \
         gnome-shell-extension-user-theme \
-        gnome-tweaks \
-        gnome-extensions-app
+        gnome-tweaks
     elif is_ubuntu; then
       pkg_install \
         git sassc libglib2.0-dev-bin libxml2-utils \
@@ -44,7 +43,9 @@ else
 
     # ── 2. Limpiar repos anteriores ───────────────────────────────────────────────
     info "Limpiando repositorios anteriores..."
-    cd ~
+    REPO_CACHE="$HOME/.cache/fedora-setup"
+    mkdir -p "$REPO_CACHE"
+    cd "$REPO_CACHE"
     rm -rf \
       WhiteSur-gtk-theme \
       WhiteSur-icon-theme \
@@ -64,44 +65,72 @@ else
 
     # ── 4. Instalar GTK Theme: WhiteSur (Light y Dark) ───────────────────────────
     info "Instalando WhiteSur GTK Theme (Light + Dark)..."
-    cd ~/WhiteSur-gtk-theme
-    ./install.sh -l -N glassy -c Light
-    ./install.sh -l -N glassy -c Dark
+    if [ ! -d "$REPO_CACHE/WhiteSur-gtk-theme" ]; then
+      error "No se encontró $REPO_CACHE/WhiteSur-gtk-theme. Abortando."
+      return 1
+    fi
+    cd "$REPO_CACHE/WhiteSur-gtk-theme"
+    ./install.sh -l -N glassy -c Light || warn "Falló instalación Light"
+    ./install.sh -l -N glassy -c Dark || warn "Falló instalación Dark"
     success "WhiteSur GTK Theme instalado."
 
     # ── 5. Instalar Icon Theme: WhiteSur ─────────────────────────────────────────
     info "Instalando WhiteSur Icon Theme..."
-    cd ~/WhiteSur-icon-theme
-    ./install.sh
+    if [ ! -d "$REPO_CACHE/WhiteSur-icon-theme" ]; then
+      error "No se encontró $REPO_CACHE/WhiteSur-icon-theme. Abortando."
+      return 1
+    fi
+    cd "$REPO_CACHE/WhiteSur-icon-theme"
+    ./install.sh || warn "Falló instalación WhiteSur Icon"
     success "WhiteSur Icon Theme instalado."
 
     # ── 6. Instalar MacTahoe Icon Theme (instalado pero no activado) ──────────────
     info "Instalando MacTahoe Icon Theme (disponible pero no activo)..."
-    cd ~/MacTahoe-icon-theme
-    ./install.sh
+    if [ ! -d "$REPO_CACHE/MacTahoe-icon-theme" ]; then
+      error "No se encontró $REPO_CACHE/MacTahoe-icon-theme. Abortando."
+      return 1
+    fi
+    cd "$REPO_CACHE/MacTahoe-icon-theme"
+    ./install.sh || warn "Falló instalación MacTahoe Icon"
     success "MacTahoe Icon Theme instalado."
 
     # ── 7. Instalar MacTahoe GTK (necesario para el tweak de GDM) ────────────────
     info "Instalando MacTahoe GTK Theme (requerido para GDM)..."
-    cd ~/MacTahoe-gtk-theme
-    ./install.sh -l -c Light
+    if [ ! -d "$REPO_CACHE/MacTahoe-gtk-theme" ]; then
+      error "No se encontró $REPO_CACHE/MacTahoe-gtk-theme. Abortando."
+      return 1
+    fi
+    cd "$REPO_CACHE/MacTahoe-gtk-theme"
+    ./install.sh -l -c Light || warn "Falló instalación MacTahoe GTK"
     success "MacTahoe GTK Theme instalado."
 
     # ── 8. Aplicar GDM MacTahoe ───────────────────────────────────────────────────
     info "Aplicando tema GDM MacTahoe (requiere sudo)..."
-    if [ -d ~/WhiteSur-gtk-theme ]; then
-      cd ~/WhiteSur-gtk-theme
+    if [ -d "$REPO_CACHE/WhiteSur-gtk-theme" ]; then
+      cd "$REPO_CACHE/WhiteSur-gtk-theme"
       sudo ./tweaks.sh -r 2>/dev/null || true
     fi
-    cd ~/MacTahoe-gtk-theme
-    sudo ./tweaks.sh -g -b default
+    if [ -d "$REPO_CACHE/MacTahoe-gtk-theme" ]; then
+      cd "$REPO_CACHE/MacTahoe-gtk-theme"
+      sudo ./tweaks.sh -g -b default || warn "Falló tweak GDM MacTahoe"
+    fi
     success "Tema GDM MacTahoe aplicado."
 
     # ── 9. Instalar WhiteSur Firefox Theme ───────────────────────────────────────
     info "Instalando WhiteSur Firefox Theme..."
-    cd ~/WhiteSur-firefox-theme
-    ./install.sh
+    if [ ! -d "$REPO_CACHE/WhiteSur-firefox-theme" ]; then
+      error "No se encontró $REPO_CACHE/WhiteSur-firefox-theme. Abortando."
+      return 1
+    fi
+    cd "$REPO_CACHE/WhiteSur-firefox-theme"
+    ./install.sh || warn "Falló instalación WhiteSur Firefox"
     success "WhiteSur Firefox Theme instalado."
+
+    # ── 9.1 Limpiar repositorios clonados ─────────────────────────────────────────
+    info "Limpiando repositorios temporales..."
+    cd "$HOME"
+    rm -rf "$REPO_CACHE"
+    success "Repositorios temporales eliminados."
 fi
 
 # ── 10. Activar extensión User Themes ─────────────────────────────────────────
@@ -126,8 +155,23 @@ else
 fi
 
 # ── 12. Sincronización Automática de Temas Claro/Oscuro ──────────────────────
-if [ -f "$HOME/.local/bin/whitesur-theme-sync.sh" ]; then
-  success "Script de sincronización ya existe."
+SYNC_SCRIPT="$HOME/.local/bin/whitesur-theme-sync.sh"
+
+if [ -f "$SYNC_SCRIPT" ]; then
+  # Migración: versiones anteriores fijaban el icono a WhiteSur con un literal
+  # dentro de apply_theme(). Si el script ya existe pero no tiene la constante
+  # SYNC_ICON_THEME, se parchea para que el componente "icons" pueda ajustarlo.
+  if grep -q '^SYNC_ICON_THEME=' "$SYNC_SCRIPT"; then
+    success "Script de sincronización ya existe."
+  else
+    info "Actualizando script de sincronización existente..."
+    sed -i 's/^    local icon_theme="WhiteSur"$/    local icon_theme="\$SYNC_ICON_THEME"/' "$SYNC_SCRIPT"
+    if ! sed -i '0,/^last_family=""$/s//# Pack de iconos que este sincronizador mantiene activo al cambiar de\n# modo claro\/oscuro. El componente "icons" reescribe esta línea si el usuario\n# elige un pack distinto, para que ambos componentes no se peleen por icon-theme.\nSYNC_ICON_THEME="WhiteSur"\n\nlast_family=""/' "$SYNC_SCRIPT"; then
+      warn "No se pudo actualizar el sincronizador. El componente 'icons' no podrá\ncambiar el pack de iconos. Puedes regenerarlo eliminando:\n  rm $SYNC_SCRIPT"
+    else
+      success "Sincronizador actualizado (SYNC_ICON_THEME añadido)."
+    fi
+  fi
 else
   info "Configurando script de sincronización automática para GNOME Shell y GTK..."
 
@@ -139,6 +183,11 @@ cat << 'EOF' > "$HOME/.local/bin/whitesur-theme-sync.sh"
 # Espera a que GNOME Shell inicie si se ejecuta al arranque (autostart)
 trap 'pkill -P $$ 2>/dev/null' EXIT
 sleep 2
+
+# Pack de iconos que este sincronizador mantiene activo al cambiar de modo
+# claro/oscuro. El componente "icons" reescribe esta línea si el usuario elige
+# un pack distinto, para que ambos componentes no se peleen por icon-theme.
+SYNC_ICON_THEME="WhiteSur"
 
 last_family=""
 last_mode=""
@@ -174,7 +223,7 @@ apply_theme() {
     local target_scheme=$([ "$mode" == "Dark" ] && echo "prefer-dark" || echo "default")
     local gtk_theme="WhiteSur-${mode}"
     local shell_theme="WhiteSur-${mode}-solid"
-    local icon_theme="WhiteSur"
+    local icon_theme="$SYNC_ICON_THEME"
 
     if [ "$(gsettings get org.gnome.desktop.interface color-scheme | tr -d "'")" != "$target_scheme" ]; then
         gsettings set org.gnome.desktop.interface color-scheme "$target_scheme"

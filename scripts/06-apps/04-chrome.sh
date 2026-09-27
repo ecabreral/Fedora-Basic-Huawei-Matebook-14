@@ -3,7 +3,7 @@
 # 04-chrome.sh — Instala Google Chrome en Fedora
 # ==============================================================================
 
-set -e
+# No usar set -e: cada paso reporta su propio error.
 source "$(dirname "$0")/../../lib/common.sh"
 
 section "Google Chrome"
@@ -17,7 +17,10 @@ fi
 # 2. Agregar repo RPM de Google Chrome
 if ! dnf repolist 2>/dev/null | grep -q google-chrome; then
   info "Agregando repositorio de Google Chrome..."
-  sudo dnf config-manager addrepo --from-repofile=https://dl.google.com/linux/chrome/rpm/stable/x86_64/google-chrome.repo
+  if ! sudo dnf config-manager addrepo --from-repofile=https://dl.google.com/linux/chrome/rpm/stable/x86_64/google-chrome.repo; then
+    error "No se pudo agregar el repositorio de Google Chrome."
+    exit 1
+  fi
   success "Repositorio agregado."
 else
   success "Repositorio de Google Chrome ya configurado."
@@ -32,18 +35,21 @@ else
   exit 1
 fi
 
-# 4. Configurar alias chromefix en ~/.zshrc (idempotente)
-ZSHRC="$HOME/.zshrc"
+# 4. Configurar alias chromefix en ~/.config/zsh/conf.d/ (idempotente)
+ZSH_CONF_DIR="$HOME/.config/zsh/conf.d"
+CHROMEFIX_FILE="$ZSH_CONF_DIR/51-chrome.sh"
 CHROMEFIX_LINE="alias chromefix='pkill -f chrome >/dev/null 2>&1; rm -f ~/.config/google-chrome/SingletonLock ~/.config/google-chrome/SingletonSocket ~/.config/google-chrome/SingletonCookie; google-chrome-stable'"
 
-if [ -f "$ZSHRC" ] && grep -q "chromefix" "$ZSHRC"; then
-  success "El alias chromefix ya está configurado en ~/.zshrc"
+if [ -f "$CHROMEFIX_FILE" ] && grep -q "chromefix" "$CHROMEFIX_FILE"; then
+  success "El alias chromefix ya está configurado"
 else
-  info "Configurando alias chromefix en ~/.zshrc..."
-  echo "" >> "$ZSHRC"
-  echo "# Google Chrome - Fix para perfil bloqueado" >> "$ZSHRC"
-  echo "$CHROMEFIX_LINE" >> "$ZSHRC"
-  success "Alias chromefix agregado a ~/.zshrc correctamente"
+  info "Configurando alias chromefix..."
+  mkdir -p "$ZSH_CONF_DIR"
+  cat << EOF > "$CHROMEFIX_FILE"
+# Google Chrome - Fix para perfil bloqueado
+$CHROMEFIX_LINE
+EOF
+  success "Alias chromefix agregado correctamente"
 fi
 
 # 5. Verificación final

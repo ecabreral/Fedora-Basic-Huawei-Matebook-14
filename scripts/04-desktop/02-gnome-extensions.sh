@@ -1,219 +1,145 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# 06-extensions.sh
-# Guía interactiva para instalar y configurar extensiones de GNOME.
+# 02-gnome-extensions.sh
+# Instala extensiones de GNOME automáticamente vía la API de extensions.gnome.org
+# (sin depender del navegador) y abre sus páginas por si alguna requiere
+# activación manual (p. ej. la primera vez que se usa GSConnect).
 # ==============================================================================
 
-set -e
+# No usar set -e: una extensión que falle no debe abortar la instalación de
+# las demás; el catálogo ya se instala con "|| true" de forma explícita.
 source "$(dirname "$0")/../../lib/common.sh"
 
 section "🧩 Extensiones GNOME ($OS_NAME)"
 
-# Asegurar que gnome-extensions esté disponible
+# Asegurar que gnome-extensions esté disponible (CLI para instalación automatizada)
 if ! command -v gnome-extensions &>/dev/null; then
-  info "Instalando gnome-extensions..."
-  if is_fedora; then
-    pkg_install gnome-extensions-app
-  elif is_ubuntu; then
-    pkg_install gnome-shell-extension-prefs
+  info "Instalando gnome-extensions (CLI)..."
+  if ! pkg_install gnome-extensions; then
+    error "No se pudo instalar gnome-extensions. Las extensiones se gestionarán desde Extension Manager."
   fi
 fi
 
-EXTENSIONS_DIR="$HOME/.local/share/gnome-shell/extensions"
+# Instalar Extension Manager desde Flathub (interfaz gráfica para gestionar extensiones)
+section "Extension Manager"
+if command -v flatpak &>/dev/null; then
+  if flatpak info com.mattjakeman.ExtensionManager &>/dev/null; then
+    success "Extension Manager ya está instalado."
+  else
+    info "Instalando Extension Manager desde Flathub..."
+    flatpak install -y flathub com.mattjakeman.ExtensionManager
+    success "Extension Manager instalado."
+  fi
+else
+  warn "Flatpak no está disponible. No se pudo instalar Extension Manager."
+  warn "Puedes instalarlo manualmente desde: https://flathub.org/apps/com.mattjakeman.ExtensionManager"
+fi
 
+# jq/curl no son necesarios: el parseo del JSON de la API se hace con grep/sed
+pkg_install curl >/dev/null 2>&1 || true
+
+# ── Catálogo de extensiones: "pk:Nombre legible" ──────────────────────────────
+# pk = ID numérico en la URL https://extensions.gnome.org/extension/<pk>/...
+EXTENSIONS_CATALOG=(
+  "307:Dash to Dock"
+  "8834:Copyous"
+  "2236:Night Theme Switcher"
+  "9334:Dynamic Music Pill"
+  "97:Coverflow Alt-Tab"
+  "4679:Burn My Windows"
+  "7065:Tiling Shell"
+  "4648:Desktop Cube"
+  "4269:Alphabetical App Grid"
+  "4167:Custom Hot Corners Extended"
+  "5219:TopHat"
+  "4470:Media Controls"
+  "1319:GSConnect"
+)
+
+EXTENSIONS_DIR="$HOME/.local/share/gnome-shell/extensions"
 mkdir -p "$EXTENSIONS_DIR"
 
-# ── Dash to Dock ──────────────────────────────────────────────────────────────
-info "Instalando Dash to Dock..."
-if [ -d "$EXTENSIONS_DIR/dash-to-dock@micxgx.gmail.com" ]; then
-    success "Dash to Dock ya instalado."
-else
-    gnome-extensions install "https://extensions.gnome.org/extension/307/dash-to-dock/" 2>/dev/null || \
-      info "Dash to Dock ya instalado o requiere instalación manual"
-fi
-
-# Configurar Dash to Dock solo si está instalado
-if gnome-extensions list | grep -q "dash-to-dock"; then
-    gsettings set org.gnome.shell.extensions.dash-to-dock click-action 'focus-minimize-or-appspread' 2>/dev/null || true
-fi
-
-# ── Magic Lamp Effect (desde tu repositorio) ───────────────────────────────────
+# ── Magic Lamp Effect: se instala desde un fork propio en GitHub ──────────────
 info "Instalando Compiz Alike Magic Lamp Effect..."
 if [ -d "$EXTENSIONS_DIR/compiz-alike-magic-lamp-effect@hermes83.github.com" ]; then
     success "Magic Lamp Effect ya instalado."
+    gnome-extensions enable "compiz-alike-magic-lamp-effect@hermes83.github.com" 2>/dev/null || true
+    _record_installed_extension "compiz-alike-magic-lamp-effect@hermes83.github.com"
 else
     MAGIC_LAMP_REPO="https://github.com/ecabreral/compiz-alike-magic-lamp-effect"
     TEMP_DIR=$(mktemp -d)
 
     if git clone --depth 1 "$MAGIC_LAMP_REPO" "$TEMP_DIR/magic-lamp" 2>/dev/null; then
-        # El UUID correcto es compiz-alike-magic-lamp-effect@hermes83.github.com
         EXTENSION_UUID="compiz-alike-magic-lamp-effect@hermes83.github.com"
         if [ -d "$TEMP_DIR/magic-lamp/$EXTENSION_UUID" ]; then
             cp -r "$TEMP_DIR/magic-lamp/$EXTENSION_UUID" "$EXTENSIONS_DIR/"
+            gnome-extensions enable "$EXTENSION_UUID" 2>/dev/null || true
+            _record_installed_extension "$EXTENSION_UUID"
             success "Magic Lamp Effect instalado correctamente."
-        elif [ -d "$TEMP_DIR/magic-lamp" ]; then
+        else
             for dir in "$TEMP_DIR/magic-lamp"/*; do
                 if [ -d "$dir" ]; then
                     cp -r "$dir" "$EXTENSIONS_DIR/"
+                    gnome-extensions enable "$(basename "$dir")" 2>/dev/null || true
+                    _record_installed_extension "$(basename "$dir")"
                     success "$(basename "$dir") instalado."
                 fi
             done
         fi
     else
-        warn "No se pudo clonar Magic Lamp Effect. Instalando desde GNOME Extensions..."
-        gnome-extensions install "https://extensions.gnome.org/extension/3740/compiz-alike-magic-lamp-effect/" 2>/dev/null || true
+        warn "No se pudo clonar el fork de Magic Lamp Effect. Intentando desde extensions.gnome.org..."
+        install_gnome_extension "3740" "Compiz Alike Magic Lamp Effect" || true
     fi
     rm -rf "$TEMP_DIR"
 fi
 
-# ── Copyous ────────────────────────────────────────────────────────────────────
-info "Instalando Copyous..."
-if [ -d "$EXTENSIONS_DIR/copyous@ambrice.dev" ]; then
-    success "Copyous ya instalado."
-else
-    gnome-extensions install "https://extensions.gnome.org/extension/8834/copyous/" 2>/dev/null || \
-      info "Copyous ya instalado o requiere instalación manual"
+# ── Resto del catálogo: instalación automática vía API ────────────────────────
+for entry in "${EXTENSIONS_CATALOG[@]}"; do
+    pk="${entry%%:*}"
+    label="${entry#*:}"
+    info "Instalando $label..."
+    install_gnome_extension "$pk" "$label" || true
+done
+
+# ── Ajustes finos post-instalación ───────────────────────────────────────────
+if gnome-extensions list 2>/dev/null | grep -q "dash-to-dock"; then
+    gsettings set org.gnome.shell.extensions.dash-to-dock click-action 'focus-minimize-or-appspread' 2>/dev/null || true
 fi
 
-# ── Night Theme Switcher ─────────────────────────────────────────────────────
-info "Instalando Night Theme Switcher..."
-if [ -d "$EXTENSIONS_DIR/nightthemeswitcher@romainvigier.fr" ]; then
-    success "Night Theme Switcher ya instalado."
-else
-    gnome-extensions install "https://extensions.gnome.org/extension/2236/night-theme-switcher/" 2>/dev/null || \
-      info "Night Theme Switcher ya instalado o requiere instalación manual"
-fi
-
-# ── Dynamic Music Pill ───────────────────────────────────────────────────────
-info "Instalando Dynamic Music Pill..."
-if [ -d "$EXTENSIONS_DIR/dynamic-music-pill@palasso.gitlab.com" ]; then
-    success "Dynamic Music Pill ya instalado."
-else
-    gnome-extensions install "https://extensions.gnome.org/extension/9334/dynamic-music-pill/" 2>/dev/null || \
-      info "Dynamic Music Pill ya instalado o requiere instalación manual"
-fi
-
-# ── Coverflow Alt-Tab ────────────────────────────────────────────────────────
-info "Instalando Coverflow Alt-Tab..."
-if [ -d "$EXTENSIONS_DIR/coverflow-alt-tab@palasso.gitlab.com" ]; then
-    success "Coverflow Alt-Tab ya instalado."
-else
-    gnome-extensions install "https://extensions.gnome.org/extension/97/coverflow-alt-tab/" 2>/dev/null || \
-      info "Coverflow Alt-Tab ya instalado o requiere instalación manual"
-fi
-
-# ── Burn My Windows ───────────────────────────────────────────────────────────
-info "Instalando Burn My Windows..."
-if [ -d "$EXTENSIONS_DIR/burn-my-windows@schmidi" ]; then
-    success "Burn My Windows ya instalado."
-else
-    gnome-extensions install "https://extensions.gnome.org/extension/4679/burn-my-windows/" 2>/dev/null || \
-      info "Burn My Windows ya instalado o requiere instalación manual"
-fi
-
-# ── Tiling Shell ──────────────────────────────────────────────────────────────
-info "Instalando Tiling Shell..."
-if [ -d "$EXTENSIONS_DIR/tiling-shell@ferraro.matias" ]; then
-    success "Tiling Shell ya instalado."
-else
-    gnome-extensions install "https://extensions.gnome.org/extension/7065/tiling-shell/" 2>/dev/null || \
-      info "Tiling Shell ya instalado o requiere instalación manual"
-fi
-
-# ── Desktop Cube ─────────────────────────────────────────────────────────────
-info "Instalando Desktop Cube..."
-if [ -d "$EXTENSIONS_DIR/desktop-cube@berend.de.schutter" ]; then
-    success "Desktop Cube ya instalado."
-else
-    gnome-extensions install "https://extensions.gnome.org/extension/4648/desktop-cube/" 2>/dev/null || \
-      info "Desktop Cube ya instalado o requiere instalación manual"
-fi
-
-# ── Alphabetical App Grid ────────────────────────────────────────────────────
-info "Instalando Alphabetical App Grid..."
-if [ -d "$EXTENSIONS_DIR/alphabetical-app-grid@alphabetical-order" ]; then
-    success "Alphabetical App Grid ya instalado."
-else
-    gnome-extensions install "https://extensions.gnome.org/extension/4269/alphabetical-app-grid/" 2>/dev/null || \
-      info "Alphabetical App Grid ya instalado o requiere instalación manual"
-fi
-
-# ── Custom Hot Corners Extended ───────────────────────────────────────────────
-info "Instalando Custom Hot Corners Extended..."
-if [ -d "$EXTENSIONS_DIR/custom-hot-corners-extended@G-dice" ]; then
-    success "Custom Hot Corners Extended ya instalado."
-else
-    gnome-extensions install "https://extensions.gnome.org/extension/4167/custom-hot-corners-extended/" 2>/dev/null || \
-      info "Custom Hot Corners Extended ya instalado o requiere instalación manual"
-fi
-
-# ── TopHat ───────────────────────────────────────────────────────────────────
-info "Instalando TopHat..."
-if [ -d "$EXTENSIONS_DIR/tophat@fflewddur.github.io" ]; then
-    success "TopHat ya instalado."
-else
-    gnome-extensions install "https://extensions.gnome.org/extension/5219/tophat/" 2>/dev/null || \
-      info "TopHat ya instalado o requiere instalación manual"
-fi
-
-# ── Media Controls ────────────────────────────────────────────────────────────
-info "Instalando Media Controls..."
-if [ -d "$EXTENSIONS_DIR/media-controls@cliffniff.github.com" ]; then
-    success "Media Controls ya instalado."
-else
-    gnome-extensions install "https://extensions.gnome.org/extension/4470/media-controls/" 2>/dev/null || \
-      info "Media Controls ya instalado o requiere instalación manual"
-fi
-
-# ── Función helper para abrir URLs ─────────────────────────────────────────────
-open_url() {
-    local url="$1"
-    if command -v xdg-open &>/dev/null; then
-        xdg-open "$url" >/dev/null 2>&1 &
-    else
-        echo "  URL: $url"
-    fi
-}
-
-# ── Abrir páginas de extensiones ─────────────────────────────────────────────
-info "Abriendo páginas de extensiones GNOME en tu navegador para activar..."
+# ── Resumen de extensiones instaladas ─────────────────────────────────────────
+INSTALLED_COUNT=$(gnome-extensions list 2>/dev/null | wc -l)
 echo ""
-echo "  Activa las siguientes extensiones:"
-echo "  1. Dash to Dock"
-echo "  2. Magic Lamp Effect"
-echo "  3. Copyous"
-echo "  4. Night Theme Switcher"
-echo "  5. Dynamic Music Pill"
-echo "  6. Coverflow Alt-Tab"
-echo "  7. Burn My Windows"
-echo "  8. Tiling Shell"
-echo "  9. Desktop Cube"
-echo " 10. Alphabetical App Grid"
-echo " 11. Custom Hot Corners Extended"
-echo " 12. TopHat"
-echo " 13. Media Controls"
+info "Extensiones activas en GNOME: $INSTALLED_COUNT"
+echo ""
+echo "  Extensiones gestionadas por este instalador:"
+echo "  • Dash to Dock              • Burn My Windows"
+echo "  • Custom Hot Corners Ext.   • Tiling Shell"
+echo "  • Magic Lamp Effect         • Desktop Cube"
+echo "  • Copyous                   • Alphabetical App Grid"
+echo "  • Night Theme Switcher      • TopHat"
+echo "  • Dynamic Music Pill        • Media Controls"
+echo "  • Coverflow Alt-Tab         • GSConnect (requiere KDE Connect en el teléfono)"
 echo ""
 
-open_url "https://extensions.gnome.org/extension/307/dash-to-dock/"
-open_url "https://extensions.gnome.org/extension/3740/compiz-alike-magic-lamp-effect/"
-open_url "https://extensions.gnome.org/extension/8834/copyous/"
-open_url "https://extensions.gnome.org/extension/2236/night-theme-switcher/"
-open_url "https://extensions.gnome.org/extension/9334/dynamic-music-pill/"
-open_url "https://extensions.gnome.org/extension/97/coverflow-alt-tab/"
-open_url "https://extensions.gnome.org/extension/4679/burn-my-windows/"
-open_url "https://extensions.gnome.org/extension/7065/tiling-shell/"
-open_url "https://extensions.gnome.org/extension/4648/desktop-cube/"
-open_url "https://extensions.gnome.org/extension/4269/alphabetical-app-grid/"
-open_url "https://extensions.gnome.org/extension/4167/custom-hot-corners-extended/"
-open_url "https://extensions.gnome.org/extension/5219/tophat/"
-open_url "https://extensions.gnome.org/extension/4470/media-controls/"
-
-if ! command -v xdg-open &>/dev/null; then
-    echo ""
-    echo "  Aviso: no se detectó navegador. Copia las URLs y ábrelas manualmente."
+# Abrir Extension Manager (una sola ventana) en vez de 13 pestañas del navegador.
+# Si no está disponible, se abre solo la página de Dash to Dock como referencia.
+if [ -t 0 ]; then
+  if flatpak info com.mattjakeman.ExtensionManager &>/dev/null; then
+    info "Abriendo Extension Manager para gestionar/configurar las extensiones."
+    flatpak run com.mattjakeman.ExtensionManager &>/dev/null &
+    disown 2>/dev/null || true
+  else
+    info "Abriendo la página de extensiones GNOME en tu navegador."
+    open_url "https://extensions.gnome.org/"
+  fi
+else
+  info "Modo no interactivo: se omite la apertura del navegador."
+  info "Para gestionar las extensiones usa: Extension Manager (Flathub)"
 fi
 
 echo ""
-read -p "  Presiona ENTER para continuar después de activar las extensiones... "
+if [ -t 0 ]; then
+  read -p "  Presiona ENTER para continuar... "
+fi
 
 success "Extensiones configuradas."

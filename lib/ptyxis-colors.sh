@@ -24,6 +24,10 @@ _ptyxis_theme_data() {
     _PTYXIS_COLORS=()
 
     case "$theme" in
+        tokyo-night)
+            _PTYXIS_FG='#a9b1d6' _PTYXIS_BG='#1a1b26'
+            _PTYXIS_COLORS=( '#32344a' '#f7768e' '#9ece6a' '#e0af68' '#7aa2f7' '#ad8ee6' '#449dab' '#787c99' '#444b6a' '#ff7a93' '#b9f27c' '#ff9e64' '#7da6ff' '#bb9af7' '#0db9d7' '#acb0d0' )
+            ;;
         pastel-powerline)
             _PTYXIS_FG='#575279' _PTYXIS_BG='#faf4ed'
             _PTYXIS_COLORS=( '#575279' '#b4637a' '#286983' '#ea9d34' '#56949f' '#907aa9' '#ea9d34' '#faf4ed' '#9893a5' '#b4637a' '#286983' '#ea9d34' '#56949f' '#907aa9' '#ea9d34' '#575279' )
@@ -36,29 +40,10 @@ _ptyxis_theme_data() {
             _PTYXIS_FG='#cdd6f4' _PTYXIS_BG='#1e1e2e'
             _PTYXIS_COLORS=( '#45475a' '#f38ba8' '#a6e3a1' '#f9e2af' '#89b4fa' '#f5c2e7' '#94e2d5' '#bac2de' '#585b70' '#f38ba8' '#a6e3a1' '#f9e2af' '#89b4fa' '#f5c2e7' '#94e2d5' '#a6adc8' )
             ;;
-        jetpack)
-            _PTYXIS_FG='#b3b1ad' _PTYXIS_BG='#0b0e14'
-            _PTYXIS_COLORS=( '#01060e' '#ea6c73' '#91b362' '#f9af4f' '#53bdfa' '#fae994' '#90e1c6' '#c7c7c7' '#686868' '#f07178' '#c2d94c' '#ffb378' '#69d0ff' '#e6b450' '#95e6cb' '#ffffff' )
-            ;;
-        pure-preset)
-            _PTYXIS_FG='#f1f1f1' _PTYXIS_BG='#1d1d1d'
-            _PTYXIS_COLORS=( '#323232' '#ff6b6b' '#98c379' '#e5c07b' '#61afef' '#c678dd' '#56b6c2' '#dcdcdc' '#505050' '#ff8787' '#aed9a0' '#ffd98e' '#8cc8ff' '#d898ff' '#7fdeff' '#f1f1f1' )
-            ;;
-        cyberpunk-storm)
-            _PTYXIS_FG='#e0e6f0' _PTYXIS_BG='#0a0e14'
-            _PTYXIS_COLORS=( '#0a0e14' '#ff007f' '#00ff41' '#ffff00' '#0080ff' '#bf00ff' '#00ffff' '#ffffff' '#1a1e24' '#ff3399' '#33ff77' '#ffff33' '#3399ff' '#cc33ff' '#33ffff' '#ffffff' )
-            ;;
-        cyberpunk-neon)
-            _PTYXIS_FG='#0abdc6' _PTYXIS_BG='#000b1e'
-            _PTYXIS_COLORS=( '#123e7c' '#ff0000' '#d300c4' '#f57800' '#123e7c' '#711c91' '#0abdc6' '#d7d7d5' '#1c61c2' '#ff0000' '#d300c4' '#f57800' '#00ff00' '#711c91' '#0abdc6' '#d7d7d5' )
-            ;;
-        cyberpunk-night)
-            _PTYXIS_FG='#c9d1d9' _PTYXIS_BG='#0d1117'
-            _PTYXIS_COLORS=( '#161b22' '#f85149' '#39d353' '#d29922' '#1f6feb' '#8b5cf6' '#39d353' '#c9d1d9' '#21262d' '#ff7b72' '#56d364' '#e3b341' '#58a6ff' '#bc8cff' '#56d364' '#f0f6fc' )
-            ;;
-        tokyo-night|*)
-            _PTYXIS_FG='#a9b1d6' _PTYXIS_BG='#1a1b26'
-            _PTYXIS_COLORS=( '#32344a' '#f7768e' '#9ece6a' '#e0af68' '#7aa2f7' '#ad8ee6' '#449dab' '#787c99' '#444b6a' '#ff7a93' '#b9f27c' '#ff9e64' '#7da6ff' '#bb9af7' '#0db9d7' '#acb0d0' )
+        *)
+            _PTYXIS_FG='' _PTYXIS_BG=''
+            _PTYXIS_COLORS=()
+            return 1
             ;;
     esac
 
@@ -72,11 +57,6 @@ ptyxis_theme_display_name() {
         pastel-powerline)     echo "Pastel Powerline" ;;
         gruvbox-rainbow)      echo "Gruvbox Rainbow" ;;
         catppuccin-powerline) echo "Catppuccin Powerline" ;;
-        jetpack)              echo "Jetpack" ;;
-        pure-preset)          echo "Pure" ;;
-        cyberpunk-storm)      echo "Cyberpunk Storm" ;;
-        cyberpunk-neon)       echo "Cyberpunk Neon" ;;
-        cyberpunk-night)      echo "Cyberpunk Night" ;;
         *)                    echo "$1" ;;
     esac
 }

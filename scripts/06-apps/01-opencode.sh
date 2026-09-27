@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# 07-opencode.sh — Instala OpenCode CLI y configura el PATH en zsh
+# 01-opencode.sh — Instala OpenCode CLI y configura el PATH en zsh
 # ==============================================================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -21,32 +21,48 @@ else
     info "OpenCode ya existe en $OPENCODE_DIR pero no está en el PATH de esta sesión."
   else
     # 3. Instalación usando el instalador oficial
-    info "Descargando e instalando OpenCode CLI..."
-    
-    curl -fsSL https://opencode.ai/install -o /tmp/opencode-install.sh
-    if bash /tmp/opencode-install.sh --no-modify-path; then
+    OPENCODE_INSTALLER=/tmp/opencode-install.sh
+
+    if ! secure_fetch "https://opencode.ai/v2/install" \
+        "$OPENCODE_INSTALLER" "instalador de OpenCode"; then
+      error "No se pudo descargar el instalador de OpenCode."
+      exit 1
+    fi
+
+    # Validar que el contenido sea realmente un script de shell y no una página
+    # de error HTML ( captive portal, mirror caído, WAF ).
+    if ! looks_like_shell_script "$OPENCODE_INSTALLER"; then
+      error "El instalador descargado no parece un script válido. Se aborta."
+      rm -f "$OPENCODE_INSTALLER"
+      exit 1
+    fi
+
+    if bash "$OPENCODE_INSTALLER" --no-modify-path; then
       success "OpenCode instalado satisfactoriamente"
     else
       error "Error al ejecutar el instalador de OpenCode"
-      rm -f /tmp/opencode-install.sh
+      rm -f "$OPENCODE_INSTALLER"
       exit 1
     fi
-    rm -f /tmp/opencode-install.sh
+    rm -f "$OPENCODE_INSTALLER"
   fi
 fi
 
 # 4. Configurar PATH en zsh (idempotente)
-ZSHRC="$HOME/.zshrc"
+ZSH_CONF_DIR="$HOME/.config/zsh/conf.d"
+PATH_FILE="$ZSH_CONF_DIR/52-opencode.sh"
 PATH_LINE='export PATH="$HOME/.opencode/bin:$PATH"'
 
-if [ -f "$ZSHRC" ] && grep -q "\.opencode/bin" "$ZSHRC"; then
-  success "El PATH de OpenCode ya está configurado en ~/.zshrc"
+if [ -f "$PATH_FILE" ] && grep -q "\.opencode/bin" "$PATH_FILE"; then
+  success "El PATH de OpenCode ya está configurado"
 else
-  info "Configurando PATH en ~/.zshrc..."
-  echo "" >> "$ZSHRC"
-  echo "# OpenCode CLI" >> "$ZSHRC"
-  echo "$PATH_LINE" >> "$ZSHRC"
-  success "PATH agregado a ~/.zshrc correctamente"
+  info "Configurando PATH de OpenCode..."
+  mkdir -p "$ZSH_CONF_DIR"
+  cat << EOF > "$PATH_FILE"
+# OpenCode CLI
+$PATH_LINE
+EOF
+  success "PATH de OpenCode agregado correctamente"
 fi
 
 # 5. Habilitar para la sesión actual del script

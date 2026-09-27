@@ -1,6 +1,6 @@
 #!/bin/bash
 # ==============================================================================
-# 09-gnome-icons.sh
+# 03-gnome-icons.sh
 # Instala y aplica temas de iconos para GNOME en Fedora/Ubuntu.
 #
 # Iconos disponibles:
@@ -11,7 +11,8 @@
 #   5. BeautyLine      → Coloridos premium (estilo Apple)
 # ==============================================================================
 
-set -e
+# No usar set -e: si un pack de iconos falla al clonar o instalar, el script
+# debe avisar y continuar con los demás en lugar de abortar todo.
 source "$(dirname "$0")/../../lib/common.sh"
 
 section "Instalador de iconos GNOME"
@@ -24,6 +25,12 @@ show_icon_menu() {
     selected[telacircle]=false
     selected[papirus]=false
     selected[beautyline]=false
+
+    # En modo no interactivo, instalar todos por defecto
+    if [ ! -t 0 ]; then
+        echo "whitesur mcmojave telacircle papirus beautyline"
+        return
+    fi
 
     while true; do
         echo "" >&2
@@ -89,11 +96,17 @@ install_whitesur() {
         success "WhiteSur Icon Theme ya está instalado."
     else
         info "Instalando WhiteSur Icon Theme (macOS Big Sur/Monterey)..."
-        cd ~
+        REPO_CACHE="$HOME/.cache/fedora-setup"
+        mkdir -p "$REPO_CACHE"
+        cd "$REPO_CACHE" || return 1
         rm -rf WhiteSur-icon-theme
-        git clone https://github.com/vinceliuice/WhiteSur-icon-theme.git --depth=1
-        cd ~/WhiteSur-icon-theme
-        ./install.sh
+        git clone https://github.com/vinceliuice/WhiteSur-icon-theme.git --depth=1 || return 1
+        if [ ! -d "$REPO_CACHE/WhiteSur-icon-theme" ]; then
+          error "No se encontró $REPO_CACHE/WhiteSur-icon-theme después del clone."
+          return 1
+        fi
+        cd "$REPO_CACHE/WhiteSur-icon-theme" || return 1
+        ./install.sh || warn "Falló instalación WhiteSur Icon"
         success "WhiteSur Icon Theme instalado."
     fi
 }
@@ -104,11 +117,17 @@ install_mcmojave() {
         success "McMojave Circle Icon Theme ya está instalado."
     else
         info "Instalando McMojave Circle Icon Theme (macOS Mojave)..."
-        cd ~
+        REPO_CACHE="$HOME/.cache/fedora-setup"
+        mkdir -p "$REPO_CACHE"
+        cd "$REPO_CACHE" || return 1
         rm -rf McMojave-circle
-        git clone https://github.com/vinceliuice/McMojave-circle.git --depth=1
-        cd ~/McMojave-circle
-        ./install.sh
+        git clone https://github.com/vinceliuice/McMojave-circle.git --depth=1 || return 1
+        if [ ! -d "$REPO_CACHE/McMojave-circle" ]; then
+          error "No se encontró $REPO_CACHE/McMojave-circle después del clone."
+          return 1
+        fi
+        cd "$REPO_CACHE/McMojave-circle" || return 1
+        ./install.sh || warn "Falló instalación McMojave Circle"
         success "McMojave Circle Icon Theme instalado."
     fi
 }
@@ -119,11 +138,17 @@ install_telacircle() {
         success "Tela Circle Icon Theme ya está instalado."
     else
         info "Instalando Tela Circle Icon Theme (minimalista redondeado)..."
-        cd ~
+        REPO_CACHE="$HOME/.cache/fedora-setup"
+        mkdir -p "$REPO_CACHE"
+        cd "$REPO_CACHE" || return 1
         rm -rf Tela-circle-icon-theme
-        git clone https://github.com/vinceliuice/Tela-circle-icon-theme.git --depth=1
-        cd ~/Tela-circle-icon-theme
-        ./install.sh -a
+        git clone https://github.com/vinceliuice/Tela-circle-icon-theme.git --depth=1 || return 1
+        if [ ! -d "$REPO_CACHE/Tela-circle-icon-theme" ]; then
+          error "No se encontró $REPO_CACHE/Tela-circle-icon-theme después del clone."
+          return 1
+        fi
+        cd "$REPO_CACHE/Tela-circle-icon-theme" || return 1
+        ./install.sh -a || warn "Falló instalación Tela Circle"
         success "Tela Circle Icon Theme instalado."
     fi
 }
@@ -149,12 +174,64 @@ install_beautyline() {
         success "BeautyLine Icon Theme ya está instalado."
     else
         info "Instalando BeautyLine Icon Theme (coloridos premium)..."
-        cd ~
+        REPO_CACHE="$HOME/.cache/fedora-setup"
+        mkdir -p "$REPO_CACHE"
+        cd "$REPO_CACHE" || return 1
         rm -rf BeautyLine
-        git clone https://github.com/gvolpe/BeautyLine.git --depth=1
+        git clone https://github.com/gvolpe/BeautyLine.git --depth=1 || return 1
+        if [ ! -d "$REPO_CACHE/BeautyLine" ]; then
+          error "No se encontró $REPO_CACHE/BeautyLine después del clone."
+          return 1
+        fi
         mkdir -p ~/.local/share/icons
-        cp -r ~/BeautyLine/BeautyLine ~/.local/share/icons/
+        cp -r "$REPO_CACHE/BeautyLine/BeautyLine" ~/.local/share/icons/
         success "BeautyLine Icon Theme instalado."
+    fi
+}
+
+# ── Keeping the theme sync script consistent with the chosen icon pack ────────
+# El componente "theme" instala whitesur-theme-sync.sh, que reescribe icon-theme
+# con un valor fijo cada vez que cambia el modo claro/oscuro. Si el usuario elige
+# aquí otro pack, ese script lo sobrescribiría al siguiente cambio de modo, así
+# que hay que actualizar también su constante SYNC_ICON_THEME.
+SYNC_SCRIPT="$HOME/.local/bin/whitesur-theme-sync.sh"
+
+sync_theme_sync_icons() {
+    local theme="$1"
+
+    if [ ! -f "$SYNC_SCRIPT" ]; then
+        return 0   # No hay conflicto: el sincronizador no está instalado.
+    fi
+
+    if ! grep -q '^SYNC_ICON_THEME=' "$SYNC_SCRIPT"; then
+        warn "El sincronizador de tema no reconoce SYNC_ICON_THEME."
+        warn "Ejecuta de nuevo el componente 'theme' para regenerarlo, o edita:"
+        warn "  $SYNC_SCRIPT"
+        return 0
+    fi
+
+    local current
+    current=$(grep -m1 '^SYNC_ICON_THEME=' "$SYNC_SCRIPT" | sed 's/^SYNC_ICON_THEME="//; s/"$//')
+    if [ "$current" = "$theme" ]; then
+        return 0   # Ya sincronizado, no hay nada que hacer.
+    fi
+
+    # El tema viene de una lista cerrada de packs conocidos (sin comillas, sin
+    # saltos de línea), pero se restringe a caracteres seguros de nombre de tema
+    # para que un valor inesperado nunca rompa el archivo del sincronizador.
+    if ! printf '%s' "$theme" | grep -qE '^[A-Za-z0-9._-]+$'; then
+        warn "Nombre de pack de iconos no válido para el sincronizador: $theme"
+        return 0
+    fi
+
+    local tmp="$SYNC_SCRIPT.tmp.$$"
+    if sed "s/^SYNC_ICON_THEME=\"$current\"$/SYNC_ICON_THEME=\"$theme\"/" "$SYNC_SCRIPT" > "$tmp" \
+       && grep -q "^SYNC_ICON_THEME=\"$theme\"$" "$tmp"; then
+        mv "$tmp" "$SYNC_SCRIPT"
+        info "Sincronizador actualizado: usará '$theme' al cambiar de modo."
+    else
+        rm -f "$tmp"
+        warn "No se pudo actualizar el sincronizador en $SYNC_SCRIPT"
     fi
 }
 
@@ -163,6 +240,7 @@ apply_icon_theme() {
     local theme="$1"
     info "Aplicando tema de iconos: $theme"
     gsettings set org.gnome.desktop.interface icon-theme "$theme"
+    sync_theme_sync_icons "$theme"
     success "Tema de iconos aplicado: $theme"
 }
 
@@ -178,6 +256,13 @@ choose_active_theme() {
 
     if [ ${#installed_themes[@]} -eq 0 ]; then
         warn "No se instaló ningún tema de iconos."
+        return
+    fi
+
+    # En modo no interactivo, mantener el tema actual
+    if [ ! -t 0 ]; then
+        local current=$(gsettings get org.gnome.desktop.interface icon-theme 2>/dev/null | tr -d "'")
+        info "Modo no interactivo: manteniendo tema actual: $current"
         return
     fi
 
@@ -224,16 +309,24 @@ install_dependencies
 
 for icon in $SELECTED; do
     case "$icon" in
-        whitesur)    install_whitesur ;;
-        mcmojave)    install_mcmojave ;;
-        telacircle)  install_telacircle ;;
-        papirus)     install_papirus ;;
-        beautyline)  install_beautyline ;;
+        whitesur)    install_whitesur || warn "Falló la instalación de WhiteSur Icons." ;;
+        mcmojave)    install_mcmojave || warn "Falló la instalación de McMojave Circle." ;;
+        telacircle)  install_telacircle || warn "Falló la instalación de Tela Circle." ;;
+        papirus)     install_papirus || warn "Falló la instalación de Papirus." ;;
+        beautyline)  install_beautyline || warn "Falló la instalación de BeautyLine." ;;
     esac
 done
 
 echo ""
 choose_active_theme
+
+# ── Limpiar repositorios temporales ───────────────────────────────────────────
+REPO_CACHE="$HOME/.cache/fedora-setup"
+if [ -d "$REPO_CACHE" ]; then
+    info "Limpiando repositorios temporales..."
+    rm -rf "$REPO_CACHE"
+    success "Repositorios temporales eliminados."
+fi
 
 # ── Resumen final ─────────────────────────────────────────────────────────────
 echo ""
