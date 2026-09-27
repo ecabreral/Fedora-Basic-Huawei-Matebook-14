@@ -15,7 +15,7 @@ else
   # 2. Instalación usando el instalador oficial
   info "Descargando e instalando Brave Browser..."
 
-  curl -fsS https://dl.brave.com/install.sh -o /tmp/brave-install.sh
+  curl -fsS --proto '=https' --tlsv1.2 https://dl.brave.com/install.sh -o /tmp/brave-install.sh
   if sh /tmp/brave-install.sh; then
     success "Brave Browser instalado satisfactoriamente"
   else
@@ -26,18 +26,21 @@ else
   rm -f /tmp/brave-install.sh
 fi
 
-# 3. Configurar alias bravefix en ~/.zshrc (idempotente)
-ZSHRC="$HOME/.zshrc"
+# 3. Configurar alias bravefix en ~/.config/zsh/conf.d/ (idempotente)
+ZSH_CONF_DIR="$HOME/.config/zsh/conf.d"
+BRAVEFIX_FILE="$ZSH_CONF_DIR/50-brave.sh"
 BRAVEFIX_LINE="alias bravefix='pkill -f brave >/dev/null 2>&1; rm -f ~/.config/BraveSoftware/Brave-Browser/Singleton*; brave-browser'"
 
-if [ -f "$ZSHRC" ] && grep -q "bravefix" "$ZSHRC"; then
-  success "El alias bravefix ya está configurado en ~/.zshrc"
+if [ -f "$BRAVEFIX_FILE" ] && grep -q "bravefix" "$BRAVEFIX_FILE"; then
+  success "El alias bravefix ya está configurado"
 else
-  info "Configurando alias bravefix en ~/.zshrc..."
-  echo "" >> "$ZSHRC"
-  echo "# Brave Browser - Fix para perfil bloqueado" >> "$ZSHRC"
-  echo "$BRAVEFIX_LINE" >> "$ZSHRC"
-  success "Alias bravefix agregado a ~/.zshrc correctamente"
+  info "Configurando alias bravefix..."
+  mkdir -p "$ZSH_CONF_DIR"
+  cat << EOF > "$BRAVEFIX_FILE"
+# Brave Browser - Fix para perfil bloqueado
+$BRAVEFIX_LINE
+EOF
+  success "Alias bravefix agregado correctamente"
 fi
 
 # 4. Verificación final

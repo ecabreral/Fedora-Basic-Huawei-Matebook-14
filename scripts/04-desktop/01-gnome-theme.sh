@@ -1,7 +1,7 @@
 #!/bin/bash
 # ==============================================================================
-# 04-gnome-theme.sh
-# Instala temas estilo macOS en Fedora 43 + GNOME con soporte claro/oscuro.
+# 01-gnome-theme.sh
+# Instala temas estilo macOS en Fedora + GNOME con soporte claro/oscuro.
 #
 # Temas instalados:
 #   GTK   → WhiteSur-Light / WhiteSur-Dark  (soporte claro y oscuro)
@@ -44,7 +44,9 @@ else
 
     # ── 2. Limpiar repos anteriores ───────────────────────────────────────────────
     info "Limpiando repositorios anteriores..."
-    cd ~
+    REPO_CACHE="$HOME/.cache/fedora-setup"
+    mkdir -p "$REPO_CACHE"
+    cd "$REPO_CACHE"
     rm -rf \
       WhiteSur-gtk-theme \
       WhiteSur-icon-theme \
@@ -64,44 +66,50 @@ else
 
     # ── 4. Instalar GTK Theme: WhiteSur (Light y Dark) ───────────────────────────
     info "Instalando WhiteSur GTK Theme (Light + Dark)..."
-    cd ~/WhiteSur-gtk-theme
+    cd "$REPO_CACHE/WhiteSur-gtk-theme"
     ./install.sh -l -N glassy -c Light
     ./install.sh -l -N glassy -c Dark
     success "WhiteSur GTK Theme instalado."
 
     # ── 5. Instalar Icon Theme: WhiteSur ─────────────────────────────────────────
     info "Instalando WhiteSur Icon Theme..."
-    cd ~/WhiteSur-icon-theme
+    cd "$REPO_CACHE/WhiteSur-icon-theme"
     ./install.sh
     success "WhiteSur Icon Theme instalado."
 
     # ── 6. Instalar MacTahoe Icon Theme (instalado pero no activado) ──────────────
     info "Instalando MacTahoe Icon Theme (disponible pero no activo)..."
-    cd ~/MacTahoe-icon-theme
+    cd "$REPO_CACHE/MacTahoe-icon-theme"
     ./install.sh
     success "MacTahoe Icon Theme instalado."
 
     # ── 7. Instalar MacTahoe GTK (necesario para el tweak de GDM) ────────────────
     info "Instalando MacTahoe GTK Theme (requerido para GDM)..."
-    cd ~/MacTahoe-gtk-theme
+    cd "$REPO_CACHE/MacTahoe-gtk-theme"
     ./install.sh -l -c Light
     success "MacTahoe GTK Theme instalado."
 
     # ── 8. Aplicar GDM MacTahoe ───────────────────────────────────────────────────
     info "Aplicando tema GDM MacTahoe (requiere sudo)..."
-    if [ -d ~/WhiteSur-gtk-theme ]; then
-      cd ~/WhiteSur-gtk-theme
+    if [ -d "$REPO_CACHE/WhiteSur-gtk-theme" ]; then
+      cd "$REPO_CACHE/WhiteSur-gtk-theme"
       sudo ./tweaks.sh -r 2>/dev/null || true
     fi
-    cd ~/MacTahoe-gtk-theme
+    cd "$REPO_CACHE/MacTahoe-gtk-theme"
     sudo ./tweaks.sh -g -b default
     success "Tema GDM MacTahoe aplicado."
 
     # ── 9. Instalar WhiteSur Firefox Theme ───────────────────────────────────────
     info "Instalando WhiteSur Firefox Theme..."
-    cd ~/WhiteSur-firefox-theme
+    cd "$REPO_CACHE/WhiteSur-firefox-theme"
     ./install.sh
     success "WhiteSur Firefox Theme instalado."
+
+    # ── 9.1 Limpiar repositorios clonados ─────────────────────────────────────────
+    info "Limpiando repositorios temporales..."
+    cd "$HOME"
+    rm -rf "$REPO_CACHE"
+    success "Repositorios temporales eliminados."
 fi
 
 # ── 10. Activar extensión User Themes ─────────────────────────────────────────

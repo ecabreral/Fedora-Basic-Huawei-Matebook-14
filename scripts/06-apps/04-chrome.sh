@@ -32,18 +32,21 @@ else
   exit 1
 fi
 
-# 4. Configurar alias chromefix en ~/.zshrc (idempotente)
-ZSHRC="$HOME/.zshrc"
+# 4. Configurar alias chromefix en ~/.config/zsh/conf.d/ (idempotente)
+ZSH_CONF_DIR="$HOME/.config/zsh/conf.d"
+CHROMEFIX_FILE="$ZSH_CONF_DIR/51-chrome.sh"
 CHROMEFIX_LINE="alias chromefix='pkill -f chrome >/dev/null 2>&1; rm -f ~/.config/google-chrome/SingletonLock ~/.config/google-chrome/SingletonSocket ~/.config/google-chrome/SingletonCookie; google-chrome-stable'"
 
-if [ -f "$ZSHRC" ] && grep -q "chromefix" "$ZSHRC"; then
-  success "El alias chromefix ya está configurado en ~/.zshrc"
+if [ -f "$CHROMEFIX_FILE" ] && grep -q "chromefix" "$CHROMEFIX_FILE"; then
+  success "El alias chromefix ya está configurado"
 else
-  info "Configurando alias chromefix en ~/.zshrc..."
-  echo "" >> "$ZSHRC"
-  echo "# Google Chrome - Fix para perfil bloqueado" >> "$ZSHRC"
-  echo "$CHROMEFIX_LINE" >> "$ZSHRC"
-  success "Alias chromefix agregado a ~/.zshrc correctamente"
+  info "Configurando alias chromefix..."
+  mkdir -p "$ZSH_CONF_DIR"
+  cat << EOF > "$CHROMEFIX_FILE"
+# Google Chrome - Fix para perfil bloqueado
+$CHROMEFIX_LINE
+EOF
+  success "Alias chromefix agregado correctamente"
 fi
 
 # 5. Verificación final

@@ -1,6 +1,16 @@
 # Fedora System Setup
 
-Instalador post-instalación para Fedora Workstation con GNOME y Huawei MateBook 14. También ofrece soporte parcial para Ubuntu.
+Instalador post-instalación automatizado para Fedora Workstation con GNOME, optimizado para Huawei MateBook 14. También ofrece soporte parcial para Ubuntu.
+
+## Características
+
+- Interfaz interactiva con `whiptail` (menús, checklists y diálogos)
+- Instalación selectiva por componentes o completa
+- Diagnóstico inicial del entorno (OS, arquitectura, Internet, sudo)
+- Reintento automático de componentes fallidos
+- Registro detallado con rotación de logs
+- Desinstalación selectiva de componentes
+- Compatible con terminales Fedora, SSH y modo CLI
 
 ## Uso
 
@@ -35,23 +45,39 @@ chmod +x setup.sh
 
 ## Componentes
 
-| ID | Componente | Instala o configura |
+| ID | Componente | Descripción |
 |---|---|---|
-| `base` | Sistema base | RPM Fusion Free/Non-Free, actualizaciones, FFmpeg, GStreamer Good/Bad/Ugly/Extras, OpenH264, Flatpak, Flathub, VA-API y controlador Intel. También desactiva `NetworkManager-wait-online` y algunos autostarts de GNOME. |
-| `terminal` | Terminal | Ptyxis, Zsh, Oh My Zsh, `zsh-autosuggestions`, `zsh-syntax-highlighting`, Starship, `eza`, `fastfetch`, `fzf`, `bat`, `zoxide`, `micro`, JetBrainsMono Nerd Font, aliases y `.zshrc`. Configura Zsh y Ptyxis como predeterminados. |
-| `vscode` | Visual Studio Code | VS Code desde el repositorio oficial de Microsoft y configuración inicial respetando `settings.json` existente. |
+| `base` | Sistema base | RPM Fusion Free/Non-Free, actualizaciones, FFmpeg, GStreamer Good/Bad/Ugly/Extras, OpenH264, Flatpak, Flathub, VA-API y controlador Intel. Desactiva `NetworkManager-wait-online` y autostarts innecesarios de GNOME. |
+| `terminal` | Terminal | Ptyxis, Zsh, Oh My Zsh, `zsh-autosuggestions`, `zsh-syntax-highlighting`, Starship, `eza`, `fastfetch`, `fzf`, `bat`, `zoxide`, `micro`, JetBrainsMono Nerd Font y aliases. Configura Zsh y Ptyxis como predeterminados. |
+| `vscode` | Visual Studio Code | VS Code desde el repositorio oficial de Microsoft con configuración inicial respetando `settings.json` existente. |
 | `git` | Git + SSH | Git, configuración global, rama `main`, clave SSH Ed25519, `ssh-agent`, copia de la clave y prueba con GitHub. |
 | `gh` | GitHub CLI | GitHub CLI y configuración como credential helper de Git. |
-| `opencode` | OpenCode CLI | OpenCode en `~/.opencode/bin` y PATH idempotente en `.zshrc`. |
+| `opencode` | OpenCode CLI | OpenCode en `~/.opencode/bin` con PATH idempotente en la configuración de zsh. |
 | `theme` | Temas GNOME | WhiteSur GTK, MacTahoe GTK, iconos WhiteSur/MacTahoe, tema de Firefox, tema GDM y sincronización claro/oscuro. |
-| `extensions` | Extensiones GNOME | Dash to Dock, Tiling Shell, GSConnect, Burn My Windows, Coverflow Alt-Tab, Desktop Cube, Alphabetical App Grid, TopHat, Media Controls, Custom Hot Corners, Magic Lamp, Night Theme Switcher y Dynamic Music Pill. |
-| `icons` | Iconos GNOME | Menú para instalar WhiteSur, McMojave Circle, Tela Circle, Papirus o BeautyLine. |
+| `extensions` | Extensiones GNOME | Dash to Dock, Tiling Shell, GSConnect, Burn My Windows, Coverflow Alt-Tab, Desktop Cube, Alphabetical App Grid, TopHat, Media Controls, Custom Hot Corners, Magic Lamp, Copyous, Night Theme Switcher y Dynamic Music Pill. Instalación automática vía API de extensions.gnome.org. |
+| `icons` | Iconos GNOME | WhiteSur, McMojave Circle, Tela Circle, Papirus o BeautyLine. |
 | `intel` | Corrección Intel | Añade `i915.enable_psr=0`, `i915.enable_dc=0` e `intel_idle.max_cstate=2` al kernel. Requiere reinicio. |
-| `brave` | Brave Browser | Brave desde el instalador oficial y alias `bravefix` para desbloquear perfiles. |
+| `brave` | Brave Browser | Brave desde el instalador oficial con alias `bravefix` para desbloquear perfiles. |
 | `chrome` | Google Chrome | Repositorio oficial de Google e instalación de `google-chrome-stable`. |
-| `spotify` | Spotify | Cliente oficial mediante Flathub y permisos gráficos necesarios. |
+| `spotify` | Spotify | Cliente oficial mediante Flathub con permisos gráficos necesarios. |
 
 En el menú **Instalar todos los componentes** se incluyen todos los componentes de esta tabla.
+
+## Configuración de Zsh
+
+La configuración de zsh se organiza en snippets modulares en `~/.config/zsh/conf.d/`, cargados desde un `~/.zshrc` mínimo:
+
+```text
+~/.zshrc                         → Carga snippets de conf.d/
+~/.config/zsh/conf.d/
+├── 00-path.sh                   → PATH de cargo
+├── 10-oh-my-zsh.sh              → Oh My Zsh y plugins
+├── 20-aliases.sh                → Aliases modernos
+├── 30-tools.sh                  → zoxide, fzf, starship
+└── 40-motd.sh                   → fastfetch al inicio
+```
+
+Estructura modular que permite agregar, quitar o modificar snippets sin afectar la configuración global.
 
 ## Temas de terminal
 
@@ -93,6 +119,7 @@ La opción 4 del menú principal desinstala Kitty o Alacritty y restaura Ptyxis 
 
 - Diagnóstico inicial de sistema, arquitectura, sesión gráfica, Internet y `sudo`.
 - Estados `[INSTALADO]` y `[NO INSTALADO]` por componente.
+- Descripción de componentes accesible desde el checklist.
 - Paleta azul sobria y alto contraste para modo claro.
 - Ventanas adaptadas al tamaño de la terminal.
 - Reintento de componentes fallidos.
@@ -118,12 +145,14 @@ source ~/.zshrc
 
 Cierra sesión si instalaste temas o extensiones GNOME. Reinicia si instalaste `base` o `intel`.
 
-## Estructura
+## Estructura del proyecto
 
 ```text
 setup.sh                 Menús, validación, CLI y desinstalación
 lib/common.sh            Funciones compartidas y detección de sistema
 lib/logger.sh            Logging, resumen y rotación
+lib/gnome-terminal-colors.sh  Esquemas de color para GNOME Terminal
+lib/ptyxis-colors.sh     Esquemas de color para Ptyxis
 scripts/runner.sh        Ejecución ordenada de componentes
 scripts/01-system        Sistema base
 scripts/02-terminal      Terminal y cambio de tema
@@ -133,3 +162,10 @@ scripts/05-hardware      Corrección Intel
 scripts/06-apps          Brave, Chrome, Spotify y OpenCode
 config/starship          Temas Starship personalizados
 ```
+
+## Seguridad
+
+- Instaladores de terceros verificados con `--proto '=https' --tlsv1.2`.
+- Zsh registrado en `/etc/shells` antes de cambiar la shell por defecto.
+- Repositorios temporales de temas clonados en `~/.cache/fedora-setup/` y eliminados tras la instalación.
+- Configuración de zsh modular en `~/.config/zsh/conf.d/` para evitar sobrescritura de snippets personalizados.

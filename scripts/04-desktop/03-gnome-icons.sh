@@ -1,6 +1,6 @@
 #!/bin/bash
 # ==============================================================================
-# 09-gnome-icons.sh
+# 03-gnome-icons.sh
 # Instala y aplica temas de iconos para GNOME en Fedora/Ubuntu.
 #
 # Iconos disponibles:
@@ -89,10 +89,12 @@ install_whitesur() {
         success "WhiteSur Icon Theme ya está instalado."
     else
         info "Instalando WhiteSur Icon Theme (macOS Big Sur/Monterey)..."
-        cd ~
+        REPO_CACHE="$HOME/.cache/fedora-setup"
+        mkdir -p "$REPO_CACHE"
+        cd "$REPO_CACHE"
         rm -rf WhiteSur-icon-theme
         git clone https://github.com/vinceliuice/WhiteSur-icon-theme.git --depth=1
-        cd ~/WhiteSur-icon-theme
+        cd "$REPO_CACHE/WhiteSur-icon-theme"
         ./install.sh
         success "WhiteSur Icon Theme instalado."
     fi
@@ -104,10 +106,12 @@ install_mcmojave() {
         success "McMojave Circle Icon Theme ya está instalado."
     else
         info "Instalando McMojave Circle Icon Theme (macOS Mojave)..."
-        cd ~
+        REPO_CACHE="$HOME/.cache/fedora-setup"
+        mkdir -p "$REPO_CACHE"
+        cd "$REPO_CACHE"
         rm -rf McMojave-circle
         git clone https://github.com/vinceliuice/McMojave-circle.git --depth=1
-        cd ~/McMojave-circle
+        cd "$REPO_CACHE/McMojave-circle"
         ./install.sh
         success "McMojave Circle Icon Theme instalado."
     fi
@@ -119,10 +123,12 @@ install_telacircle() {
         success "Tela Circle Icon Theme ya está instalado."
     else
         info "Instalando Tela Circle Icon Theme (minimalista redondeado)..."
-        cd ~
+        REPO_CACHE="$HOME/.cache/fedora-setup"
+        mkdir -p "$REPO_CACHE"
+        cd "$REPO_CACHE"
         rm -rf Tela-circle-icon-theme
         git clone https://github.com/vinceliuice/Tela-circle-icon-theme.git --depth=1
-        cd ~/Tela-circle-icon-theme
+        cd "$REPO_CACHE/Tela-circle-icon-theme"
         ./install.sh -a
         success "Tela Circle Icon Theme instalado."
     fi
@@ -149,11 +155,13 @@ install_beautyline() {
         success "BeautyLine Icon Theme ya está instalado."
     else
         info "Instalando BeautyLine Icon Theme (coloridos premium)..."
-        cd ~
+        REPO_CACHE="$HOME/.cache/fedora-setup"
+        mkdir -p "$REPO_CACHE"
+        cd "$REPO_CACHE"
         rm -rf BeautyLine
         git clone https://github.com/gvolpe/BeautyLine.git --depth=1
         mkdir -p ~/.local/share/icons
-        cp -r ~/BeautyLine/BeautyLine ~/.local/share/icons/
+        cp -r "$REPO_CACHE/BeautyLine/BeautyLine" ~/.local/share/icons/
         success "BeautyLine Icon Theme instalado."
     fi
 }
@@ -234,6 +242,14 @@ done
 
 echo ""
 choose_active_theme
+
+# ── Limpiar repositorios temporales ───────────────────────────────────────────
+REPO_CACHE="$HOME/.cache/fedora-setup"
+if [ -d "$REPO_CACHE" ]; then
+    info "Limpiando repositorios temporales..."
+    rm -rf "$REPO_CACHE"
+    success "Repositorios temporales eliminados."
+fi
 
 # ── Resumen final ─────────────────────────────────────────────────────────────
 echo ""

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# 05-intel-fix.sh
+# 01-intel-fix.sh
 # Corrige el parpadeo de pantalla en GPUs Intel aplicando parámetros de kernel.
 # Compatible con Fedora (grubby) y Ubuntu (update-grub).
 # Requiere: sudo, reinicio
@@ -42,21 +42,23 @@ elif is_ubuntu; then
   # ── Ubuntu: /etc/default/grub + update-grub ─────────────────────────────────
   info "Aplicando parámetros del kernel en /etc/default/grub..."
 
+  # Este script ya se ejecuta como root (require_root), así que no se usa
+  # "sudo" aquí para no depender de que sudo también esté instalado/configurado.
   if grep -q "^GRUB_CMDLINE_LINUX=" /etc/default/grub; then
     if grep -q "$KERNEL_PARAMS" /etc/default/grub; then
       success "Parámetros ya están presentes en GRUB_CMDLINE_LINUX."
     else
       # Añadir parámetros a la línea existente
-      sudo sed -i 's/^GRUB_CMDLINE_LINUX="\(.*\)"/GRUB_CMDLINE_LINUX="\1 '"$KERNEL_PARAMS"'"/' /etc/default/grub
+      sed -i 's/^GRUB_CMDLINE_LINUX="\(.*\)"/GRUB_CMDLINE_LINUX="\1 '"$KERNEL_PARAMS"'"/' /etc/default/grub
       success "Parámetros agregados a GRUB_CMDLINE_LINUX."
     fi
   else
-    echo "GRUB_CMDLINE_LINUX=\"$KERNEL_PARAMS\"" | sudo tee -a /etc/default/grub > /dev/null
+    echo "GRUB_CMDLINE_LINUX=\"$KERNEL_PARAMS\"" >> /etc/default/grub
     success "GRUB_CMDLINE_LINUX creado con parámetros."
   fi
 
   info "Actualizando GRUB..."
-  sudo update-grub
+  update-grub
   success "GRUB actualizado."
 fi
 

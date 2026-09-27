@@ -170,13 +170,89 @@ install_nerd_font() {
 open_url() {
   local url="$1"
   if command -v xdg-open &>/dev/null; then
-    xdg-open "$url" 2>/dev/null
+    xdg-open "$url" >/dev/null 2>&1 &
+    disown 2>/dev/null || true
   elif command -v gnome-open &>/dev/null; then
-    gnome-open "$url" 2>/dev/null
+    gnome-open "$url" >/dev/null 2>&1 &
+    disown 2>/dev/null || true
   else
     info "Abre esta URL manualmente: $url"
     return 1
   fi
+}
+
+# ── EXTENSIONS_STATE_FILE: registro de extensiones GNOME instaladas por este proyecto ─
+EXTENSIONS_STATE_FILE="$HOME/.config/fedora-setup/installed-extensions.list"
+
+# ── gnome_shell_version: obtiene la versión mayor de GNOME Shell instalada ───
+gnome_shell_version() {
+  gnome-shell --version 2>/dev/null | grep -oE '[0-9]+' | head -1
+}
+
+# ── install_gnome_extension: descarga e instala una extensión desde
+#    extensions.gnome.org usando su API pública (no requiere navegador).
+#    Uso: install_gnome_extension <pk> "<Nombre legible>"
+#    `pk` es el ID numérico que aparece en la URL de la extensión
+#    (https://extensions.gnome.org/extension/<pk>/nombre/).
+#    El UUID real se obtiene de la respuesta de la API en vez de asumirlo,
+#    para evitar desajustes si el autor de la extensión lo cambia.
+install_gnome_extension() {
+  local pk="$1"
+  local label="$2"
+
+  if ! command -v gnome-extensions &>/dev/null; then
+    warn "gnome-extensions no está disponible. Omitiendo $label."
+    return 1
+  fi
+
+  local shell_ver
+  shell_ver=$(gnome_shell_version)
+  if [ -z "$shell_ver" ]; then
+    warn "No se pudo detectar la versión de GNOME Shell. Omitiendo $label (instálala manualmente)."
+    return 1
+  fi
+
+  local info_json
+  info_json=$(curl -fsSL "https://extensions.gnome.org/extension-info/?pk=${pk}&shell_version=${shell_ver}" 2>/dev/null)
+
+  local uuid download_path
+  uuid=$(printf '%s' "$info_json" | grep -oE '"uuid"[[:space:]]*:[[:space:]]*"[^"]+"' | head -1 | sed -E 's/.*: *"([^"]+)"/\1/')
+  download_path=$(printf '%s' "$info_json" | grep -oE '"download_url"[[:space:]]*:[[:space:]]*"[^"]+"' | head -1 | sed -E 's/.*: *"([^"]+)"/\1/' | sed 's/\\u002F/\//g; s/\\\//\//g')
+
+  if [ -z "$uuid" ] || [ -z "$download_path" ]; then
+    warn "$label no está disponible para GNOME Shell $shell_ver. Instálala manualmente desde extensions.gnome.org."
+    return 1
+  fi
+
+  if [ -d "$HOME/.local/share/gnome-shell/extensions/$uuid" ]; then
+    success "$label ya está instalado."
+    gnome-extensions enable "$uuid" 2>/dev/null || true
+    _record_installed_extension "$uuid"
+    return 0
+  fi
+
+  local tmp_zip
+  tmp_zip=$(mktemp --suffix=.shell-extension.zip)
+  if curl -fsSL "https://extensions.gnome.org${download_path}" -o "$tmp_zip" 2>/dev/null && \
+     gnome-extensions install --force "$tmp_zip" 2>/dev/null; then
+    rm -f "$tmp_zip"
+    gnome-extensions enable "$uuid" 2>/dev/null || true
+    _record_installed_extension "$uuid"
+    success "$label instalado y habilitado."
+    return 0
+  fi
+
+  rm -f "$tmp_zip"
+  warn "No se pudo instalar $label automáticamente. Instálala manualmente desde extensions.gnome.org."
+  return 1
+}
+
+# ── _record_installed_extension: guarda el UUID en el registro local ─────────
+_record_installed_extension() {
+  local uuid="$1"
+  mkdir -p "$(dirname "$EXTENSIONS_STATE_FILE")"
+  touch "$EXTENSIONS_STATE_FILE"
+  grep -qxF "$uuid" "$EXTENSIONS_STATE_FILE" 2>/dev/null || echo "$uuid" >> "$EXTENSIONS_STATE_FILE"
 }
 
 # ── apply_starship_theme: Aplica un tema de Starship ──────────────────────────

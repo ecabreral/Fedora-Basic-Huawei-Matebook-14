@@ -82,7 +82,7 @@ if [ -d "$HOME/.oh-my-zsh" ]; then
   success "Oh My Zsh ya está instalado."
 else
   info "Instalando Oh My Zsh..."
-  sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+  sh -c "$(curl -fsSL --proto '=https' --tlsv1.2 https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
   success "Oh My Zsh instalado."
 fi
 
@@ -106,8 +106,11 @@ if command -v starship &>/dev/null; then
   success "Starship ya está instalado."
 else
   info "Instalando Starship..."
-  curl -sS https://starship.rs/install.sh -o /tmp/starship-install.sh
-  sh /tmp/starship-install.sh -s -- --yes
+  curl -sS --proto '=https' --tlsv1.2 https://starship.rs/install.sh -o /tmp/starship-install.sh
+  # "-s --" solo aplica cuando el instalador se ejecuta vía "curl | sh -s --";
+  # al ejecutar el archivo ya descargado esos tokens se pasarían como
+  # argumentos literales al script y romperían el modo --yes (no interactivo).
+  sh /tmp/starship-install.sh --yes
   rm -f /tmp/starship-install.sh
   success "Starship instalado."
 fi
@@ -145,10 +148,15 @@ else
   warn "Ptyxis no está disponible. Omitiendo configuración de tema."
 fi
 
-# ── 10. Generar .zshrc ────────────────────────────────────────────────────────
-section "Configurando .zshrc"
+# ── 10. Generar configuración de zsh (snippets en conf.d) ───────────────────
+section "Configurando zsh (snippets en ~/.config/zsh/conf.d/)"
 
-# Si .zshrc existe, preguntar antes de sobrescribir
+ZSH_CONF_DIR="$HOME/.config/zsh/conf.d"
+mkdir -p "$ZSH_CONF_DIR"
+
+UPDATE_ALIAS=$(system_update_alias)
+
+# Si .zshrc existe y no es un symlink a nuestro template, preguntar antes de respaldar
 if [ -L ~/.zshrc ] || [ -f ~/.zshrc ]; then
   if [ ! -t 0 ]; then
     info ".zshrc ya existe. Omitiendo generación (modo automatizado)."
@@ -165,26 +173,31 @@ if [ -L ~/.zshrc ] || [ -f ~/.zshrc ]; then
   fi
 fi
 
-UPDATE_ALIAS=$(system_update_alias)
-
 if [ "$SKIP_ZSHRC" != true ]; then
-cat << EOF > ~/.zshrc
+  # ── 00-path.sh ─────────────────────────────────────────────────────────────
+  cat << 'EOF' > "$ZSH_CONF_DIR/00-path.sh"
 # cargo path
-export PATH="\$HOME/.cargo/bin:\$PATH"
+export PATH="$HOME/.cargo/bin:$PATH"
+EOF
 
+  # ── 10-oh-my-zsh.sh ────────────────────────────────────────────────────────
+  cat << 'EOF' > "$ZSH_CONF_DIR/10-oh-my-zsh.sh"
 # Verificar si estamos en zsh antes de cargar oh-my-zsh
-if [ -n "\$ZSH_VERSION" ]; then
-  export ZSH="\$HOME/.oh-my-zsh"
+if [ -n "$ZSH_VERSION" ]; then
+  export ZSH="$HOME/.oh-my-zsh"
   plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
-  source \$ZSH/oh-my-zsh.sh
+  source $ZSH/oh-my-zsh.sh
 else
   # Si se ejecuta desde bash, cargar plugins manualmente
-  [ -f "\$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh" ] && \
-    source "\$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh"
-  [ -f "\$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ] && \
-    source "\$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+  [ -f "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh" ] && \
+    source "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh"
+  [ -f "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ] && \
+    source "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 fi
+EOF
 
+  # ── 20-aliases.sh ──────────────────────────────────────────────────────────
+  cat << EOF > "$ZSH_CONF_DIR/20-aliases.sh"
 # aliases modernos
 alias ls="eza --icons=auto"
 alias ll="eza -lah --icons --git"
@@ -195,28 +208,48 @@ alias cls="clear"
 
 # atajo de actualización del sistema
 $UPDATE_ALIAS
+EOF
 
+  # ── 30-tools.sh ─────────────────────────────────────────────────────────────
+  cat << 'EOF' > "$ZSH_CONF_DIR/30-tools.sh"
 # zoxide (cd inteligente)
-eval "\$(zoxide init zsh)"
+eval "$(zoxide init zsh)"
 
 # fzf (búsqueda difusa)
 [ -f /usr/share/fzf/shell/key-bindings.zsh ] && source /usr/share/fzf/shell/key-bindings.zsh
 
 # starship prompt
-eval "\$(starship init zsh)"
+eval "$(starship init zsh)"
+EOF
 
+  # ── 40-motd.sh ──────────────────────────────────────────────────────────────
+  cat << 'EOF' > "$ZSH_CONF_DIR/40-motd.sh"
 # fastfetch al iniciar terminal interactiva
 clear
-if [[ \$- == *i* ]]; then
+if [[ $- == *i* ]]; then
   fastfetch
 fi
 EOF
 
-  success ".zshrc configurado."
+  # ── .zshrc mínimo que carga los snippets ───────────────────────────────────
+  cat << 'EOF' > ~/.zshrc
+# ~/.zshrc — generado por Fedora System Setup
+# Carga snippets desde ~/.config/zsh/conf.d/ (orden alfabético)
+for snippet in ~/.config/zsh/conf.d/*.zsh(N); do
+  source "$snippet"
+done
+EOF
+
+  success "Configuración de zsh generada en ~/.config/zsh/conf.d/ y ~/.zshrc."
 fi
 
 # ── 10. Cambiar shell por defecto a Zsh ───────────────────────────────────────
 if [ "$SHELL" != "$(which zsh)" ]; then
+  # Registrar zsh en /etc/shells si no está (evita fallo silencioso con zsh de cargo/binario)
+  if ! grep -qxF "$(which zsh)" /etc/shells 2>/dev/null; then
+    info "Registrando zsh en /etc/shells..."
+    echo "$(which zsh)" | sudo tee -a /etc/shells >/dev/null
+  fi
   info "Cambiando shell por defecto a Zsh..."
   chsh -s "$(which zsh)"
   success "Zsh configurado como shell por defecto."

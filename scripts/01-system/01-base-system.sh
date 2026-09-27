@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# 00-base-system.sh
+# 01-base-system.sh
 # Configura el sistema base para Fedora o Ubuntu en Huawei MateBook 14.
 # Incluye: Repositorios, códecs, VA-API Intel, Flatpak, optimizaciones.
 # ==============================================================================
@@ -32,10 +32,14 @@ if is_fedora; then
   fi
 
   info "Configurando repositorios RPM Fusion..."
-  sudo dnf config-manager --set-disabled rpmfusion-free-rawhide 2>/dev/null || true
-  sudo dnf config-manager --set-disabled rpmfusion-nonfree-rawhide 2>/dev/null || true
-  sudo dnf config-manager --set-enabled rpmfusion-free 2>/dev/null || true
-  sudo dnf config-manager --set-enabled rpmfusion-nonfree 2>/dev/null || true
+  # NOTA: "dnf config-manager --set-disabled/--set-enabled" era la sintaxis de
+  # dnf4. Con dnf5 (por defecto desde Fedora 41, incluida Fedora 44) esos flags
+  # fueron eliminados y devuelven "Unknown argument"; el equivalente actual es
+  # "setopt <repo>.enabled=0|1".
+  sudo dnf config-manager setopt rpmfusion-free-rawhide.enabled=0 2>/dev/null || true
+  sudo dnf config-manager setopt rpmfusion-nonfree-rawhide.enabled=0 2>/dev/null || true
+  sudo dnf config-manager setopt rpmfusion-free.enabled=1 2>/dev/null || true
+  sudo dnf config-manager setopt rpmfusion-nonfree.enabled=1 2>/dev/null || true
   success "Repositorios RPM Fusion configurados."
 
 elif is_ubuntu; then

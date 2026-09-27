@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# 03-git.sh
+# 02-git-ssh.sh
 # Configura Git con nombre/email de usuario, genera claves SSH
 # y guía para añadirla a GitHub.
 # ==============================================================================
@@ -80,16 +80,6 @@ fi
 # ── 6. Guiar para añadir en GitHub ────────────────────────────────────────────
 section "Añadir clave a GitHub"
 info "Abriendo GitHub → Settings → SSH Keys..."
-
-# Función helper para abrir URLs
-open_url() {
-    local url="$1"
-    if command -v xdg-open &>/dev/null; then
-        xdg-open "$url" &
-    else
-        echo "  URL: $url"
-    fi
-}
 
 open_url "https://github.com/settings/keys"
 

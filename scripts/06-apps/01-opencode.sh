@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# 07-opencode.sh — Instala OpenCode CLI y configura el PATH en zsh
+# 01-opencode.sh — Instala OpenCode CLI y configura el PATH en zsh
 # ==============================================================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -23,7 +23,7 @@ else
     # 3. Instalación usando el instalador oficial
     info "Descargando e instalando OpenCode CLI..."
     
-    curl -fsSL https://opencode.ai/install -o /tmp/opencode-install.sh
+    curl -fsSL --proto '=https' --tlsv1.2 https://opencode.ai/v2/install -o /tmp/opencode-install.sh
     if bash /tmp/opencode-install.sh --no-modify-path; then
       success "OpenCode instalado satisfactoriamente"
     else
@@ -36,17 +36,20 @@ else
 fi
 
 # 4. Configurar PATH en zsh (idempotente)
-ZSHRC="$HOME/.zshrc"
+ZSH_CONF_DIR="$HOME/.config/zsh/conf.d"
+PATH_FILE="$ZSH_CONF_DIR/52-opencode.sh"
 PATH_LINE='export PATH="$HOME/.opencode/bin:$PATH"'
 
-if [ -f "$ZSHRC" ] && grep -q "\.opencode/bin" "$ZSHRC"; then
-  success "El PATH de OpenCode ya está configurado en ~/.zshrc"
+if [ -f "$PATH_FILE" ] && grep -q "\.opencode/bin" "$PATH_FILE"; then
+  success "El PATH de OpenCode ya está configurado"
 else
-  info "Configurando PATH en ~/.zshrc..."
-  echo "" >> "$ZSHRC"
-  echo "# OpenCode CLI" >> "$ZSHRC"
-  echo "$PATH_LINE" >> "$ZSHRC"
-  success "PATH agregado a ~/.zshrc correctamente"
+  info "Configurando PATH de OpenCode..."
+  mkdir -p "$ZSH_CONF_DIR"
+  cat << EOF > "$PATH_FILE"
+# OpenCode CLI
+$PATH_LINE
+EOF
+  success "PATH de OpenCode agregado correctamente"
 fi
 
 # 5. Habilitar para la sesión actual del script

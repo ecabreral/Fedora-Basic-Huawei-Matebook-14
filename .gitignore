@@ -1,17 +1,6 @@
-build/
-dist/
+# Logs de instalación (se regeneran en cada ejecución)
 logs/
-__pycache__/
-*.pyc
-*.bin
-*.spec
-.venv/
-venv/
-.idea/
-.vscode/
-*.swp
-*.swo
-.DS_Store
-fedora-setup-gui
-install.log
-*.apk
+*.log
+
+# Config local de Obsidian (workspace del autor, no del proyecto)
+.obsidian/
