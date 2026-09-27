@@ -11,7 +11,7 @@
 #   Firefox → WhiteSur Firefox Theme
 # ==============================================================================
 
-set -e
+# No usar set -e: manejar errores manualmente para evitar abortes por fallos menores
 source "$(dirname "$0")/../../lib/common.sh"
 
 
@@ -65,27 +65,43 @@ else
 
     # ── 4. Instalar GTK Theme: WhiteSur (Light y Dark) ───────────────────────────
     info "Instalando WhiteSur GTK Theme (Light + Dark)..."
+    if [ ! -d "$REPO_CACHE/WhiteSur-gtk-theme" ]; then
+      error "No se encontró $REPO_CACHE/WhiteSur-gtk-theme. Abortando."
+      return 1
+    fi
     cd "$REPO_CACHE/WhiteSur-gtk-theme"
-    ./install.sh -l -N glassy -c Light
-    ./install.sh -l -N glassy -c Dark
+    ./install.sh -l -N glassy -c Light || warn "Falló instalación Light"
+    ./install.sh -l -N glassy -c Dark || warn "Falló instalación Dark"
     success "WhiteSur GTK Theme instalado."
 
     # ── 5. Instalar Icon Theme: WhiteSur ─────────────────────────────────────────
     info "Instalando WhiteSur Icon Theme..."
+    if [ ! -d "$REPO_CACHE/WhiteSur-icon-theme" ]; then
+      error "No se encontró $REPO_CACHE/WhiteSur-icon-theme. Abortando."
+      return 1
+    fi
     cd "$REPO_CACHE/WhiteSur-icon-theme"
-    ./install.sh
+    ./install.sh || warn "Falló instalación WhiteSur Icon"
     success "WhiteSur Icon Theme instalado."
 
     # ── 6. Instalar MacTahoe Icon Theme (instalado pero no activado) ──────────────
     info "Instalando MacTahoe Icon Theme (disponible pero no activo)..."
+    if [ ! -d "$REPO_CACHE/MacTahoe-icon-theme" ]; then
+      error "No se encontró $REPO_CACHE/MacTahoe-icon-theme. Abortando."
+      return 1
+    fi
     cd "$REPO_CACHE/MacTahoe-icon-theme"
-    ./install.sh
+    ./install.sh || warn "Falló instalación MacTahoe Icon"
     success "MacTahoe Icon Theme instalado."
 
     # ── 7. Instalar MacTahoe GTK (necesario para el tweak de GDM) ────────────────
     info "Instalando MacTahoe GTK Theme (requerido para GDM)..."
+    if [ ! -d "$REPO_CACHE/MacTahoe-gtk-theme" ]; then
+      error "No se encontró $REPO_CACHE/MacTahoe-gtk-theme. Abortando."
+      return 1
+    fi
     cd "$REPO_CACHE/MacTahoe-gtk-theme"
-    ./install.sh -l -c Light
+    ./install.sh -l -c Light || warn "Falló instalación MacTahoe GTK"
     success "MacTahoe GTK Theme instalado."
 
     # ── 8. Aplicar GDM MacTahoe ───────────────────────────────────────────────────
@@ -94,14 +110,20 @@ else
       cd "$REPO_CACHE/WhiteSur-gtk-theme"
       sudo ./tweaks.sh -r 2>/dev/null || true
     fi
-    cd "$REPO_CACHE/MacTahoe-gtk-theme"
-    sudo ./tweaks.sh -g -b default
+    if [ -d "$REPO_CACHE/MacTahoe-gtk-theme" ]; then
+      cd "$REPO_CACHE/MacTahoe-gtk-theme"
+      sudo ./tweaks.sh -g -b default || warn "Falló tweak GDM MacTahoe"
+    fi
     success "Tema GDM MacTahoe aplicado."
 
     # ── 9. Instalar WhiteSur Firefox Theme ───────────────────────────────────────
     info "Instalando WhiteSur Firefox Theme..."
+    if [ ! -d "$REPO_CACHE/WhiteSur-firefox-theme" ]; then
+      error "No se encontró $REPO_CACHE/WhiteSur-firefox-theme. Abortando."
+      return 1
+    fi
     cd "$REPO_CACHE/WhiteSur-firefox-theme"
-    ./install.sh
+    ./install.sh || warn "Falló instalación WhiteSur Firefox"
     success "WhiteSur Firefox Theme instalado."
 
     # ── 9.1 Limpiar repositorios clonados ─────────────────────────────────────────

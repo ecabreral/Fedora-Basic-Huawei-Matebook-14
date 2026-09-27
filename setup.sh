@@ -231,6 +231,18 @@ if [ -z "$CLI_COMPONENTS" ] && [ "$DRY_RUN" = false ] && ! command -v whiptail &
     exit 1
 fi
 
+# ── Validar tamaño mínimo de terminal ─────────────────────────────────────────
+if [ -z "$CLI_COMPONENTS" ] && [ "$DRY_RUN" = false ]; then
+    MIN_LINES=20
+    MIN_COLS=60
+    if [ "$UI_LINES" -lt "$MIN_LINES" ] || [ "$UI_COLS" -lt "$MIN_COLS" ]; then
+        error "La terminal es demasiado pequeña (${UI_COLS}x${UI_LINES})."
+        error "Se requieren al menos ${MIN_COLS}x${MIN_LINES} para la interfaz interactiva."
+        error "Usa --component para modo CLI o agranda la terminal."
+        exit 1
+    fi
+fi
+
 # ── Menú principal con whiptail ────────────────────────────────────────────────
 show_main_menu() {
     local choice

@@ -140,6 +140,8 @@ if ! command -v xdg-open &>/dev/null; then
 fi
 
 echo ""
-read -p "  Presiona ENTER para continuar... "
+if [ -t 0 ]; then
+  read -p "  Presiona ENTER para continuar... "
+fi
 
 success "Extensiones configuradas."

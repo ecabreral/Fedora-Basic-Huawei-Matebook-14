@@ -123,14 +123,19 @@ info "Aplicando tema Starship: $THEME"
 
 # Respaldo automático si ya existe configuración
 if [ -f ~/.config/starship.toml ]; then
-  read -p "  starship.toml ya existe. ¿Deseas respaldar y generar uno nuevo? [s/N]: " RESP
-  if [[ "$RESP" =~ ^[sS]$ ]]; then
-    mkdir -p ~/.config/theme-backups
-    cp ~/.config/starship.toml ~/.config/theme-backups/starship.toml.backup.$(date +%s)
-    success "Starship respaldado."
-  else
-    info "Omitiendo generación de starship.toml."
+  if [ ! -t 0 ]; then
+    info "starship.toml ya existe. Omitiendo generación (modo automatizado)."
     SKIP_STARSHIP=true
+  else
+    read -p "  starship.toml ya existe. ¿Deseas respaldar y generar uno nuevo? [s/N]: " RESP
+    if [[ "$RESP" =~ ^[sS]$ ]]; then
+      mkdir -p ~/.config/theme-backups
+      cp ~/.config/starship.toml ~/.config/theme-backups/starship.toml.backup.$(date +%s)
+      success "Starship respaldado."
+    else
+      info "Omitiendo generación de starship.toml."
+      SKIP_STARSHIP=true
+    fi
   fi
 fi
 
@@ -244,15 +249,22 @@ EOF
 fi
 
 # ── 10. Cambiar shell por defecto a Zsh ───────────────────────────────────────
-if [ "$SHELL" != "$(which zsh)" ]; then
+if ! command -v zsh &>/dev/null; then
+  warn "Zsh no está instalado. No se puede cambiar la shell por defecto."
+elif [ "$SHELL" != "$(which zsh)" ]; then
   # Registrar zsh en /etc/shells si no está (evita fallo silencioso con zsh de cargo/binario)
   if ! grep -qxF "$(which zsh)" /etc/shells 2>/dev/null; then
     info "Registrando zsh en /etc/shells..."
     echo "$(which zsh)" | sudo tee -a /etc/shells >/dev/null
   fi
-  info "Cambiando shell por defecto a Zsh..."
-  chsh -s "$(which zsh)"
-  success "Zsh configurado como shell por defecto."
+  if [ ! -t 0 ]; then
+    info "Modo no interactivo: no se puede ejecutar chsh automáticamente."
+    info "Ejecuta manualmente: chsh -s $(which zsh)"
+  else
+    info "Cambiando shell por defecto a Zsh..."
+    chsh -s "$(which zsh)"
+    success "Zsh configurado como shell por defecto."
+  fi
 fi
 
 # ── 12. Establecer Ptyxis como terminal por defecto ──────────────────────────

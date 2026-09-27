@@ -25,6 +25,12 @@ show_icon_menu() {
     selected[papirus]=false
     selected[beautyline]=false
 
+    # En modo no interactivo, instalar todos por defecto
+    if [ ! -t 0 ]; then
+        echo "whitesur mcmojave telacircle papirus beautyline"
+        return
+    fi
+
     while true; do
         echo "" >&2
         echo "================================================================" >&2
@@ -91,11 +97,15 @@ install_whitesur() {
         info "Instalando WhiteSur Icon Theme (macOS Big Sur/Monterey)..."
         REPO_CACHE="$HOME/.cache/fedora-setup"
         mkdir -p "$REPO_CACHE"
-        cd "$REPO_CACHE"
+        cd "$REPO_CACHE" || return 1
         rm -rf WhiteSur-icon-theme
-        git clone https://github.com/vinceliuice/WhiteSur-icon-theme.git --depth=1
-        cd "$REPO_CACHE/WhiteSur-icon-theme"
-        ./install.sh
+        git clone https://github.com/vinceliuice/WhiteSur-icon-theme.git --depth=1 || return 1
+        if [ ! -d "$REPO_CACHE/WhiteSur-icon-theme" ]; then
+          error "No se encontró $REPO_CACHE/WhiteSur-icon-theme después del clone."
+          return 1
+        fi
+        cd "$REPO_CACHE/WhiteSur-icon-theme" || return 1
+        ./install.sh || warn "Falló instalación WhiteSur Icon"
         success "WhiteSur Icon Theme instalado."
     fi
 }
@@ -108,11 +118,15 @@ install_mcmojave() {
         info "Instalando McMojave Circle Icon Theme (macOS Mojave)..."
         REPO_CACHE="$HOME/.cache/fedora-setup"
         mkdir -p "$REPO_CACHE"
-        cd "$REPO_CACHE"
+        cd "$REPO_CACHE" || return 1
         rm -rf McMojave-circle
-        git clone https://github.com/vinceliuice/McMojave-circle.git --depth=1
-        cd "$REPO_CACHE/McMojave-circle"
-        ./install.sh
+        git clone https://github.com/vinceliuice/McMojave-circle.git --depth=1 || return 1
+        if [ ! -d "$REPO_CACHE/McMojave-circle" ]; then
+          error "No se encontró $REPO_CACHE/McMojave-circle después del clone."
+          return 1
+        fi
+        cd "$REPO_CACHE/McMojave-circle" || return 1
+        ./install.sh || warn "Falló instalación McMojave Circle"
         success "McMojave Circle Icon Theme instalado."
     fi
 }
@@ -125,11 +139,15 @@ install_telacircle() {
         info "Instalando Tela Circle Icon Theme (minimalista redondeado)..."
         REPO_CACHE="$HOME/.cache/fedora-setup"
         mkdir -p "$REPO_CACHE"
-        cd "$REPO_CACHE"
+        cd "$REPO_CACHE" || return 1
         rm -rf Tela-circle-icon-theme
-        git clone https://github.com/vinceliuice/Tela-circle-icon-theme.git --depth=1
-        cd "$REPO_CACHE/Tela-circle-icon-theme"
-        ./install.sh -a
+        git clone https://github.com/vinceliuice/Tela-circle-icon-theme.git --depth=1 || return 1
+        if [ ! -d "$REPO_CACHE/Tela-circle-icon-theme" ]; then
+          error "No se encontró $REPO_CACHE/Tela-circle-icon-theme después del clone."
+          return 1
+        fi
+        cd "$REPO_CACHE/Tela-circle-icon-theme" || return 1
+        ./install.sh -a || warn "Falló instalación Tela Circle"
         success "Tela Circle Icon Theme instalado."
     fi
 }
@@ -157,9 +175,13 @@ install_beautyline() {
         info "Instalando BeautyLine Icon Theme (coloridos premium)..."
         REPO_CACHE="$HOME/.cache/fedora-setup"
         mkdir -p "$REPO_CACHE"
-        cd "$REPO_CACHE"
+        cd "$REPO_CACHE" || return 1
         rm -rf BeautyLine
-        git clone https://github.com/gvolpe/BeautyLine.git --depth=1
+        git clone https://github.com/gvolpe/BeautyLine.git --depth=1 || return 1
+        if [ ! -d "$REPO_CACHE/BeautyLine" ]; then
+          error "No se encontró $REPO_CACHE/BeautyLine después del clone."
+          return 1
+        fi
         mkdir -p ~/.local/share/icons
         cp -r "$REPO_CACHE/BeautyLine/BeautyLine" ~/.local/share/icons/
         success "BeautyLine Icon Theme instalado."
@@ -186,6 +208,13 @@ choose_active_theme() {
 
     if [ ${#installed_themes[@]} -eq 0 ]; then
         warn "No se instaló ningún tema de iconos."
+        return
+    fi
+
+    # En modo no interactivo, mantener el tema actual
+    if [ ! -t 0 ]; then
+        local current=$(gsettings get org.gnome.desktop.interface icon-theme 2>/dev/null | tr -d "'")
+        info "Modo no interactivo: manteniendo tema actual: $current"
         return
     fi
 
