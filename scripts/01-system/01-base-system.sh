@@ -6,6 +6,7 @@
 # ==============================================================================
 
 source "$(dirname "$0")/../../lib/common.sh"
+source "$(dirname "$0")/../../lib/privilege.sh"
 
 OS="$(detect_os)"
 section "Sistema operativo detectado: $OS_NAME $OS_VERSION"
@@ -243,13 +244,10 @@ else
 fi
 
 # Este script se ejecuta con sudo desde runner.sh, por lo que $HOME apunta a
-# /root. Los ajustes de sesión deben aplicarse al usuario real.
-REAL_USER="${SUDO_USER:-$USER}"
-if [ -z "$REAL_USER" ] || [ "$REAL_USER" = "root" ]; then
-  REAL_USER=$(logname 2>/dev/null || echo "$USER")
-fi
-REAL_HOME=$(getent passwd "$REAL_USER" 2>/dev/null | cut -d: -f6)
-[ -z "$REAL_HOME" ] && REAL_HOME="/home/$REAL_USER"
+# /root. Los ajustes de sesión deben aplicarse al usuario real (INSTALL_USER,
+# INSTALL_USER_HOME y user_path vienen de lib/privilege.sh).
+AUTOSTART_DIR="$(user_path '.config/autostart')"
+AUTOSTART_FILE="$AUTOSTART_DIR/org.gnome.Software.desktop"
 
 # Desactivar el autostart de GNOME Software de forma NO destructiva.
 # Borrar /etc/xdg/autostart/*.desktop modifica archivos propiedad de un paquete:
@@ -257,17 +255,17 @@ REAL_HOME=$(getent passwd "$REAL_USER" 2>/dev/null | cut -d: -f6)
 # La alternativa correcta es una entrada de usuario en ~/.config/autostart con
 # Hidden=true, que tiene prioridad sobre /etc/xdg/autostart y sobrevive updates.
 info "Desactivando autostart de GNOME Software (sin tocar archivos del sistema)..."
-mkdir -p "$REAL_HOME/.config/autostart"
-cat > "$REAL_HOME/.config/autostart/org.gnome.Software.desktop" << 'EOF'
+mkdir -p "$AUTOSTART_DIR"
+cat > "$AUTOSTART_FILE" << 'EOF'
 [Desktop Entry]
 Type=Application
 Name=GNOME Software
 Hidden=true
 EOF
 
-if [ -f "$REAL_HOME/.config/autostart/org.gnome.Software.desktop" ]; then
-  chown "$REAL_USER":"$REAL_USER" "$REAL_HOME/.config/autostart/org.gnome.Software.desktop" 2>/dev/null || true
-  success "Autostart de GNOME Software desactivado para $REAL_USER."
+if [ -f "$AUTOSTART_FILE" ]; then
+  chown "$INSTALL_USER":"$INSTALL_USER" "$AUTOSTART_FILE" 2>/dev/null || true
+  success "Autostart de GNOME Software desactivado para $INSTALL_USER."
 else
   warn "No se pudo desactivar el autostart de GNOME Software."
 fi
