@@ -29,8 +29,7 @@ else
         git sassc glib2-devel libxml2 \
         ImageMagick optipng inkscape \
         gnome-shell-extension-user-theme \
-        gnome-tweaks \
-        gnome-extensions-app
+        gnome-tweaks
     elif is_ubuntu; then
       pkg_install \
         git sassc libglib2.0-dev-bin libxml2-utils \

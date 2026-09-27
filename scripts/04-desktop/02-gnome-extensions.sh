@@ -11,14 +11,25 @@ source "$(dirname "$0")/../../lib/common.sh"
 
 section "🧩 Extensiones GNOME ($OS_NAME)"
 
-# Asegurar que gnome-extensions esté disponible
+# Asegurar que gnome-extensions esté disponible (CLI para instalación automatizada)
 if ! command -v gnome-extensions &>/dev/null; then
-  info "Instalando gnome-extensions..."
-  if is_fedora; then
-    pkg_install gnome-extensions-app
-  elif is_ubuntu; then
-    pkg_install gnome-shell-extension-prefs
+  info "Instalando gnome-extensions (CLI)..."
+  pkg_install gnome-extensions
+fi
+
+# Instalar Extension Manager desde Flathub (interfaz gráfica para gestionar extensiones)
+section "Extension Manager"
+if command -v flatpak &>/dev/null; then
+  if flatpak info com.mattjakeman.ExtensionManager &>/dev/null; then
+    success "Extension Manager ya está instalado."
+  else
+    info "Instalando Extension Manager desde Flathub..."
+    flatpak install -y flathub com.mattjakeman.ExtensionManager
+    success "Extension Manager instalado."
   fi
+else
+  warn "Flatpak no está disponible. No se pudo instalar Extension Manager."
+  warn "Puedes instalarlo manualmente desde: https://flathub.org/apps/com.mattjakeman.ExtensionManager"
 fi
 
 # jq/curl no son necesarios: el parseo del JSON de la API se hace con grep/sed
