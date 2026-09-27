@@ -23,14 +23,29 @@ if command -v code &>/dev/null; then
 else
   if is_fedora; then
     # ── Fedora: repositorio RPM ───────────────────────────────────────────────
-    info "Importando llave GPG de Microsoft..."
-    if sudo rpm --import <(curl -fsSL --proto '=https' --tlsv1.2 \
-        --connect-timeout 15 --max-time 60 \
-        https://packages.microsoft.com/keys/microsoft.asc); then
-      success "Llave GPG importada."
+    # Importar la llave desde un archivo, no por process substitution:
+    # "sudo rpm --import <(curl ...)" falla con "import read failed(2)" porque
+    # sudo no hereda el file descriptor creado por <(). Además, descargar a
+    # archivo permite verificar el tamaño del contenido antes de importar.
+    if rpm -q gpg-pubkey --qf '%{SUMMARY}\n' 2>/dev/null | grep -qi 'Microsoft'; then
+      success "Llave GPG de Microsoft ya importada."
     else
-      error "No se pudo importar la llave GPG de Microsoft. Abortando."
-      exit 1
+      MS_KEY=/tmp/microsoft.asc
+      if ! secure_fetch "https://packages.microsoft.com/keys/microsoft.asc" \
+          "$MS_KEY" "llave GPG de Microsoft"; then
+        error "No se pudo descargar la llave GPG de Microsoft. Abortando."
+        exit 1
+      fi
+
+      info "Importando llave GPG de Microsoft..."
+      if sudo rpm --import "$MS_KEY"; then
+        success "Llave GPG importada."
+      else
+        rm -f "$MS_KEY"
+        error "No se pudo importar la llave GPG de Microsoft. Abortando."
+        exit 1
+      fi
+      rm -f "$MS_KEY"
     fi
 
     # Idempotente: no sobrescribir si el repo ya está bien configurado.
