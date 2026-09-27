@@ -8,6 +8,13 @@
 # Función para obtener los colores de GNOME Terminal según el tema
 get_gnome_terminal_colors() {
     case "$THEME" in
+        tokyo-night)
+            echo "palette=['#32344a','#f7768e','#9ece6a','#e0af68','#7aa2f7','#ad8ee6','#449dab','#787c99','#444b6a','#ff7a93','#b9f27c','#ff9e64','#7da6ff','#bb9af7','#0db9d7','#acb0d0']"
+            echo "foreground_color='#a9b1d6'"
+            echo "background_color='#1a1b26'"
+            echo "bold_color='#a9b1d6'"
+            echo "bold_color_same_as_fg=true"
+            ;;
         pastel-powerline)
             echo "palette=['#575279','#b4637a','#286983','#ea9d34','#56949f','#907aa9','#ea9d34','#faf4ed','#9893a5','#b4637a','#286983','#ea9d34','#56949f','#907aa9','#ea9d34','#575279']"
             echo "foreground_color='#575279'"

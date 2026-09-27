@@ -349,7 +349,7 @@ apply_starship_theme() {
   mkdir -p "$config_dir"
 
   case "$theme" in
-    pastel-powerline|gruvbox-rainbow|catppuccin-powerline)
+    tokyo-night|pastel-powerline|gruvbox-rainbow|catppuccin-powerline)
       if ! starship preset "$theme" > "$config_dir/starship.toml"; then
         error "Starship no pudo aplicar el preset '$theme'."
         return 1
@@ -374,9 +374,10 @@ show_theme_selector() {
   [ "$width" -lt 60 ] && width=60
   if theme=$(whiptail --title "Selecciona el tema de Starship" \
       --radiolist "Elige un tema para tu terminal (Espacio marca, Enter confirma):" "$height" "$width" 12 \
-      "1" "Gruvbox Rainbow (oscuro cálido, recomendado)" ON \
-      "2" "Pastel Powerline (claro)" OFF \
-      "3" "Catppuccin Powerline (oscuro pastel)" OFF \
+      "1" "Tokyo Night (oscuro azulado, recomendado)" ON \
+      "2" "Gruvbox Rainbow (oscuro cálido)" OFF \
+      "3" "Pastel Powerline (claro)" OFF \
+      "4" "Catppuccin Powerline (oscuro pastel)" OFF \
       3>&1 1>&2 2>&3); then
     :
   else
@@ -386,9 +387,10 @@ show_theme_selector() {
   [ -z "$theme" ] && { echo ""; return 1; }
 
   case "$theme" in
-    1) echo "gruvbox-rainbow" ;;
-    2) echo "pastel-powerline" ;;
-    3) echo "catppuccin-powerline" ;;
+    1) echo "tokyo-night" ;;
+    2) echo "gruvbox-rainbow" ;;
+    3) echo "pastel-powerline" ;;
+    4) echo "catppuccin-powerline" ;;
     *) echo "" ;;
   esac
 }

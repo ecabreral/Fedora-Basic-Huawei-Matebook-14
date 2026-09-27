@@ -22,7 +22,9 @@ CURRENT_THEME="ninguno"
 if [ -f ~/.config/starship.toml ]; then
   # Detectar cuál de los tres presets está aplicado. Los presets de Starship no
   # incluyen su nombre en el TOML, así que se distinguen por su paleta de colores.
-  if grep -qE "'#faf4ed'|#faf4ed" ~/.config/starship.toml 2>/dev/null; then
+  if grep -qE "'#1a1b26'|#1a1b26" ~/.config/starship.toml 2>/dev/null; then
+    CURRENT_THEME="tokyo-night"
+  elif grep -qE "'#faf4ed'|#faf4ed" ~/.config/starship.toml 2>/dev/null; then
     CURRENT_THEME="pastel-powerline"
   elif grep -qE "'#1e1e2e'|#1e1e2e" ~/.config/starship.toml 2>/dev/null; then
     CURRENT_THEME="catppuccin-powerline"
@@ -41,9 +43,10 @@ show_theme_menu() {
   local theme
   theme=$(whiptail --title "Cambio de Tema" \
       --radiolist "Selecciona el nuevo tema para tu terminal:" 22 60 12 \
-      "1" "Gruvbox Rainbow (oscuro cálido)" ON \
-      "2" "Pastel Powerline (claro)" OFF \
-      "3" "Catppuccin Powerline (oscuro pastel)" OFF \
+      "1" "Tokyo Night (oscuro azulado)" ON \
+      "2" "Gruvbox Rainbow (oscuro cálido)" OFF \
+      "3" "Pastel Powerline (claro)" OFF \
+      "4" "Catppuccin Powerline (oscuro pastel)" OFF \
       3>&1 1>&2 2>&3)
 
   if [ $? -ne 0 ] || [ -z "$theme" ]; then
@@ -52,9 +55,10 @@ show_theme_menu() {
   fi
 
   case "$theme" in
-    1)  echo "gruvbox-rainbow" ;;
-    2)  echo "pastel-powerline" ;;
-    3)  echo "catppuccin-powerline" ;;
+    1)  echo "tokyo-night" ;;
+    2)  echo "gruvbox-rainbow" ;;
+    3)  echo "pastel-powerline" ;;
+    4)  echo "catppuccin-powerline" ;;
     *)  echo "" ;;
   esac
 }

@@ -32,7 +32,7 @@ CLI_COMPONENTS=""
 CLI_THEME=""
 
 COMPONENTS=(base terminal vscode git gh theme extensions icons intel brave chrome spotify opencode)
-THEMES=(gruvbox-rainbow pastel-powerline catppuccin-powerline)
+THEMES=(tokyo-night gruvbox-rainbow pastel-powerline catppuccin-powerline)
 
 # Tamaños conservadores para que la interfaz funcione también por SSH.
 UI_LINES=$(tput lines 2>/dev/null || echo 24)
@@ -51,12 +51,12 @@ show_help() {
     echo "  --help              Muestra esta ayuda"
     echo "  --dry-run           Muestra qué haría sin ejecutar nada"
     echo "  --component <names> Instala uno o varios componentes separados por espacio (base, terminal, vscode, git, gh, theme, extensions, icons, intel, brave, chrome, spotify, opencode)"
-    echo "  --theme <name>      Selecciona tema para terminal (gruvbox-rainbow, pastel-powerline, catppuccin-powerline)"
+    echo "  --theme <name>      Selecciona tema para terminal (tokyo-night, gruvbox-rainbow, pastel-powerline, catppuccin-powerline)"
     echo "  --uninstall         Modo desinstalación interactiva"
     echo ""
     echo "Ejemplos:"
     echo "  ./setup.sh                                    # Modo interactivo (whiptail)"
-    echo "  ./setup.sh --component base --theme gruvbox-rainbow  # Instala solo base con tema"
+    echo "  ./setup.sh --component base --theme tokyo-night  # Instala solo base con tema"
     echo "  ./setup.sh --dry-run                          # Solo muestra qué haría"
     echo "  ./setup.sh --uninstall                        # Desinstalar componentes"
 }

@@ -21,7 +21,7 @@ chmod +x setup.sh
 ./setup.sh
 
 # Instalar componentes concretos
-./setup.sh --component base terminal vscode git --theme gruvbox-rainbow
+./setup.sh --component base terminal vscode git --theme tokyo-night
 
 # Simular una instalación
 ./setup.sh --dry-run --component base terminal
@@ -81,15 +81,16 @@ Estructura modular que permite agregar, quitar o modificar snippets sin afectar 
 
 ## Temas de terminal
 
-Los tres temas disponibles son presets oficiales de Starship, con paleta de colores sincronizada para Ptyxis:
+Los temas disponibles son presets oficiales de Starship, con paleta de colores sincronizada para Ptyxis:
 
-| Tema | Estilo |
-|---|---|
-| `gruvbox-rainbow` | Oscuro cálido (recomendado por defecto). |
-| `pastel-powerline` | Claro pastel. |
-| `catppuccin-powerline` | Oscuro pastel. |
+| Tema | Estilo | Símbolos |
+|---|---|---|
+| `tokyo-night` | Oscuro azulado (recomendado por defecto). | Texto plano |
+| `gruvbox-rainbow` | Oscuro cálido. | Powerline |
+| `pastel-powerline` | Claro pastel. | Powerline |
+| `catppuccin-powerline` | Oscuro pastel. | Powerline |
 
-Los tres usan estilo Powerline, por lo que requieren **JetBrainsMono Nerd Font** para los separadores y la fuente de la terminal.
+Los tres temas Powerline requieren **JetBrainsMono Nerd Font** para sus separadores. `tokyo-night` no los usa, pero la fuente se aplica igualmente a la terminal por los iconos de `eza --icons`.
 
 Cambiar el tema sin reinstalar:
 

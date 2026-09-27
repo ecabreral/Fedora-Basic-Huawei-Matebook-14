@@ -24,6 +24,10 @@ _ptyxis_theme_data() {
     _PTYXIS_COLORS=()
 
     case "$theme" in
+        tokyo-night)
+            _PTYXIS_FG='#a9b1d6' _PTYXIS_BG='#1a1b26'
+            _PTYXIS_COLORS=( '#32344a' '#f7768e' '#9ece6a' '#e0af68' '#7aa2f7' '#ad8ee6' '#449dab' '#787c99' '#444b6a' '#ff7a93' '#b9f27c' '#ff9e64' '#7da6ff' '#bb9af7' '#0db9d7' '#acb0d0' )
+            ;;
         pastel-powerline)
             _PTYXIS_FG='#575279' _PTYXIS_BG='#faf4ed'
             _PTYXIS_COLORS=( '#575279' '#b4637a' '#286983' '#ea9d34' '#56949f' '#907aa9' '#ea9d34' '#faf4ed' '#9893a5' '#b4637a' '#286983' '#ea9d34' '#56949f' '#907aa9' '#ea9d34' '#575279' )
@@ -49,6 +53,7 @@ _ptyxis_theme_data() {
 # ── Nombre legible del tema ───────────────────────────────────────────────────
 ptyxis_theme_display_name() {
     case "$1" in
+        tokyo-night)          echo "Tokyo Night" ;;
         pastel-powerline)     echo "Pastel Powerline" ;;
         gruvbox-rainbow)      echo "Gruvbox Rainbow" ;;
         catppuccin-powerline) echo "Catppuccin Powerline" ;;
