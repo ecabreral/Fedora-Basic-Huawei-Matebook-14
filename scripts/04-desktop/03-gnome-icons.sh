@@ -189,11 +189,58 @@ install_beautyline() {
     fi
 }
 
+# ── Keeping the theme sync script consistent with the chosen icon pack ────────
+# El componente "theme" instala whitesur-theme-sync.sh, que reescribe icon-theme
+# con un valor fijo cada vez que cambia el modo claro/oscuro. Si el usuario elige
+# aquí otro pack, ese script lo sobrescribiría al siguiente cambio de modo, así
+# que hay que actualizar también su constante SYNC_ICON_THEME.
+SYNC_SCRIPT="$HOME/.local/bin/whitesur-theme-sync.sh"
+
+sync_theme_sync_icons() {
+    local theme="$1"
+
+    if [ ! -f "$SYNC_SCRIPT" ]; then
+        return 0   # No hay conflicto: el sincronizador no está instalado.
+    fi
+
+    if ! grep -q '^SYNC_ICON_THEME=' "$SYNC_SCRIPT"; then
+        warn "El sincronizador de tema no reconoce SYNC_ICON_THEME."
+        warn "Ejecuta de nuevo el componente 'theme' para regenerarlo, o edita:"
+        warn "  $SYNC_SCRIPT"
+        return 0
+    fi
+
+    local current
+    current=$(grep -m1 '^SYNC_ICON_THEME=' "$SYNC_SCRIPT" | sed 's/^SYNC_ICON_THEME="//; s/"$//')
+    if [ "$current" = "$theme" ]; then
+        return 0   # Ya sincronizado, no hay nada que hacer.
+    fi
+
+    # El tema viene de una lista cerrada de packs conocidos (sin comillas, sin
+    # saltos de línea), pero se restringe a caracteres seguros de nombre de tema
+    # para que un valor inesperado nunca rompa el archivo del sincronizador.
+    if ! printf '%s' "$theme" | grep -qE '^[A-Za-z0-9._-]+$'; then
+        warn "Nombre de pack de iconos no válido para el sincronizador: $theme"
+        return 0
+    fi
+
+    local tmp="$SYNC_SCRIPT.tmp.$$"
+    if sed "s/^SYNC_ICON_THEME=\"$current\"$/SYNC_ICON_THEME=\"$theme\"/" "$SYNC_SCRIPT" > "$tmp" \
+       && grep -q "^SYNC_ICON_THEME=\"$theme\"$" "$tmp"; then
+        mv "$tmp" "$SYNC_SCRIPT"
+        info "Sincronizador actualizado: usará '$theme' al cambiar de modo."
+    else
+        rm -f "$tmp"
+        warn "No se pudo actualizar el sincronizador en $SYNC_SCRIPT"
+    fi
+}
+
 # ── Aplicar tema de iconos ───────────────────────────────────────────────────
 apply_icon_theme() {
     local theme="$1"
     info "Aplicando tema de iconos: $theme"
     gsettings set org.gnome.desktop.interface icon-theme "$theme"
+    sync_theme_sync_icons "$theme"
     success "Tema de iconos aplicado: $theme"
 }
 

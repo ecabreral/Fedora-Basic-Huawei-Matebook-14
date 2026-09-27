@@ -114,6 +114,15 @@ Permite desinstalar VS Code, GitHub CLI, Brave, Chrome, Spotify, Starship, Oh My
 
 La opción 4 del menú principal desinstala Kitty o Alacritty y restaura Ptyxis como terminal predeterminada.
 
+## Temas de GNOME e iconos
+
+Los componentes `theme` e `icons` se complementan, pero ambos escriben sobre `gsettings`:
+
+- **`theme`** instala WhiteSur/MacTahoe (GTK, Shell, GDM, Firefox) y activa un sincronizador que mantiene alineados `color-scheme`, `gtk-theme`, `user-theme` e `icon-theme` cuando cambias entre modo claro y oscuro.
+- **`icons`** instala packs de iconos a elección (WhiteSur, McMojave Circle, Tela Circle, Papirus, BeautyLine) y activa el que elijas.
+
+Para que no se pisen, el valor del icono en el sincronizador es una constante `SYNC_ICON_THEME` que `icons` reescribe al aplicar un pack. Así el sincronizador respeta la elección del usuario en los cambios de modo futuros. El razonamiento y las alternativas descartadas están en [`docs/theme-icons-conflict.md`](docs/theme-icons-conflict.md).
+
 ## Interfaz
 
 - Diagnóstico inicial de sistema, arquitectura, sesión gráfica, Internet y `sudo`.
@@ -172,6 +181,7 @@ scripts/03-development   VS Code, Git y GitHub CLI
 scripts/04-desktop       Temas, extensiones e iconos GNOME
 scripts/05-hardware      Corrección Intel
 scripts/06-apps          Brave, Chrome, Spotify y OpenCode
+docs/                    Notas de diseño
 ```
 
 > `lib/gnome-terminal-colors.sh` no lo sourcea ningún script: el proyecto configura

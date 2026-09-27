@@ -155,8 +155,23 @@ else
 fi
 
 # ── 12. Sincronización Automática de Temas Claro/Oscuro ──────────────────────
-if [ -f "$HOME/.local/bin/whitesur-theme-sync.sh" ]; then
-  success "Script de sincronización ya existe."
+SYNC_SCRIPT="$HOME/.local/bin/whitesur-theme-sync.sh"
+
+if [ -f "$SYNC_SCRIPT" ]; then
+  # Migración: versiones anteriores fijaban el icono a WhiteSur con un literal
+  # dentro de apply_theme(). Si el script ya existe pero no tiene la constante
+  # SYNC_ICON_THEME, se parchea para que el componente "icons" pueda ajustarlo.
+  if grep -q '^SYNC_ICON_THEME=' "$SYNC_SCRIPT"; then
+    success "Script de sincronización ya existe."
+  else
+    info "Actualizando script de sincronización existente..."
+    sed -i 's/^    local icon_theme="WhiteSur"$/    local icon_theme="\$SYNC_ICON_THEME"/' "$SYNC_SCRIPT"
+    if ! sed -i '0,/^last_family=""$/s//# Pack de iconos que este sincronizador mantiene activo al cambiar de\n# modo claro\/oscuro. El componente "icons" reescribe esta línea si el usuario\n# elige un pack distinto, para que ambos componentes no se peleen por icon-theme.\nSYNC_ICON_THEME="WhiteSur"\n\nlast_family=""/' "$SYNC_SCRIPT"; then
+      warn "No se pudo actualizar el sincronizador. El componente 'icons' no podrá\ncambiar el pack de iconos. Puedes regenerarlo eliminando:\n  rm $SYNC_SCRIPT"
+    else
+      success "Sincronizador actualizado (SYNC_ICON_THEME añadido)."
+    fi
+  fi
 else
   info "Configurando script de sincronización automática para GNOME Shell y GTK..."
 
@@ -168,6 +183,11 @@ cat << 'EOF' > "$HOME/.local/bin/whitesur-theme-sync.sh"
 # Espera a que GNOME Shell inicie si se ejecuta al arranque (autostart)
 trap 'pkill -P $$ 2>/dev/null' EXIT
 sleep 2
+
+# Pack de iconos que este sincronizador mantiene activo al cambiar de modo
+# claro/oscuro. El componente "icons" reescribe esta línea si el usuario elige
+# un pack distinto, para que ambos componentes no se peleen por icon-theme.
+SYNC_ICON_THEME="WhiteSur"
 
 last_family=""
 last_mode=""
@@ -203,7 +223,7 @@ apply_theme() {
     local target_scheme=$([ "$mode" == "Dark" ] && echo "prefer-dark" || echo "default")
     local gtk_theme="WhiteSur-${mode}"
     local shell_theme="WhiteSur-${mode}-solid"
-    local icon_theme="WhiteSur"
+    local icon_theme="$SYNC_ICON_THEME"
 
     if [ "$(gsettings get org.gnome.desktop.interface color-scheme | tr -d "'")" != "$target_scheme" ]; then
         gsettings set org.gnome.desktop.interface color-scheme "$target_scheme"
