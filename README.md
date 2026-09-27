@@ -172,6 +172,7 @@ Cierra sesión si instalaste temas o extensiones GNOME. **Reinicia solo si insta
 setup.sh                 Menús, validación, CLI y desinstalación
 lib/common.sh            Funciones compartidas, detección de SO y seguridad
 lib/logger.sh            Logging, resumen y rotación
+lib/privilege.sh         Usuario real y rutas bajo sudo
 lib/ptyxis-colors.sh     Paletas de color para Ptyxis (tema activo)
 lib/gnome-terminal-colors.sh  Paletas para GNOME Terminal (sin uso actual)
 scripts/runner.sh        Ejecución ordenada de componentes
@@ -207,3 +208,4 @@ Además:
 - Scripts de bootloader idempotentes: se detectan parámetros ya aplicados antes de modificarlos, y se guarda backup de `/etc/default/grub` en Ubuntu.
 - Comprobación de `lspci` unificada en `has_intel_gpu()` antes de aplicar parámetros del kernel.
 - Deshabilitar `NetworkManager-wait-online` requiere confirmación interactiva e informa del tradeoff.
+- Los scripts que corren con sudo resuelven el home del usuario real vía `lib/privilege.sh` en lugar de asumir `/home/<usuario>`, que es incorrecto en Fedora Silverblue (`/var/home`).
