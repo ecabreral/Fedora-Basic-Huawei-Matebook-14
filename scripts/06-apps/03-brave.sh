@@ -65,3 +65,4 @@ else
   warn "Instalación completada, pero 'brave-browser' no se detecta en la sesión actual."
   info "Ejecuta 'source ~/.zshrc' para activar el comando."
 fi
+wait_for_enter

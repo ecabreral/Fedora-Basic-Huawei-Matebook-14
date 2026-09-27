@@ -346,3 +346,4 @@ echo ""
 echo "  Los iconos se pueden cambiar en cualquier momento con:"
 echo "  gnome-tweaks → Apariencia → Iconos"
 echo ""
+wait_for_enter

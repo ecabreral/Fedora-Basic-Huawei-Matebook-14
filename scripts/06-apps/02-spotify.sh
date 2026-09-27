@@ -39,3 +39,4 @@ fi
 
 info "Spotify está disponible en el menú de aplicaciones."
 info "Si no aparece, reinicia GNOME Shell (Alt+F2 → r → Enter)."
+wait_for_enter

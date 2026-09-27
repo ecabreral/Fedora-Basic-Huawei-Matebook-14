@@ -316,3 +316,4 @@ echo "    Ctrl+PageUp/Down   Navegar pestañas"
 echo ""
 echo "  Ejecuta exec zsh o abre una nueva terminal para aplicar los cambios."
 echo ""
+wait_for_enter

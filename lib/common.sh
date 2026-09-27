@@ -36,6 +36,18 @@ section() {
   }
 }
 
+# ── wait_for_enter: Pausa el script hasta que el usuario pulse ENTER ───────────
+# Sin esto, un componente que imprime su resumen y termina deja al usuario
+# mirando un prompt que no llega, y parece que el instalador se quedó colgado.
+# En modo no interactivo (sin TTY) no hace nada: nunca debe bloquear en SSH,
+# en un pipeline o en un runner de CI.
+wait_for_enter() {
+    local msg="${1:-Presiona ENTER para continuar...}"
+    [ -t 0 ] || return 0
+    printf '\n  %s%s%s\n' "$DIM" "$msg" "$RESET"
+    read -r _ </dev/tty 2>/dev/null || read -r _
+}
+
 # ── OS Detection ──────────────────────────────────────────────────────────────
 OS_ID=""
 OS_NAME=""

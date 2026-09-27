@@ -287,3 +287,4 @@ echo ""
 echo "  Logout → Login"
 echo ""
 echo "Aviso: cierra sesión y vuelve a entrar para aplicar el tema."
+wait_for_enter

@@ -96,3 +96,4 @@ warn "Debes reiniciar el sistema para aplicar los cambios:"
 echo ""
 echo -e "    ${BOLD}sudo reboot${RESET}"
 echo ""
+wait_for_enter

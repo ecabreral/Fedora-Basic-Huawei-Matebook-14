@@ -301,3 +301,4 @@ echo "    • Optimizaciones de arranque"
 echo ""
 echo "  Para reiniciar y aplicar cambios: sudo reboot"
 echo ""
+wait_for_enter

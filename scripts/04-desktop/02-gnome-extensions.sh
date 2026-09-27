@@ -138,8 +138,7 @@ else
 fi
 
 echo ""
-if [ -t 0 ]; then
-  read -p "  Presiona ENTER para continuar... "
-fi
+wait_for_enter
 
 success "Extensiones configuradas."
+wait_for_enter

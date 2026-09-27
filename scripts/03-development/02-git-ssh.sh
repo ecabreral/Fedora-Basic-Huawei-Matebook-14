@@ -161,3 +161,4 @@ fi
 echo ""
 success "Configuración de Git completada"
 echo ""
+wait_for_enter

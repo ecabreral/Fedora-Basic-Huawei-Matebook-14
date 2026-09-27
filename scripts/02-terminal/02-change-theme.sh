@@ -105,3 +105,4 @@ echo "  Respaldos: $BACKUP_DIR"
 echo ""
 echo "  Ejecuta exec zsh o abre una nueva terminal para ver los cambios."
 echo ""
+wait_for_enter

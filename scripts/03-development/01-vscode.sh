@@ -165,3 +165,4 @@ section "Visual Studio Code listo"
 echo -e "  Versión instalada: ${BOLD}$(vscode_version)${RESET}"
 echo -e "  Ejecuta ${BOLD}code${RESET} para abrir VS Code."
 echo ""
+wait_for_enter

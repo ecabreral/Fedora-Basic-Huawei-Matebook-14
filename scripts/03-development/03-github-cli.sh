@@ -79,3 +79,6 @@ else
     info "Para autenticarte con GitHub ejecuta: gh auth login"
     info "Después, habilita el credential helper con: gh auth setup-git"
 fi
+
+echo ""
+wait_for_enter
