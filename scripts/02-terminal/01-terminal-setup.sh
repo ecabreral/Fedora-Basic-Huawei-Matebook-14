@@ -219,7 +219,8 @@ EOF
 if [ -n "$ZSH_VERSION" ]; then
   export ZSH="$HOME/.oh-my-zsh"
   plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
-  source $ZSH/oh-my-zsh.sh
+  # Defensivo: si ~/.oh-my-zsh no está (p. ej. desinstalado), no romper la shell.
+  [ -f "$ZSH/oh-my-zsh.sh" ] && source $ZSH/oh-my-zsh.sh
 else
   # Si se ejecuta desde bash, cargar plugins manualmente
   [ -f "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh" ] && \
@@ -251,8 +252,8 @@ eval "$(zoxide init zsh)"
 # fzf (búsqueda difusa)
 [ -f /usr/share/fzf/shell/key-bindings.zsh ] && source /usr/share/fzf/shell/key-bindings.zsh
 
-# starship prompt
-eval "$(starship init zsh)"
+# starship prompt (defensivo: si starship no está, no romper la shell)
+command -v starship &>/dev/null && eval "$(starship init zsh)"
 EOF
 
   # ── 40-motd.sh ──────────────────────────────────────────────────────────────

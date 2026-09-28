@@ -35,7 +35,28 @@ else
   exit 1
 fi
 
-# 4. Configurar alias chromefix en ~/.config/zsh/conf.d/ (idempotente)
+# 4. Verificar la llave de firma de Google en rpmdb ────────────────────────────
+# El %post del paquete ejecuta `rpm --import` con la transacción dnf aún abierta,
+# así que SIEMPRE falla con "can't create transaction lock" + "key 1 import
+# failed". Es un bug conocido del scriptlet de Google, no un fallo de esta
+# instalación: dnf mismo ya importó la llave antes de abrir la transacción
+# (ver "The key was successfully import" más arriba). Aquí solo verificamos
+# que quedó bien; si no, la importamos a mano desde el archivo de Google.
+if rpm -qa 'gpg-pubkey-*' 2>/dev/null | grep -qi '38b4796'; then
+  success "Llave de firma de Google presente en rpmdb."
+else
+  warn "Llave de firma de Google no encontrada; importando manualmente..."
+  KEY_TMP=$(mktemp /tmp/google-chrome-key.XXXXXX)
+  if secure_fetch "https://dl.google.com/linux/linux_signing_key.pub" \
+      "$KEY_TMP" "llave de firma de Google" && sudo rpm --import "$KEY_TMP"; then
+    success "Llave de firma de Google importada correctamente."
+  else
+    warn "No se pudo importar la llave de Google. Las actualizaciones de Chrome podrían fallar la verificación GPG."
+  fi
+  rm -f "$KEY_TMP"
+fi
+
+# 5. Configurar alias chromefix en ~/.config/zsh/conf.d/ (idempotente)
 ZSH_CONF_DIR="$HOME/.config/zsh/conf.d"
 CHROMEFIX_FILE="$ZSH_CONF_DIR/51-chrome.sh"
 CHROMEFIX_LINE="alias chromefix='pkill -f chrome >/dev/null 2>&1; rm -f ~/.config/google-chrome/SingletonLock ~/.config/google-chrome/SingletonSocket ~/.config/google-chrome/SingletonCookie; google-chrome-stable'"

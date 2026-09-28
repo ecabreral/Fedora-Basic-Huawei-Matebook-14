@@ -734,57 +734,116 @@ run_full_uninstall() {
         "opencode|OpenCode CLI|OFF")
 
     if [ -z "$COMPONENTS" ]; then
+        warn "No se seleccionó ningún componente. Nada que desinstalar."
         return 0
     fi
+
+    log_info "Desinstalando: $COMPONENTS"
 
     for comp in $COMPONENTS; do
         case "$comp" in
             vscode)
                 sudo dnf remove -y code 2>/dev/null || sudo snap remove code 2>/dev/null
-                rm -rf ~/.config/Code ~/.vscode
-                log_success "VS Code desinstalado"
+                if rpm -q code &>/dev/null; then
+                    log_error "VS Code sigue instalado (el paquete 'code' no se pudo eliminar)."
+                else
+                    rm -rf ~/.config/Code ~/.vscode
+                    log_success "VS Code desinstalado."
+                fi
                 ;;
             gh)
                 sudo dnf remove -y gh 2>/dev/null || sudo apt remove -y gh 2>/dev/null
-                log_success "GitHub CLI desinstalado"
+                if rpm -q gh &>/dev/null; then
+                    log_error "GitHub CLI sigue instalado."
+                else
+                    log_success "GitHub CLI desinstalado."
+                fi
                 ;;
             brave)
                 sudo dnf remove -y brave-browser 2>/dev/null
-                rm -rf ~/.config/BraveSoftware
-                log_success "Brave desinstalado"
+                if rpm -q brave-browser &>/dev/null; then
+                    log_error "Brave sigue instalado."
+                else
+                    rm -rf ~/.config/BraveSoftware
+                    log_success "Brave desinstalado."
+                fi
                 ;;
             chrome)
                 sudo dnf remove -y google-chrome-stable 2>/dev/null
                 # dnf5 (Fedora 41+) no tiene el verbo "disable"; se usa setopt.
                 sudo dnf config-manager setopt google-chrome.enabled=0 2>/dev/null
-                rm -rf ~/.config/google-chrome
-                log_success "Google Chrome desinstalado"
+                if rpm -q google-chrome-stable &>/dev/null; then
+                    log_error "Google Chrome sigue instalado."
+                else
+                    rm -rf ~/.config/google-chrome
+                    log_success "Google Chrome desinstalado."
+                fi
                 ;;
             spotify)
                 sudo dnf remove -y spotify 2>/dev/null || sudo snap remove spotify 2>/dev/null
-                log_success "Spotify desinstalado"
+                flatpak uninstall -y com.spotify.Client 2>/dev/null
+                if flatpak list --app 2>/dev/null | grep -qi spotify; then
+                    log_error "Spotify sigue instalado."
+                else
+                    log_success "Spotify desinstalado."
+                fi
                 ;;
             starship)
+                # El instalador oficial pone el binario en /usr/local/bin (root);
+                # ~/.local/bin es solo una alternativa. El generador escribe
+                # ~/.config/starship.toml.
+                sudo rm -f /usr/local/bin/starship 2>/dev/null
                 rm -f ~/.local/bin/starship
                 rm -f ~/.config/starship.toml
-                log_success "Starship desinstalado"
+                # Sin binario, el `eval "$(starship init zsh)"` del snippet
+                # rompería cada shell: neutralizamos esa línea del snippet.
+                if [ -f ~/.config/zsh/conf.d/30-tools.sh ]; then
+                    sed -i '/starship init zsh/d' ~/.config/zsh/conf.d/30-tools.sh
+                fi
+                if command -v starship &>/dev/null; then
+                    log_error "Starship sigue instalado."
+                else
+                    log_success "Starship desinstalado."
+                fi
                 ;;
             ohmyzsh)
                 rm -rf ~/.oh-my-zsh
-                if [ -f ~/.zshrc.pre-oh-my-zsh ]; then
+                # El snippet 10-oh-my-zsh.sh hace `source $ZSH/oh-my-zsh.sh`:
+                # sin el directorio, ese source rompería cada shell.
+                # Neutralizamos la línea en vez de borrar el snippet entero
+                # (el generador lo reescribirá en la próxima instalación).
+                if [ -f ~/.config/zsh/conf.d/10-oh-my-zsh.sh ]; then
+                    sed -i '\|source $ZSH/oh-my-zsh\.sh|d' ~/.config/zsh/conf.d/10-oh-my-zsh.sh
+                fi
+                # Restaurar .zshrc pre-oh-my-zsh solo si el actual no es el
+                # generado por este proyecto (el nuestro carga conf.d/*.sh).
+                if [ -f ~/.zshrc.pre-oh-my-zsh ] && ! grep -q 'conf\.d' ~/.zshrc 2>/dev/null; then
                     mv ~/.zshrc.pre-oh-my-zsh ~/.zshrc
                 fi
-                log_success "Oh My Zsh desinstalado"
+                if [ -d ~/.oh-my-zsh ]; then
+                    log_error "No se pudo eliminar ~/.oh-my-zsh por completo."
+                else
+                    log_success "Oh My Zsh desinstalado."
+                fi
                 ;;
             extensions)
                 if command -v gnome-extensions &>/dev/null; then
                     EXT_STATE_FILE="$HOME/.config/fedora-setup/installed-extensions.list"
                     if [ -f "$EXT_STATE_FILE" ]; then
                         # Registro exacto de lo que este proyecto instaló.
+                        # Solo las entradas con "@" son UUID válidos: el fallback
+                        # roto de Magic Lamp llegó a registrar "assets"/"schemas".
                         while IFS= read -r ext_uuid; do
                             [ -n "$ext_uuid" ] || continue
-                            gnome-extensions disable "$ext_uuid" 2>/dev/null
-                            gnome-extensions uninstall "$ext_uuid" 2>/dev/null
+                            case "$ext_uuid" in
+                                *@*)
+                                    gnome-extensions disable "$ext_uuid" 2>/dev/null
+                                    gnome-extensions uninstall "$ext_uuid" 2>/dev/null
+                                    ;;
+                                *)
+                                    warn "Entrada inválida en el registro (se omite): $ext_uuid"
+                                    ;;
+                            esac
                         done < "$EXT_STATE_FILE"
                         rm -f "$EXT_STATE_FILE"
                     else
@@ -808,6 +867,17 @@ run_full_uninstall() {
                             gnome-extensions uninstall "$ext_uuid" 2>/dev/null
                         done
                     fi
+                    # Limpieza: un directorio de extensiones de usuario sin
+                    # metadata.json no es una extensión válida. El fallback roto
+                    # de Magic Lamp llegó a copiar "assets/" y "schemas/" aquí.
+                    local ext_dir
+                    for ext_dir in "$HOME/.local/share/gnome-shell/extensions"/*/; do
+                        [ -d "$ext_dir" ] || continue
+                        if [ ! -f "${ext_dir}metadata.json" ]; then
+                            warn "Eliminando directorio inválido de extensiones: ${ext_dir}"
+                            rm -rf "$ext_dir"
+                        fi
+                    done
                 fi
                 log_success "Extensiones deshabilitadas y desinstaladas"
                 ;;
@@ -822,8 +892,16 @@ run_full_uninstall() {
                 ;;
             opencode)
                 sudo dnf remove -y opencode 2>/dev/null || sudo snap remove opencode 2>/dev/null
+                # El instalador oficial vive en ~/.opencode (binario real) y el
+                # snippet 52-opencode.sh lo añade al PATH.
+                rm -rf ~/.opencode
+                rm -f ~/.config/zsh/conf.d/52-opencode.sh
                 rm -rf ~/.config/opencode
-                log_success "OpenCode desinstalado"
+                if [ -d ~/.opencode ] || [ -d ~/.config/opencode ]; then
+                    log_error "No se pudo eliminar OpenCode por completo."
+                else
+                    log_success "OpenCode desinstalado."
+                fi
                 ;;
         esac
     done

@@ -64,7 +64,14 @@ run_script() {
     while true; do
         set +e
         if [ "$use_sudo" = "true" ]; then
-            sudo "$SCRIPT_DIR/$script_path" 2>&1 | tee >(strip_ansi >> "$LOG_FILE")
+            # sudo resetea el entorno (env_reset): sin pasar _INSTALL_LOG_FILE,
+            # el hijo crea su propio log como root y el directorio logs/ queda
+            # con archivos root-owned. `env` inyecta las variables sin depender
+            # de la política de sudoers.
+            sudo env "_INSTALL_LOG_FILE=$LOG_FILE" \
+                     "_INSTALL_RUNNER=1" \
+                     "INSTALL_LIGHT_MODE=${INSTALL_LIGHT_MODE:-false}" \
+                     "$SCRIPT_DIR/$script_path" 2>&1 | tee >(strip_ansi >> "$LOG_FILE")
         else
             "$SCRIPT_DIR/$script_path" 2>&1 | tee >(strip_ansi >> "$LOG_FILE")
         fi

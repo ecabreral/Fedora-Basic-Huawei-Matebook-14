@@ -71,20 +71,34 @@ else
 
     if git clone --depth 1 "$MAGIC_LAMP_REPO" "$TEMP_DIR/magic-lamp" 2>/dev/null; then
         EXTENSION_UUID="compiz-alike-magic-lamp-effect@hermes83.github.com"
+        SRC_DIR=""
         if [ -d "$TEMP_DIR/magic-lamp/$EXTENSION_UUID" ]; then
-            cp -r "$TEMP_DIR/magic-lamp/$EXTENSION_UUID" "$EXTENSIONS_DIR/"
-            gnome-extensions enable "$EXTENSION_UUID" 2>/dev/null || true
-            _record_installed_extension "$EXTENSION_UUID"
-            success "Magic Lamp Effect instalado correctamente."
+            SRC_DIR="$TEMP_DIR/magic-lamp/$EXTENSION_UUID"
+        elif [ -f "$TEMP_DIR/magic-lamp/metadata.json" ]; then
+            # Este fork publica la extensión en la RAÍZ del repo (metadata.json
+            # aquí, sin subdirectorio por UUID). Copiamos el contenido del repo
+            # completo, excluyendo .git.
+            SRC_DIR="$TEMP_DIR/magic-lamp"
+        fi
+
+        if [ -n "$SRC_DIR" ]; then
+            mkdir -p "$EXTENSIONS_DIR/$EXTENSION_UUID"
+            cp -r "$SRC_DIR/." "$EXTENSIONS_DIR/$EXTENSION_UUID/"
+            rm -rf "$EXTENSIONS_DIR/$EXTENSION_UUID/.git"
+            # Verificar que el metadata.json copiado declara el UUID esperado.
+            if [ -f "$EXTENSIONS_DIR/$EXTENSION_UUID/metadata.json" ] && \
+               grep -q "$EXTENSION_UUID" "$EXTENSIONS_DIR/$EXTENSION_UUID/metadata.json"; then
+                gnome-extensions enable "$EXTENSION_UUID" 2>/dev/null || true
+                _record_installed_extension "$EXTENSION_UUID"
+                success "Magic Lamp Effect instalado correctamente."
+            else
+                rm -rf "$EXTENSIONS_DIR/$EXTENSION_UUID"
+                warn "El fork no contiene una extensión válida (UUID no coincide). Intentando desde extensions.gnome.org..."
+                install_gnome_extension "3740" "Compiz Alike Magic Lamp Effect" || true
+            fi
         else
-            for dir in "$TEMP_DIR/magic-lamp"/*; do
-                if [ -d "$dir" ]; then
-                    cp -r "$dir" "$EXTENSIONS_DIR/"
-                    gnome-extensions enable "$(basename "$dir")" 2>/dev/null || true
-                    _record_installed_extension "$(basename "$dir")"
-                    success "$(basename "$dir") instalado."
-                fi
-            done
+            warn "No se pudo clonar el fork de Magic Lamp Effect. Intentando desde extensions.gnome.org..."
+            install_gnome_extension "3740" "Compiz Alike Magic Lamp Effect" || true
         fi
     else
         warn "No se pudo clonar el fork de Magic Lamp Effect. Intentando desde extensions.gnome.org..."

@@ -44,7 +44,9 @@ section() {
 wait_for_enter() {
     local msg="${1:-Presiona ENTER para continuar...}"
     [ -t 0 ] || return 0
-    printf '\n  %s%s%s\n' "$DIM" "$msg" "$RESET"
+    # %b (no %s) para que \e[2m y \e[0m se interpreten como escapes reales;
+    # con %s salían literales en el log ("\e[2mPresiona ENTER...").
+    printf '\n  %b%s%b\n' "$DIM" "$msg" "$RESET"
     read -r _ </dev/tty 2>/dev/null || read -r _
 }
 
